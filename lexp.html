@@ -1,7 +1,7 @@
 <html>
 <head>
 <script src="//code.jquery.com/jquery-2.1.4.js"></script>
-<script data-main="slapdash/lexp.js" src="assets/js/require.js"></script>
+<script data-main="lexp.js" src="assets/js/require.js"></script>
 <style>
 .error { color: red; }
 </style>
@@ -15,7 +15,7 @@ $(document).ready( function() {
 
 	$('#exp').on( "change", function() {
 		var exp = $(this).val();
-		require( ['lexp', 'util' ], function( lexp, util ) {
+		require( ['lexp'], function( lexp ) {
 			var n;
 			try {
 				$('#val').text("??").removeClass('error');
@@ -23,12 +23,10 @@ $(document).ready( function() {
 				
 				n = lexp.compile( exp );
 				
-				$('#result').html('Successful compile!<br/><pre>' + util.dump( n ) + "</pre>");
+				$('#result').html('Successful compile!');
 			}
 			catch (e) {
 				$('#result').html(typeof e + " error: " + e.toString()).addClass('error');
-				console.log( "util.dump: " + util.dump(e) );
-				console.log( "As JSON: " + JSON.stringify(e) );
 			}
 
 			var context = {
