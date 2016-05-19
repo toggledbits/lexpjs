@@ -72,7 +72,7 @@ This is a very rough BNF for the parser:
 
 ## The Basics ##
 
-Lexpjs is designed to be run under requirejs or similar loader.
+Lexpjs is designed to be run under [requirejs](https://github.com/requirejs/requirejs) or similar loader.
 
 ### compile( expressionString ) ###
 
@@ -83,11 +83,14 @@ that is used as input to `run()` later. If parsing fails, the function throws an
 Example: 
 
 ```
-try {
-    pp = lexp.compile('2 + 3 * 4 + 5");
-} catch (e) {
-    console.log("Parsing failed: " + e.message);
-}
+require('lexp', function('lexp') {
+    try {
+        pp = lexp.compile('2 + 3 * 4 + 5");
+    } catch (e) {
+        console.log("Parsing failed: " + e.message);
+    }
+    ...
+});
 ```
 
 ### run( parsedResult [, executionContext ] ) ###
