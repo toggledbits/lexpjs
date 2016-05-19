@@ -17,7 +17,7 @@ values or create new variables during expression evaluation (i.e. there is not a
 The "=" operator is currently used for equality comparison, but this may change in future and you are advised 
 not to use it for comparisons. [repository issue #3](https://github.com/toggledbits/lexpjs/issues/3)
 
-* Lexpjs has been tested under [requirejs](https://github.com/requirejs). It has not been tested with other
+* Lexpjs has been tested under [requirejs](https://github.com/requirejs/requirejs). It has not been tested with other
 loaders. Reports on success or failure would be appreciated--make your comment in an issue in this repository.
 
 ## Bug Reports and Contributions ##
