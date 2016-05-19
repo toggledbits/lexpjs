@@ -83,7 +83,7 @@ that is used as input to `run()` later. If parsing fails, the function throws an
 Example: 
 
 ```
-require('lexp', function('lexp') {
+require( [ 'lexp' ], function( lexp ) {
     try {
         pp = lexp.compile('2 + 3 * 4 + 5");
     } catch (e) {
