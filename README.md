@@ -77,7 +77,7 @@ Lexpjs is designed to be run under [requirejs](https://github.com/requirejs/requ
 ### compile( expressionString ) ###
 
 The `compile()` function accepts a single argument, the string the containing the expression to be parsed.
-If parsing of the expression succeeds, the function returns a JavaScript Array containing the parse tree 
+If parsing of the expression succeeds, the function returns a JavaScript object containing the parse tree 
 that is used as input to `run()` later. If parsing fails, the function throws an exception.
 
 Example: 
