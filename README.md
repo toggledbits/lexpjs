@@ -15,7 +15,7 @@ Lexpjs is offered under GPL 3.0.
 * Variables defined in the evaluation context can be read by the evaluator, but there is no facility to change
 values or create new variables during expression evaluation (i.e. there is not assignment operation/statement).
 The "=" operator is currently used for equality comparison, but this may change in future and you are advised 
-not to use it for comparisons. [repository issue #3](https://github.com/toggledbits/lexpjs/issues/3)
+not to use it for comparisons. [repository issue #1](https://github.com/toggledbits/lexpjs/issues/1)
 
 * Lexpjs has been tested under [requirejs](https://github.com/requirejs/requirejs). It has not been tested with other
 loaders. Reports on success or failure would be appreciated--make your comment in an issue in this repository.
