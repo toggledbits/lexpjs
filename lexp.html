@@ -1,0 +1,64 @@
+<html>
+<head>
+<script src="//code.jquery.com/jquery-2.1.4.js"></script>
+<script data-main="slapdash/lexp.js" src="assets/js/require.js"></script>
+<style>
+.error { color: red; }
+</style>
+</head>
+<body>
+<textarea name="exp" id="exp" rows="8" cols="60"></textarea><br/>
+<div id="result">compiled result will be shown here</div>
+<div id="val">result of evaluated expression will be shown here</div>
+<script language="javascript">
+$(document).ready( function() {
+
+	$('#exp').on( "change", function() {
+		var exp = $(this).val();
+		require( ['lexp', 'util' ], function( lexp, util ) {
+			var n;
+			try {
+				$('#val').text("??").removeClass('error');
+				$('#result').text("??").removeClass('error');
+				
+				n = lexp.compile( exp );
+				
+				$('#result').html('Successful compile!<br/><pre>' + util.dump( n ) + "</pre>");
+			}
+			catch (e) {
+				$('#result').html(typeof e + " error: " + e.toString()).addClass('error');
+				console.log( "util.dump: " + util.dump(e) );
+				console.log( "As JSON: " + JSON.stringify(e) );
+			}
+
+			var context = {
+				color: "red",
+				size: "XL",
+				price: "40.00",
+				origin: {
+					country: "CN",
+					city: "Shanghai",
+					distance: 10000
+				}
+			};
+			
+			if (n) {
+				n.buzz = function(a,b,c) { if (arguments.length != 3) throw new Error(); return 'a='+a+', b='+b+', c='+c; };
+				n.strftime = util.strftime;
+				
+				try
+				{
+					var v = lexp.run( n, context );
+					$('#val').text( v + " (" + typeof v + ")" );
+				}
+				catch (e) 
+				{
+					$('#val').text('Runtime error: ' + e.toString()).addClass('error');
+				}
+			}
+		});
+	});
+});
+</script>
+</body>
+</html>
