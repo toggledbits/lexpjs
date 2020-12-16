@@ -1,4 +1,4 @@
-/* Version 20351.1756 */
+/* Version 20351.1801 */
 /* Ref: https://github.com/umdjs/umd */
 (function (root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -847,7 +847,7 @@ return new Parser;
         , if: { nargs: 2, impl: function( cond, texp, fexp ) { return (cond) ? texp : fexp; } }
     };
 
-    var D = /* function() {}; */ console.log; /* */
+    var D = function() {}; /* console.log; /* */
 
     var run = function( ce, ctx, stack ) {
         ctx = ctx || {};
@@ -855,7 +855,7 @@ return new Parser;
 D(JSON.stringify(ce,null,2));
 
         function is_atom( v, typ ) {
-            return null !== v && "object" === typeof( v ) && 
+            return null !== v && "object" === typeof( v ) &&
                 "undefined" !== typeof v.__atom &&
                 ( !typ || v.__atom === typ );
         }

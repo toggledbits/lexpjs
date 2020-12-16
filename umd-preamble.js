@@ -52,7 +52,7 @@
         , if: { nargs: 2, impl: function( cond, texp, fexp ) { return (cond) ? texp : fexp; } }
     };
 
-    var D = /* function() {}; */ console.log; /* */
+    var D = function() {}; /* console.log; /* */
 
     var run = function( ce, ctx, stack ) {
         ctx = ctx || {};
