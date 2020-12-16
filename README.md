@@ -1,15 +1,15 @@
 # lexpjs
 
-lexpjs is a Lightweight EXPression parser and evaluator for JavaScript.
+*lexpjs* is a Lightweight EXPression parser and evaluator for JavaScript. It is intended to be functional replacement for the use of `eval()`, which can present significant security issues.
 
-Lexpjs supports simple mathemtical expressions for addition, subtraction, multiplication,
+*lexpjs* supports simple mathemtical expressions for addition, subtraction, multiplication,
 division, modulus, bitwise operations, and logical operations. It has a small library of
-built-in functions (abs, cos, sin, floor, ceil, round, etc.).
+built-in functions (abs, cos, sin, floor, ceil, round, etc.). The syntax is common "infix" expression notation, very similar to JavaScript itself.
 
-Through a passed-in context table, lexpjs supports named variables, and custom functions.
+Through a passed-in context table, *lexpjs* supports named variables, and custom functions.
 See the documentation below for how to implement these.
 
-Lexpjs is offered under GPL 3.0.
+*lexpjs* is offered under GPL 3.0.
 
 ## Known Issues ##
 
@@ -30,7 +30,7 @@ as possible.
 
 ## Syntax ##
 
-As *lexpjs* now uses Jison to generate its parser, the file `grammar.jison` can be examined for syntax. The TL;DR version is that it's pretty close to JavaScript expressions, as one might think, without the hazards of using `eval()`.
+As *lexpjs* now uses [Jison](http://zaa.ch/jison/) to generate its parser, the file `grammar.jison` can be examined for syntax. The TL;DR version is that it's pretty close to JavaScript expressions, as one might think, without the hazards of using `eval()`.
 
 ## The Basics ##
 
@@ -72,7 +72,7 @@ var rr = lexpjs.run(pp);
 // In runtime, this example throws ReferenceError because "range" is not defined in "context"
 ```
 
-As of this version, Lexpjs does not allow you to modify variables or create new ones during evaluation.
+As of this version, *lexpjs* does not allow you to modify variables or create new ones during evaluation.
 
 ### evaluate( expressionString [, executionContext ] ) ###
 
@@ -153,7 +153,7 @@ context.__func.toradians = function( degrees ) {
 };
 ```
 
-Now, when you run an expression that makes reference to your `toradians` function, it is called by lexpjs and the
+Now, when you run an expression that makes reference to your `toradians` function, it is called by *lexpjs* and the
 result value is used in the remainder of the expression. For example, `cos(toradians(45))` would return `0.707106...`
 
 Although we have used an anonymous function in this example, there is no reason you could not separately
