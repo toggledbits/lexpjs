@@ -1,4 +1,5 @@
 # lexpjs
+
 lexpjs is a Lightweight EXPression parser and evaluator for JavaScript.
 
 Lexpjs supports simple mathemtical expressions for addition, subtraction, multiplication,
@@ -12,13 +13,7 @@ Lexpjs is offered under GPL 3.0.
 
 ## Known Issues ##
 
-* Variables defined in the evaluation context can be read by the evaluator, but there is no facility to change
-values or create new variables during expression evaluation (i.e. there is not assignment operation/statement).
-The "=" operator is currently used for equality comparison, but this may change in future and you are advised 
-not to use it for comparisons. [repository issue #1](https://github.com/toggledbits/lexpjs/issues/1)
-
-* Lexpjs has been tested under [requirejs](https://github.com/requirejs/requirejs). It has not been tested with other
-loaders. Reports on success or failure would be appreciated--make your comment in an issue in this repository.
+* Lexp uses a UMD wrapper for compatibility with node, CommonJS, AMD, etc., but it has not been tested in all of these environments.
 
 ## Bug Reports and Contributions ##
 
@@ -35,44 +30,9 @@ as possible.
 
 ## Syntax ##
 
-This is a very rough BNF for the parser:
-
-```
-<expression> ::= <number>
-               | <string>
-               | <variable-name>
-               | <function-name> "(" <argument-list> ")"
-               | <expression> <binary-operator> <expression>
-               | <unary-operator> <expression>
-               | "(" <expression> ")"
-               
-<argument-list> ::= "" | <expression-list>
-                  
-<expression-list> ::= <expression> [ "," <expression-list> ]
-
-<unary-operator> ::= "-" | "+" | "!"
-
-<binary-operator> ::= "+" | "-" | "*" | "/" | "%"
-                    | "&" | "|" | "^"
-                    | "<" | "<=" | ">" | ">=" | "==" | "=" | "<>" | "!="
-
-<number> ::= <decimal-integer>
-           | "0x" <hexadecimal-integer>
-           | "0b" <binary-integer>
-           | "0" <octal-integer>
-           | <decimal-rational-number>
-         
-<string> ::= "'" <characters> "'"
-           | '"' <characters> '"'
-           
-<variable-name> ::= <letter> { <letter> | <digit> | "_" | "." }
-
-<function-name> ::= <letter> { <letter> | <digit> | "_" }
-```
+As *lexpjs* now uses Jison to generate its parser, the file `grammar.jison` can be examined for syntax. The TL;DR version is that it's pretty close to JavaScript expressions, as one might think, without the hazards of using `eval()`.
 
 ## The Basics ##
-
-Lexpjs is designed to be run under [requirejs](https://github.com/requirejs/requirejs) or similar loader.
 
 ### compile( expressionString ) ###
 
@@ -80,33 +40,35 @@ The `compile()` function accepts a single argument, the string the containing th
 If parsing of the expression succeeds, the function returns a JavaScript object containing the parse tree 
 that is used as input to `run()` later. If parsing fails, the function throws an exception.
 
-Example: 
+Example (node.js): 
 
 ```
-require( [ 'lexp' ], function( lexp ) {
-    try {
-        pp = lexp.compile('2 + 3 * 4 + 5");
-    } catch (e) {
-        console.log("Parsing failed: " + e.message);
-    }
-    ...
-});
+const lexpjs = require( "./lexp.js" );
+
+try {
+	pp = lexp.compile('2 + 3 * 4 + 5");
+} catch (e) {
+	console.log("Parsing failed:", e);
+}
+...
 ```
 
 ### run( parsedResult [, executionContext ] ) ###
 
 The `run()` function executes the parsed expression. It takes an optional `executionContext` argument, which 
-is a table containing variable names and functions.
+is an object containing pre-defined symbol names and definable functions.
 
 `run()` returns the result of the expression evaluation. The result is always a primitive type (number or string)
 if the evaluation is successful. If it fails, an exception is thrown.
 
-Example:
+Example (browser):
 
 ```
-var context = { "median": "50" };
-var pp = lexp.compile("8 * range");
-var rr = lexp.run(pp); 
+import * as lexpjs from './lexp.js';
+
+var context = { median: 50 };
+var pp = lexpjs.compile("8 * range");
+var rr = lexpjs.run(pp); 
 // In runtime, this example throws ReferenceError because "range" is not defined in "context"
 ```
 
@@ -119,14 +81,14 @@ is the value of the parsed and evaluated expression, unless a parsing or evaluat
 case an exception is thrown.
 
 ```
-var context = { "minval": 25, "maxval": 77 };
-var rr = lexp.evaluate("minval+(maxval-minval)/2", context);
+var context = { minval: 25, maxval: 77 };
+var rr = lexpjs.evaluate("minval+(maxval-minval)/2", context);
 // rr would be 51
 ```
 
-## User-defined Variables ##
+## Pre-defined Symbols ##
 
-The context passed to `evaluate()` and `run()` is used to define named variables and custom functions
+The context passed to `evaluate()` and `run()` is used to define named symbols (variables) and custom functions
 that can be used in expressions. We've seen in the above examples for these functions how that works.
 For variables, it's simple a matter of defining an element with the value to be used:
 
@@ -182,10 +144,12 @@ To make that a function that your expressions could use, you need to put it into
 to `run()`, which is done like this:
 
 ```
-local context = {
-    "toradians": function( degrees ) {
-        return degrees * Math.PI / 180;
-    }
+/* First, set up an empty context, and the contain __func for custom functions */
+var context = {};
+context.__func = {};
+/* Now define a custom function */
+context.__func.toradians = function( degrees ) {
+    return degrees * Math.PI / 180;
 };
 ```
 
@@ -212,9 +176,9 @@ context for any name that it doesn't recognize as one of its predefined function
 If it finds an element with a key equal to the name, the value is assumed to be a function it can call.
 
 Note in the above example that we declared our function with an uppercase letter "R" in the name,
-but when we made the context assignment, the context element key is all lower case. This means that 
-any expression would also need to use all lower case. The name used in evaluation is the name of the key,
-not the actual name of the actual function. 
+but when we made the context assignment to "toradians", the context element key is all lower case. This means that 
+any expression would also need to use all lower case. The name used in evaluation is the name of the *key* in `__func`,
+not the actual name of the actual function (if it has one). 
 As a further example, `degToRad` is also defined
 as an expression function that is implemented by `toRadians()`, showing that there's no required parity between
 the name used in the expression context and the name of the function implementing it.
