@@ -1,6 +1,5 @@
-/* Grammar for lexp.js for Reactor.
- * This file is part of Reactor.
- * Copyright (C) 2020, Patrick H. Rigney, All Rights Reserved
+/* Grammar for lexpjs. Copyright (C) 2020 Patrick H. Rigney
+ * See https://github.com/toggledbits/lexpjs
  */
 
 /* Lexical analysis/rules. First come first served! */
