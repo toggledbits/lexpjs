@@ -54,10 +54,8 @@
 
     var D = function() {}; /* console.log; /* */
 
-    var run = function( ce, ctx, stack ) {
+    var run = function( ce, ctx ) {
         ctx = ctx || {};
-        stack = stack || [];
-D(JSON.stringify(ce,null,2));
 
         function is_atom( v, typ ) {
             return null !== v && "object" === typeof( v ) &&
@@ -240,7 +238,6 @@ D("run() assign",v2eval,"to",v1.name);
                     throw new Error('BUG: unsupported atom');
                 }
             }
-            // D('_run is done, stack has ' + stack.length);
         } /* function _run() */
 
         D("lexp.run()", ce, ctx);
@@ -258,8 +255,8 @@ D("run() assign",v2eval,"to",v1.name);
             return parser.parse( expr );
         },
         run: run,
-        evaluate: function( expr, context, stack ) {
-            return run( parser.parse( expr ), context, stack );
+        evaluate: function( expr, context ) {
+            return run( parser.parse( expr ), context );
         }
     };
 }));
