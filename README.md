@@ -220,4 +220,4 @@ The library of intrinsic functions is not meant to perfectly mirror the function
 * `join( array, string )` - Returns a string with all elements of `array` joined by `string` (e.g. `join({3,5,7}, ':')=="3:5:7"`).
 * `indexOf( array, val )` - Returns the index of `val` in array, or -1 if not present.
 
-I keep adding things as I need them or people ask, so let me know if I'm missing what you need.
+I keep adding things as I need them or people ask, so [let me know](https://github.com/toggledbits/lexpjs/issues) if I'm missing what you need.
