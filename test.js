@@ -13,7 +13,7 @@ var ctx = {
     pi: 3.14159265
 };
 
-var exp = 'r={ id:1, name: "test" },r.name,r.notthere,b=r.notthere??{},b.reallynot';
+var exp = 'join({3,5,7},"::")';
 
 console.log("Expression:",exp);
 var t1 = Date.now();
