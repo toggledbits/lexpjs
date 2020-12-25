@@ -19,11 +19,12 @@
 "in"                    { return 'IN'; }
 \"[^"]*\"               { return 'QSTR'; } /* NB Jison now support start conditions */
 \'[^']*\'               { return 'QSTR'; }
-\`[^']*\`               { return 'QSTR'; }
+\`[^`]*\`               { return 'QSTR'; }
 [A-Za-z$][A-Za-z0-9_$]*\b  { return 'IDENTIFIER'; }
 [0-9]+("."[0-9]+)?([eE][+-]?[0-9]+)?\b  {return 'NUMBER'; }
 0x[0-9A-Fa-f]+\b          { return 'HEXNUM'; }
 0o[0-7]+\b                { return 'OCTNUM'; }
+0b[01]+\b                { return 'BINNUM'; }
 ":"                     { return 'COLON'; }
 "**"                    { return 'POW'; }
 "*"                   {return '*';}
@@ -33,10 +34,10 @@
 "+"                   {return '+';}
 "<<"                    { return '<<'; }
 ">>"                    { return '>>'; }
-"<"                     { return '<'; }
 "<="                    { return '<='; }
-">"                     { return '>'; }
 ">="                    { return '>='; }
+"<"                     { return '<'; }
+">"                     { return '>'; }
 "==="                   { return '==='; }
 "=="                    { return '=='; }
 "!=="                   { return '!=='; }
@@ -47,7 +48,8 @@
 "||"                    { return 'LOR'; }
 "&"                     { return 'BAND'; }
 "|"                     { return 'BOR'; }
-"!"                     { return 'NOT'; }
+"~"                     { return 'BNOT'; }
+"!"                     { return 'LNOT'; }
 "??"                    { return 'COALESCE'; }
 "?"                     { return '?'; }
 "="                     { return 'ASSIGN'; }
@@ -64,7 +66,7 @@
 
 /* Operator associativity and precedence */
 
-%precedence ASSIGN
+%right ASSIGN
 %left '?'
 %left COLON
 %left COALESCE
@@ -82,7 +84,7 @@
 %right POW
 %left DOT
 %left UMINUS
-%right NOT
+%right BNOT LNOT
 
 %start expressions
 
@@ -117,27 +119,24 @@ expressions
 
 expr_list
     : expr_list COMMA e
-        {
-            if ( is_atom( $1, 'list' ) ) {
-                $1.expr.push( $3 );
-                $$ = $1;
-            } else {
-                $$ = atom( 'list', { expr: [ $1, $3 ] } );
-            }
-        }
+        { $1.expr.push( $3 ); $$ = $1; }
     | e
-        { $$ = $1; }
+        { $$ = atom( 'list', { expr: [ $1 ] } ); }
     ;
 
-ident
-    : IDENTIFIER
+/* arg_list - function arguments: expr_list or nothing */
+
+arg_list
+    : expr_list
         { $$ = $1; }
-    | '[' QSTR ']'
-        { $$ = $2.slice( 1, -1 ); }
+    |
+        { $$ = atom( 'list', { expr: [] } ); }
     ;
+
+/* A reference expression is an expression referring to a value or a member of a value (presumed to be an object or array) */
 
 ref_expr
-    : ident
+    : IDENTIFIER
         { $$ = atom( 'vref', { name: $1 } ); }
     | ref_expr DOT IDENTIFIER
         { $$ = atom( 'deref', { context: $1, member: $3, locs: [@1, @3] } ); }
@@ -145,16 +144,11 @@ ref_expr
         { $$ = atom( 'deref', { context: $1, member: $3, locs: [@1, @3] } ); }
     ;
 
-array_elements
-    : array_elements COMMA e
-      { $1.push( $3 ); $$ = $1; }
-    | e
-      { $$ = [ $1 ]; }
-    ;
-
 dict_element
-    : ident COLON e
+    : IDENTIFIER COLON e
         { $$ = { key: $1, value: $3 }; }
+    | '[' QSTR ']' COLON e
+        { $$ = { key: $2.slice( 1, -1 ), value: $5 }; }
     ;
 
 dict_elements
@@ -165,21 +159,33 @@ dict_elements
     ;
 
 element_list
-    : array_elements
-        { $$ = $1; }
-    | dict_elements
+    : dict_elements
         { $$ = $1; }
     |
         { $$ = {}; }
     ;
 
+array_elements
+    : array_elements COMMA e
+      { $1.push( $3 ); $$ = $1; }
+    | e
+      { $$ = [ $1 ]; }
+    ;
+
+array_list
+    : array_elements
+        { $$ = $1; }
+    |
+        { $$ = []; }
+    ;
+
 e
     : '-' e %prec UMINUS
         { $$ = atom( 'unop', { op: '-', val: $2 } ); }
-    | NOT e
+    | LNOT e
         { $$ = atom( 'unop', { op: '!', val: $2 } ); }
-    | IDENTIFIER ASSIGN e
-        { $$ = atom( 'binop', { 'op': $2, v1: atom( 'vref', { name: $1 } ), v2: $3, locs: [@1, @3] } ); }
+    | BNOT e
+        { $$ = atom( 'unop', { op: '~', val: $2 } ); }
     | e POW e
         { $$ = atom( 'binop', { op: $2, v1: $1, v2: $3, locs: [@1,@3] } ); }
     | e '*' e
@@ -230,19 +236,23 @@ e
         { $$ = atom( 'if', { test: $1, tc: $3, fc: $5, locs: [@1, @3, @5] } ); }
     | LCURLY element_list RCURLY
         { $$ = $2; }
+    | '[' array_list ']'
+        { $$ = $2; }
     | NUMBER
         { $$ = Number(yytext); }
     | HEXNUM
         { $$ = parseInt( yytext.substr( 2 ), 16 ); }
     | OCTNUM
         { $$ = parseInt( yytext.substr( 2 ), 8 ); }
+    | BINNUM
+        { $$ = parseInt( yytext.substr( 2 ), 2 ); }
     | QSTR
         { $$ = yytext.slice( 1, -1 ); }
     | IF '(' e COMMA e COMMA e ')'
         { $$ = atom( 'if', { test: $3, tc: $5, fc: $7, locs: [@3, @5, @7] } ); }
     | IF '(' e COMMA e ')'
         { $$ = atom( 'if', { test: $3, tc: $5, locs: [@3, @5] } ); }
-    | IDENTIFIER '(' expr_list ')'
+    | IDENTIFIER '(' arg_list ')'
         { $$ = atom( 'fref', { name: $1, args: is_atom( $3, 'list') ? ($3).expr : [ $3 ], locs: [@1] } ); }
     | TRUE
         { $$ = true; }
@@ -256,4 +266,6 @@ e
         { $$ = $1; }
     | '(' e ')'
         { $$ = $2; }
+    | IDENTIFIER ASSIGN e
+        { $$ = atom( 'binop', { 'op': $2, v1: atom( 'vref', { name: $1 } ), v2: $3, locs: [@1, @3] } ); }
     ;
