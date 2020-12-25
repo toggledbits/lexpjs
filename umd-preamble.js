@@ -82,6 +82,7 @@
 
     var run = function( ce, ctx ) {
         ctx = ctx || {};
+        ctx.context = ctx; /* self-reference to assist disambiguation of references */
 
         function is_atom( v, typ ) {
             return null !== v && "object" === typeof( v ) &&
