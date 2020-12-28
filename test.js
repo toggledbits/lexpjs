@@ -94,7 +94,7 @@ var test_expr = [
     , { expr: "false ? 123 : 456", expect: 456 }
     , { expr: "[1,2,3]", Xxpect: [1,2,3] }
     , { expr: "{ alpha: 1, beta: 2, gamma: 3 }", Xxpect: { alpha: 1, beta: 2, gamma: 3 } }
-    , { expr: "{ first: 'a', ['strange id']: 'b' }", Xxpect: {} }
+    , { expr: "{ first: 'a', ['strange id']: 'b', 'Another Strange ID': 'voodoo' }", Xxpect: {} }
 
     /* Assignment test, two steps */
     , { expr: "t = 'soul stone'", expect: "soul stone" }
@@ -116,6 +116,7 @@ var test_expr = [
     /* Function tests */
     , { expr: "upper('hello')", expect: "HELLO" }
     , { expr: "lower('BYEBYE')", expect: "byebye" }
+    , { expr: "t='attributes',str(entity[t]['power_switch.state'])", expect: "true" }
 ];
 
 var exp = '"Hello",{},{alpha:1,beta:2,["not.valid.name"]:3},t=[9,5,1],join(t,"::"),time(),x=2*y=2*z=3,x,y,z,(9)';
@@ -136,15 +137,20 @@ test_expr.forEach( function( e ) {
             if ( !Array.isArray(res) ) {
                 console.log("**** Invalid return data",typeof res,res);
                 ++num_errors;
-            } else if ( "undefined" !== typeof e.expect && res[0] !== e.expect ) {
-                console.log("**** Unexpected result; got",typeof res[0],res[0],", expected",typeof e.expect,e.expect);
-                console.log("     Full result:", res);
-                ++num_errors;
             } else {
-                console.log( "     Result:", res[0] );
+                /* For now, we only care about the last thing returned. */
+                res = res.pop();
+                if ( "undefined" !== typeof e.expect && res !== e.expect ) {
+                    console.log("**** Unexpected result; got", typeof res, res,", expected",typeof e.expect,e.expect);
+                    console.log("     Full result:", res);
+                    ++num_errors;
+                } else {
+                    console.log( "     Result:", res );
+                }
             }
         } catch ( err ) {
             console.log("**** Eval error:", err );
+            console.log( JSON.stringify(ce) );
             ++num_errors;
         }
     } catch ( err ) {

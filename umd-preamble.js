@@ -216,7 +216,9 @@ D("run() assign",v2eval,"to",v1.name);
                     if ( "object" !== typeof scope || null === scope ) {
                         throw new ReferenceError("Invalid reference to member "+String(e.member)+" of "+String(scope));
                     }
-                    var res = scope[ e.member ];
+                    var member = _run( e.member );
+                    /* ??? member must be primitive? */
+                    var res = scope[ member ];
                     if ( "undefined" === typeof res ) {
                         return null;
                     }

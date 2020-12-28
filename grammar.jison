@@ -149,6 +149,8 @@ dict_element
         { $$ = { key: $1, value: $3 }; }
     | '[' QSTR ']' COLON e
         { $$ = { key: $2.slice( 1, -1 ), value: $5 }; }
+    | QSTR COLON e
+        { $$ = { key: $1.slice( 1, -1 ), value: $3 }; }
     ;
 
 dict_elements
