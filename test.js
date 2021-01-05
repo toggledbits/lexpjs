@@ -10,6 +10,10 @@ var ctx = {
             "power_switch.state": true
         }
     },
+    arr: [
+        { name: "Spot", type: "beagle" },
+        { name: "Lucy", type: "shepherd" }
+    ],
     pi: 3.14159265
 };
 
@@ -113,10 +117,24 @@ var test_expr = [
     , { expr: "4 * 8 + 2", expect: 34 }
     , { expr: "4 - 8 * 2", expect: -12 }
     
+    /* Null-conditional operators */
+    , { expr: "entity?.id", expect: "house>123" }
+    , { expr: "entity?.attributes" }
+    , { expr: "entity?.attributes?.size?.octopus", expect: null }
+    , { expr: "entity?.attributes?.size?.octopus ?? 99", expect: 99 }
+    , { expr: "nontity?.id", expect: null }
+    , { expr: "arr?[1]?.name", expect: "Lucy" }
+    , { expr: "arg?[1]?.name", expect: null }
+    , { expr: "arr[5]?.name", expect: null }
+
     /* Function tests */
     , { expr: "upper('hello')", expect: "HELLO" }
     , { expr: "lower('BYEBYE')", expect: "byebye" }
     , { expr: "t='attributes',str(entity[t]['power_switch.state'])", expect: "true" }
+
+    /* misc */
+    , { expr: "1 ?? 0 & 4" }
+    , { expr: "(1 ?? 0) & 4" }
 ];
 
 var exp = '"Hello",{},{alpha:1,beta:2,["not.valid.name"]:3},t=[9,5,1],join(t,"::"),time(),x=2*y=2*z=3,x,y,z,(9)';

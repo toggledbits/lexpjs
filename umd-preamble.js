@@ -45,6 +45,7 @@
         , replace: { nargs: 3, impl: function( s, p, r ) { return String(s).replace( p, r ); } }
         , "int": { nargs: 1, impl: parseInt }
         , "float": { nargs: 1, impl: parseFloat }
+        , "bool": { nargs: 1, impl: function( s ) { return ! ( s === 0 || s === false || s === "" || null !== String(s).match( /^\s*(0|no|off|false)\s*$/i ) ); } }
         , str: { nargs: 1, impl: function( s ) { return String( s ); } }
         , time: { nargs: 0, impl: function() { return Date.now(); } }
         , dateparts: { nargs: 0, impl: function( t ) { var d = new Date(t); return { year: d.getFullYear(), month: d.getMonth()+1, day: d.getDate(),
@@ -91,15 +92,12 @@
         }
 
         function _resolve( a ) {
+            /* "Local" variables command scope */
             if ( "undefined" !== typeof (ctx.__lvar || {})[a.name] ) {
                 return ctx.__lvar[a.name];
             }
             if ( "undefined" === typeof ctx[a.name] ) {
-                var msg = "Can't resolve " + String( a.name );
-                if ( a.locs ) {
-                    msg += " at " + String( a.locs );
-                }
-                throw new ReferenceError( msg );
+                return null;
             }
             return ctx[a.name];
         }
@@ -213,6 +211,10 @@ D("run() assign",v2eval,"to",v1.name);
                     return veval;
                 } else if ( is_atom( e, 'deref' ) ) {
                     var scope = _run( e.context );
+                    /* Watch for null-conditional operators */
+                    if ( ( e.op === '?.' || e.op == '?[' ) && scope === null ) {
+                        return null;
+                    }
                     if ( "object" !== typeof scope || null === scope ) {
                         throw new ReferenceError("Invalid reference to member "+String(e.member)+" of "+String(scope));
                     }

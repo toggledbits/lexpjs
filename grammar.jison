@@ -51,6 +51,8 @@
 "~"                     { return 'BNOT'; }
 "!"                     { return 'LNOT'; }
 "??"                    { return 'COALESCE'; }
+"?."                    { return 'QDOT'; }
+"?["                    { return 'QBRACKET'; }
 "?"                     { return '?'; }
 "="                     { return 'ASSIGN'; }
 "."                     { return 'DOT'; }
@@ -82,7 +84,7 @@
 %left '+' '-'
 %left '*' '/' MOD
 %right POW
-%left DOT
+%left DOT QDOT QBRACKET
 %left UMINUS
 %right BNOT LNOT
 
@@ -142,6 +144,10 @@ ref_expr
         { $$ = atom( 'deref', { context: $1, member: $3, locs: [@1, @3] } ); }
     | ref_expr '[' e ']'
         { $$ = atom( 'deref', { context: $1, member: $3, locs: [@1, @3] } ); }
+    | ref_expr QDOT IDENTIFIER
+        { $$ = atom( 'deref', { context: $1, member: $3, locs: [@1, @3], op: $2 } ); }
+    | ref_expr QBRACKET e ']'
+        { $$ = atom( 'deref', { context: $1, member: $3, locs: [@1, @3], op: $2 } ); }
     ;
 
 dict_element
