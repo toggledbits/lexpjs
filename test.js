@@ -131,6 +131,9 @@ var test_expr = [
     , { expr: "max(5,4,6*9)", expect: 54 }
     , { expr: "upper('hello')", expect: "HELLO" }
     , { expr: "lower('BYEBYE')", expect: "byebye" }
+    , { expr: "ltrim('    abcde')", expect: "abcde" }
+    , { expr: "rtrim('work     ')", expect: "work" }
+    , { expr: "trim('       tight   ')", expect: "tight" }
     , { expr: "t='attributes',str(entity[t]['power_switch.state'])", expect: "true" }
 
     /* Conditional */
@@ -152,6 +155,8 @@ var test_expr = [
     , { expr: "do 5, 6, 7, 8, 9 done", expect: 9 }
     , { expr: "'nice' # this is a comment", expect: "nice" }
     , { expr: "# this is a comment\n'hello'", expect: "hello" }
+    , { expr: "([1,2,3])[1]", expect: 2 }
+    , { expr: "time(2021,1,17)", expect: new Date(2021,1,17).getTime() }
 ];
 
 var exp = '"Hello",{},{alpha:1,beta:2,["not.valid.name"]:3},t=[9,5,1],join(t,"::"),time(),x=2*y=2*z=3,x,y,z,(9)';

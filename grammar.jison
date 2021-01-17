@@ -27,7 +27,7 @@
 \"[^"]*\"               { return 'QSTR'; } /* NB Jison now support start conditions */
 \'[^']*\'               { return 'QSTR'; }
 \`[^`]*\`               { return 'QSTR'; }
-[A-Za-z$][A-Za-z0-9_$]*\b  { return 'IDENTIFIER'; }
+[A-Za-z_$][A-Za-z0-9_$]*\b  { return 'IDENTIFIER'; }
 [0-9]+("."[0-9]+)?([eE][+-]?[0-9]+)?\b  {return 'NUMBER'; }
 0x[0-9A-Fa-f]+\b          { return 'HEXNUM'; }
 0o[0-7]+\b                { return 'OCTNUM'; }
@@ -91,9 +91,9 @@
 %left '+' '-'
 %left '*' '/' MOD
 %right POW
-%left DOT QDOT QBRACKET
 %left UMINUS
 %right BNOT LNOT
+%left DOT QDOT QBRACKET
 
 %start expressions
 
@@ -142,7 +142,11 @@ arg_list
         { $$ = atom( 'list', { expr: [] } ); }
     ;
 
-/* A reference expression is an expression referring to a value or a member of a value (presumed to be an object or array) */
+/** A reference expression is an expression referring to a value or a member of a value (presumed to be an object or array).
+ *  Certain expressions, such as function calls and parenthesized results, are considered reference expressions. This is a 
+ *  slight constraint to help disambiguate certain constructions that may otherwise be possible but usually aren't used
+ *  (e.g. what does "A-OK"[3] mean?)
+*/
 
 ref_expr
     : IDENTIFIER
@@ -155,6 +159,10 @@ ref_expr
         { $$ = atom( 'deref', { context: $1, member: $3, locs: [@1, @3], op: $2 } ); }
     | ref_expr QBRACKET e ']'
         { $$ = atom( 'deref', { context: $1, member: $3, locs: [@1, @3], op: $2 } ); }
+    | IDENTIFIER '(' arg_list ')'
+        { $$ = atom( 'fref', { name: $1, args: is_atom( $3, 'list') ? ($3).expr : [ $3 ], locs: [@1] } ); }
+    | '(' e ')'
+        { $$ = $2; }
     ;
 
 dict_element
@@ -267,8 +275,6 @@ e
         { $$ = atom( 'if', { test: $2, tc: $4, fc: $6, locs: [@2, @4, @6] } ); }
     | IF e THEN expr_list ENDIF
         { $$ = atom( 'if', { test: $2, tc: $4, locs: [@2, @4] } ); }
-    | IDENTIFIER '(' arg_list ')'
-        { $$ = atom( 'fref', { name: $1, args: is_atom( $3, 'list') ? ($3).expr : [ $3 ], locs: [@1] } ); }
     | TRUE
         { $$ = true; }
     | FALSE
@@ -279,8 +285,6 @@ e
         { $$ = NaN; }
     | ref_expr
         { $$ = $1; }
-    | '(' e ')'
-        { $$ = $2; }
     | IDENTIFIER ASSIGN e
         { $$ = atom( 'binop', { 'op': $2, v1: atom( 'vref', { name: $1 } ), v2: $3, locs: [@1, @3] } ); }
     | EACH IDENTIFIER IN e COLON e

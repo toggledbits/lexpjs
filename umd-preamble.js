@@ -21,48 +21,50 @@
 /* --------------------------------- lexp executive ------------------------------- */
 
     const nativeFuncs = {
-          abs : { nargs: 1, impl: function( v ) { return v >= 0 ? v : -v; } }
-        , sign : { nargs: 1, impl: Math.sign }
-        , floor : { nargs: 1, impl: Math.floor }
-        , ceil : { nargs: 1, impl: Math.ceil }
-        , round : { nargs: 2, impl: function( n, p ) { if (p == undefined) p = 0; return Math.floor( n * Math.pow(10, p) + 0.5 ) / Math.pow(10, p); } }
-        , trunc : { nargs: 1, impl: Math.trunc }
-        , cos : { nargs: 1, impl: Math.cos }
-        , sin : { nargs: 1, impl: Math.sin }
-        , tan : { nargs: 1, impl: Math.tan }
-        , log : { nargs: 1, impl: Math.log }
-        , exp : { nargs: 1, impl: Math.exp }
-        , pow : { nargs: 2, impl: Math.pow }
-        , sqrt : { nargs: 1, impl: Math.sqrt }
-        , min : { nargs: 2, impl: Math.min }
-        , max : { nargs: 2, impl: Math.max }
-        , len : { nargs: 1, impl: function( s ) { return s.length; } }
-        , substr : { nargs: 2, impl: function( s, p, l ) { s = String(s); if (l==undefined) l=s.length; return s.substr(p,l); } }
-        , upper: { nargs: 1, impl: function( s ) { return String(s).toUpperCase(); } }
-        , lower: { nargs: 1, impl: function( s ) { return String(s).toLowerCase(); } }
-        , match: { nargs: 2, impl: function( s, p, n ) { var r = String(s).match( p ); return ( r === null ) ? null : r[n || 0]; } }
-        , find: { nargs: 2, impl: function( s, p ) { var r = String(s).match( p ); return ( r === null ) ? -1 : r.index; } }
-        , replace: { nargs: 3, impl: function( s, p, r ) { return String(s).replace( p, r ); } }
-        , "int": { nargs: 1, impl: parseInt }
-        , "float": { nargs: 1, impl: parseFloat }
-        , "bool": { nargs: 1, impl: function( s ) { return ! ( s === 0 || s === false || s === "" || null !== String(s).match( /^\s*(0|no|off|false)\s*$/i ) ); } }
-        , str: { nargs: 1, impl: function( s ) { return String( s ); } }
-        , time: { nargs: 0, impl: function() { return Date.now(); } }
-        , dateparts: { nargs: 0, impl: function( t ) { var d = new Date(t); return { year: d.getFullYear(), month: d.getMonth()+1, day: d.getDate(),
+          abs       : { nargs: 1, impl: (v) => v >= 0 ? v : -v }
+        , sign      : { nargs: 1, impl: Math.sign }
+        , floor     : { nargs: 1, impl: Math.floor }
+        , ceil      : { nargs: 1, impl: Math.ceil }
+        , round     : { nargs: 2, impl: function( n, p ) { if (p == undefined) p = 0; return Math.floor( n * Math.pow(10, p) + 0.5 ) / Math.pow(10, p); } }
+        , trunc     : { nargs: 1, impl: Math.trunc }
+        , cos       : { nargs: 1, impl: Math.cos }
+        , sin       : { nargs: 1, impl: Math.sin }
+        , tan       : { nargs: 1, impl: Math.tan }
+        , log       : { nargs: 1, impl: Math.log }
+        , exp       : { nargs: 1, impl: Math.exp }
+        , pow       : { nargs: 2, impl: Math.pow }
+        , sqrt      : { nargs: 1, impl: Math.sqrt }
+        , min       : { nargs: 2, impl: Math.min } /* ??? should take arrays, too */
+        , max       : { nargs: 2, impl: Math.max } /* ??? should take arrays, too */
+        , len       : { nargs: 1, impl: (s) => s.length }
+        , substr    : { nargs: 2, impl: function( s, p, l ) { s = String(s); if (l==undefined) l=s.length; return s.substr(p,l); } }
+        , upper     : { nargs: 1, impl: (s) => String(s).toUpperCase() }
+        , lower     : { nargs: 1, impl: (s) => String(s).toLowerCase() }
+        , match     : { nargs: 2, impl: function( s, p, n ) { var r = String(s).match( p ); return ( r === null ) ? null : r[n || 0]; } }
+        , find      : { nargs: 2, impl: function( s, p ) { var r = String(s).match( p ); return ( r === null ) ? -1 : r.index; } }
+        , replace   : { nargs: 3, impl: function( s, p, r ) { return String(s).replace( p, r ); } }
+        , rtrim     : { nargs: 1, impl: (s) => String(s).replace( /\s+$/, "" ) }
+        , ltrim     : { nargs: 1, impl: (s) => String(s).replace( /^\s+/, "" ) }
+        , trim      : { nargs: 1, impl: (s) => String(s).trim() }
+        , "int"     : { nargs: 1, impl: parseInt }
+        , "float"   : { nargs: 1, impl: parseFloat }
+        , "bool"    : { nargs: 1, impl: function( s ) { return ! ( s === 0 || s === false || s === "" || null !== String(s).match( /^\s*(0|no|off|false)\s*$/i ) ); } }
+        , str       : { nargs: 1, impl: (s) => String(s) }
+        , time      : { nargs: 0, impl: (...args) => new Date(...args).getTime() }
+        , dateparts : { nargs: 0, impl: function( t ) { var d = new Date(t); return { year: d.getFullYear(), month: d.getMonth()+1, day: d.getDate(),
             hour: d.getHours(), minute: d.getMinutes(), second: d.getSeconds(), weekday: d.getDay() }; } }
-        , "isNaN": { nargs: 1, impl: function( n ) { return isNaN( n ); } }
-        , isnull: { nargs: 1, impl: function( s ) { return "undefined" === typeof s || null === s; } }
-        , keys: { nargs: 1, impl: Object.keys }
-        , values: { nargs: 1, impl: Object.values }
-        , join: { nargs: 2, impl: function( a, s ) { return a.join(s); } }
-        , list: { nargs: 0, impl: function( ...args ) { return args; } }
-        , indexOf: { nargs: 2, impl: function( a, el ) { return a.indexOf( el ); } }
-        , isArray: { nargs: 1, impl: Array.isArray }
-        , isObject: { nargs: 1, impl: function( p ) { return "object" === typeof p && null !== p; } }
+        , "isNaN"   : { nargs: 1, impl: (n) => isNaN(n) }
+        , isnull    : { nargs: 1, impl: (s) => "undefined" === typeof s || null === s }
+        , keys      : { nargs: 1, impl: Object.keys }
+        , values    : { nargs: 1, impl: Object.values }
+        , join      : { nargs: 2, impl: (a,s) => a.join(s) }
+        , list      : { nargs: 0, impl: function( ...args ) { return args; } }
+        , indexOf   : { nargs: 2, impl: (a,el) => a.indexOf( el ) }
+        , isArray   : { nargs: 1, impl: Array.isArray }
+        , isObject  : { nargs: 1, impl: (p) => "object" === typeof p && null !== p }
 /* FUTURE: 
         , select: (see find below)
         , format:
-        , each:
         , map:
         , reduce:
         , every:
@@ -77,6 +79,7 @@
         , find:
         , slice:
         , splice:
+        , dateadd
 */        
     };
 
