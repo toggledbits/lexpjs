@@ -7,6 +7,7 @@
 %lex
 
 %%
+\#[^\n]*                { /* skip comment */ }
 \s+                     { /* skip whitespace */ }
 \r                      { /* skip */ }
 \n                      { /* skip */ }

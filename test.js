@@ -150,6 +150,8 @@ var test_expr = [
     , { expr: "1 ?? 0 & 4" }
     , { expr: "(1 ?? 0) & 4" }
     , { expr: "do 5, 6, 7, 8, 9 done", expect: 9 }
+    , { expr: "'nice' # this is a comment", expect: "nice" }
+    , { expr: "# this is a comment\n'hello'", expect: "hello" }
 ];
 
 var exp = '"Hello",{},{alpha:1,beta:2,["not.valid.name"]:3},t=[9,5,1],join(t,"::"),time(),x=2*y=2*z=3,x,y,z,(9)';
