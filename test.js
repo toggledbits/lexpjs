@@ -147,7 +147,7 @@ var test_expr = [
     , { expr: "each item in arr: item.name" }
     , { expr: "each item in keys(entity.attributes): item + '=' + entity.attributes[item]" }
     , { expr: "t=each item in 'hello': item + ' there', t?[0]", expect: "hello there" }
-    , { expr: "t=0, each item in arr: do t=t+1, null done, t", expect: 2 }
+    , { expr: "t=0; each item in arr: do t=t+1; null done; t", expect: 2 }
 
     /* misc */
     , { expr: "1 ?? 0 & 4" }

@@ -12,6 +12,7 @@
 \r                      { /* skip */ }
 \n                      { /* skip */ }
 ","                     { return 'COMMA'; }
+";"                     { return 'EXPRSEP'; }
 "true"                  { return 'TRUE'; }
 "false"                 { return 'FALSE'; }
 "null"                  { return 'NULL'; }
@@ -128,6 +129,8 @@ expressions
 
 expr_list
     : expr_list COMMA e
+        { $1.expr.push( $3 ); $$ = $1; }
+    | expr_list EXPRSEP e
         { $1.expr.push( $3 ); $$ = $1; }
     | e
         { $$ = atom( 'list', { expr: [ $1 ] } ); }
