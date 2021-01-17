@@ -55,6 +55,7 @@
         , keys: { nargs: 1, impl: Object.keys }
         , values: { nargs: 1, impl: Object.values }
         , join: { nargs: 2, impl: function( a, s ) { return a.join(s); } }
+        , list: { nargs: 0, impl: function( ...args ) { return args; } }
         , indexOf: { nargs: 2, impl: function( a, el ) { return a.indexOf( el ); } }
         , isArray: { nargs: 1, impl: Array.isArray }
         , isObject: { nargs: 1, impl: function( p ) { return "object" === typeof p && null !== p; } }
@@ -83,23 +84,29 @@
 
     var run = function( ce, ctx ) {
         ctx = ctx || {};
-        ctx.context = ctx; /* self-reference to assist disambiguation of references */
 
         function is_atom( v, typ ) {
             return null !== v && "object" === typeof( v ) &&
                 "undefined" !== typeof v.__atom &&
                 ( !typ || v.__atom === typ );
         }
+        
+        function N( v ) {
+            return "undefined" === typeof v ? null : v;
+        }
 
+        /* Resolve a VREF atom */
         function _resolve( a ) {
-            /* "Local" variables command scope */
+            /* Scope priority: local, context, external resolver */
+            var res;
             if ( "undefined" !== typeof (ctx.__lvar || {})[a.name] ) {
-                return ctx.__lvar[a.name];
+                res = ctx.__lvar[a.name];
+            } else if ( "undefined" !== typeof ctx[a.name] ) {
+                res = ctx[a.name];
+            } else if ( "function" === typeof (ctx._func || {})._resolve ) {
+                res = ctx._func._resolve( a.name, ctx );
             }
-            if ( "undefined" === typeof ctx[a.name] ) {
-                return null;
-            }
-            return ctx[a.name];
+            return N(res);
         }
 
         function _run( e ) {
@@ -108,17 +115,13 @@
             } else {
                 /* Handle atom */
                 if ( is_atom( e, 'list' ) ) {
-                    var arr = [];
+                    let v = null;
                     e.expr.forEach( function( se ) {
-                        arr.push( _run( se ) );
+                        v = _run( se );
                     });
-                    return arr;
+                    return N(v);
                 } else if ( is_atom( e, 'vref' ) ) {
-                    var vv = _resolve( e );
-                    if ( "undefined" === typeof vv ) {
-                        return null;
-                    }
-                    return vv;
+                    return N( _resolve( e ) );
                 } else if ( is_atom( e, 'binop' ) ) {
                     var v2 = e.v2;
                     var v1 = e.v1;
@@ -182,7 +185,7 @@
                     } else if (e.op == 'in' )
                         v1eval = v1eval in v2eval;
                     else if (e.op == '??' )
-                        v1eval = ( null === v1eval || undefined === v1eval ) ? _run( v2 ) : v1eval;
+                        v1eval = ( null === N(v1eval) ) ? _run( v2 ) : v1eval;
                     else if (e.op == '=' ) {
                         /* Assignment */
                         if ( ! is_atom( v1, 'vref' ) ) {
@@ -221,25 +224,19 @@ D("run() assign",v2eval,"to",v1.name);
                     var member = _run( e.member );
                     /* ??? member must be primitive? */
                     var res = scope[ member ];
-                    if ( "undefined" === typeof res ) {
-                        return null;
-                    }
-                    return res;
+                    return N(res);
                 } else if ( is_atom( e, 'if' ) ) {
                     /* Special short-cut function */
                     var cond = _run( e.test );
                     var ifresult;
                     if ( cond ) {
                         ifresult = _run( e.tc );
-                    } else if ( e.fc ) {
+                    } else if ( "undefined" !== typeof e.fc ) {
                         ifresult = _run( e.fc );
                     } else {
                         ifresult = null;
                     }
-                    if ( "undefined" === typeof ifresult ) {
-                        return null;
-                    }
-                    return ifresult;
+                    return N(ifresult);
                 } else if ( is_atom( e, 'fref' ) ) {
                     D('function ref ' + e.name + ' with ' + e.args.length + ' args');
                     var name = e.name;
@@ -260,13 +257,43 @@ D("run() assign",v2eval,"to",v1.name);
                         a.push( _run( se ) );
                     });
                     var r = impl.apply( null, a );
-                    if ( "undefined" === typeof r ) {
-                        return null;
+                    return N(r);
+                } else if ( is_atom( e, 'iter' ) ) {
+                    ctx.__lvar = ctx.__lvar || {};
+                    var context = _run( e.context );
+                    var res = null;
+                    // D(e);
+                    // D("Iterate over",context,"using",e.ident,"apply",e.exec);
+                    if ( ! Array.isArray( context ) ) {
+                        if ( "object" !== typeof context ) {
+                            context = [ context ];
+                        } else {
+                            context = Object.values( context );
+                        }
                     }
-                    return r;
+                    context.forEach( element => {
+                        // D("Assigning",element,"to",e.ident);
+                        ctx.__lvar[ e.ident ] = element;
+                        let v = _run( e.exec );
+                        if ( is_atom( e.exec, 'list' ) ) {
+                            /* If atom is list (as in each X of Y: do list done), use only result of last expr */
+                            if ( Array.isArray( v ) ) {
+                                v = v.pop();
+                            }
+                        }
+                        // D("result",v);
+                        if ( v !== null ) {
+                            if ( null === res ) {
+                                res = [ v ];
+                            } else {
+                                res.push( v );
+                            }
+                        }
+                    });
+                    return res;
                 } else {
                     D("BUG: unsupported atom:", e);
-                    throw new Error('BUG: unsupported atom');
+                    throw new Error('BUG: unsupported atom ' + String(e.__atom));
                 }
             }
         } /* function _run() */
@@ -274,10 +301,6 @@ D("run() assign",v2eval,"to",v1.name);
         D("lexp.run()", ce, ctx);
         var result = _run( ce );
         D("lexp.run() finished with", result);
-        /* Always return array */
-        if ( !Array.isArray( result ) ) {
-            result = [ result ];
-        }
         return result;
     };
 

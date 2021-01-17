@@ -14,9 +14,15 @@
 "true"                  { return 'TRUE'; }
 "false"                 { return 'FALSE'; }
 "null"                  { return 'NULL'; }
+"each"                  { return 'EACH'; }
 "NaN"                   { return 'NAN'; }
 "if"                    { return 'IF'; }
+"then"					{ return 'THEN'; }
+"else"					{ return 'ELSE'; }
+"endif"					{ return 'ENDIF'; }
 "in"                    { return 'IN'; }
+"done"                  { return 'DONE'; }
+"do"                    { return 'DO'; }
 \"[^"]*\"               { return 'QSTR'; } /* NB Jison now support start conditions */
 \'[^']*\'               { return 'QSTR'; }
 \`[^`]*\`               { return 'QSTR'; }
@@ -256,10 +262,10 @@ e
         { $$ = parseInt( yytext.substr( 2 ), 2 ); }
     | QSTR
         { $$ = yytext.slice( 1, -1 ); }
-    | IF '(' e COMMA e COMMA e ')'
-        { $$ = atom( 'if', { test: $3, tc: $5, fc: $7, locs: [@3, @5, @7] } ); }
-    | IF '(' e COMMA e ')'
-        { $$ = atom( 'if', { test: $3, tc: $5, locs: [@3, @5] } ); }
+    | IF e THEN expr_list ELSE expr_list ENDIF
+        { $$ = atom( 'if', { test: $2, tc: $4, fc: $6, locs: [@2, @4, @6] } ); }
+    | IF e THEN expr_list ENDIF
+        { $$ = atom( 'if', { test: $2, tc: $4, locs: [@2, @4] } ); }
     | IDENTIFIER '(' arg_list ')'
         { $$ = atom( 'fref', { name: $1, args: is_atom( $3, 'list') ? ($3).expr : [ $3 ], locs: [@1] } ); }
     | TRUE
@@ -276,4 +282,8 @@ e
         { $$ = $2; }
     | IDENTIFIER ASSIGN e
         { $$ = atom( 'binop', { 'op': $2, v1: atom( 'vref', { name: $1 } ), v2: $3, locs: [@1, @3] } ); }
+    | EACH IDENTIFIER IN e COLON e
+        { $$ = atom( 'iter', { ident: $2, context: $4, exec: $6 } ); }
+    | DO expr_list DONE
+        { $$ = $2; }
     ;

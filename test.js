@@ -132,9 +132,23 @@ var test_expr = [
     , { expr: "lower('BYEBYE')", expect: "byebye" }
     , { expr: "t='attributes',str(entity[t]['power_switch.state'])", expect: "true" }
 
+    /* Conditional */
+    , { expr: "if entity.attributes['power_switch.state'] then 1 else 0 endif", expect: 1 }
+    , { expr: "if !entity.attributes['power_switch.state'] then 1 else 0 endif", expect: 0 }
+    , { expr: "if entity.attributes['power_switch.state'] then 1 endif", expect: 1 }
+    , { expr: "if !entity.attributes['power_switch.state'] then 1 endif", expect: null }
+
+    /* Iteration */
+    , { expr: "each item in [1,2,3,4,5]: 2*item" }
+    , { expr: "each item in arr: item.name" }
+    , { expr: "each item in keys(entity.attributes): item + '=' + entity.attributes[item]" }
+    , { expr: "t=each item in 'hello': item + ' there', t?[0]", expect: "hello there" }
+    , { expr: "t=0, each item in arr: do t=t+1, null done, t", expect: 2 }
+
     /* misc */
     , { expr: "1 ?? 0 & 4" }
     , { expr: "(1 ?? 0) & 4" }
+    , { expr: "do 5, 6, 7, 8, 9 done", expect: 9 }
 ];
 
 var exp = '"Hello",{},{alpha:1,beta:2,["not.valid.name"]:3},t=[9,5,1],join(t,"::"),time(),x=2*y=2*z=3,x,y,z,(9)';
@@ -152,19 +166,10 @@ test_expr.forEach( function( e ) {
         ce = lexp.compile( e.expr );
         try {
             res = lexp.run( ce, ctx );
-            if ( !Array.isArray(res) ) {
-                console.log("**** Invalid return data",typeof res,res);
+            console.log( "     Result:", res );
+            if ( "undefined" !== typeof e.expect && res !== e.expect ) {
+                console.log("**** Unexpected result; got", typeof res, res,", expected",typeof e.expect,e.expect);
                 ++num_errors;
-            } else {
-                /* For now, we only care about the last thing returned. */
-                res = res.pop();
-                if ( "undefined" !== typeof e.expect && res !== e.expect ) {
-                    console.log("**** Unexpected result; got", typeof res, res,", expected",typeof e.expect,e.expect);
-                    console.log("     Full result:", res);
-                    ++num_errors;
-                } else {
-                    console.log( "     Result:", res );
-                }
             }
         } catch ( err ) {
             console.log("**** Eval error:", err );
