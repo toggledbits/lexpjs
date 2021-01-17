@@ -34,8 +34,8 @@
         , exp : { nargs: 1, impl: Math.exp }
         , pow : { nargs: 2, impl: Math.pow }
         , sqrt : { nargs: 1, impl: Math.sqrt }
-        , min : { nargs: 2, impl: function( n1, n2 ) { return (n1 <= n2 ? n1 : n2); } }
-        , max : { nargs: 2, impl: function( n1, n2 ) { return (n1 >= n2 ? n1 : n2); } }
+        , min : { nargs: 2, impl: Math.min }
+        , max : { nargs: 2, impl: Math.max }
         , len : { nargs: 1, impl: function( s ) { return s.length; } }
         , substr : { nargs: 2, impl: function( s, p, l ) { s = String(s); if (l==undefined) l=s.length; return s.substr(p,l); } }
         , upper: { nargs: 1, impl: function( s ) { return String(s).toUpperCase(); } }

@@ -128,6 +128,7 @@ var test_expr = [
     , { expr: "arr[5]?.name", expect: null }
 
     /* Function tests */
+    , { expr: "max(5,4,6*9)", expect: 54 }
     , { expr: "upper('hello')", expect: "HELLO" }
     , { expr: "lower('BYEBYE')", expect: "byebye" }
     , { expr: "t='attributes',str(entity[t]['power_switch.state'])", expect: "true" }

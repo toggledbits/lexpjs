@@ -7,7 +7,7 @@
 %lex
 
 %%
-\s+                   {/* skip whitespace */}
+\s+                     { /* skip whitespace */ }
 \r                      { /* skip */ }
 \n                      { /* skip */ }
 ","                     { return 'COMMA'; }
@@ -17,9 +17,9 @@
 "each"                  { return 'EACH'; }
 "NaN"                   { return 'NAN'; }
 "if"                    { return 'IF'; }
-"then"					{ return 'THEN'; }
-"else"					{ return 'ELSE'; }
-"endif"					{ return 'ENDIF'; }
+"then"                  { return 'THEN'; }
+"else"                  { return 'ELSE'; }
+"endif"                 { return 'ENDIF'; }
 "in"                    { return 'IN'; }
 "done"                  { return 'DONE'; }
 "do"                    { return 'DO'; }
