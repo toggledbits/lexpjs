@@ -1,4 +1,4 @@
-/* Version 21017.1804 */
+/* Version 21047.2211 */
 /* Ref: https://github.com/umdjs/umd */
 (function (root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -873,6 +873,7 @@ return new Parser;
         , exp       : { nargs: 1, impl: Math.exp }
         , pow       : { nargs: 2, impl: Math.pow }
         , sqrt      : { nargs: 1, impl: Math.sqrt }
+        , random    : { nargs: 0, impl: Math.random }
         , min       : { nargs: 2, impl: Math.min } /* ??? should take arrays, too */
         , max       : { nargs: 2, impl: Math.max } /* ??? should take arrays, too */
         , len       : { nargs: 1, impl: (s) => s.length }
