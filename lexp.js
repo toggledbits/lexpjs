@@ -1,5 +1,8 @@
-/* Version 21047.2211 */
+/* Version 21047.2225 */
 /* Ref: https://github.com/umdjs/umd */
+
+const version = 21047;
+
 (function (root, factory) {
     if (typeof define === 'function' && define.amd) {
         // AMD. Register as an anonymous module.
@@ -1104,7 +1107,7 @@ D("run() assign",v2eval,"to",v1.name);
                 } else if ( is_atom( e, 'iter' ) ) {
                     ctx.__lvar = ctx.__lvar || {};
                     var context = _run( e.context );
-                    var res = null;
+                    var res = [];
                     // D(e);
                     // D("Iterate over",context,"using",e.ident,"apply",e.exec);
                     if ( ! Array.isArray( context ) ) {
@@ -1126,11 +1129,7 @@ D("run() assign",v2eval,"to",v1.name);
                         }
                         // D("result",v);
                         if ( v !== null ) {
-                            if ( null === res ) {
-                                res = [ v ];
-                            } else {
-                                res.push( v );
-                            }
+                            res.push( v );
                         }
                     });
                     return res;
@@ -1148,6 +1147,7 @@ D("run() assign",v2eval,"to",v1.name);
     };
 
     return {
+        version: version,
         compile: function( expr ) {
             return parser.parse( expr );
         },
