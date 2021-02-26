@@ -167,6 +167,7 @@ var test_expr = [
     , { expr: "([1,2,3])[1]", expect: 2 }
     , { expr: "time(2021,1,17)", expect: new Date(2021,1,17).getTime() }
     , { expr: "min( 1, entity.attributes.volume.level - ( parameters.amount ?? 0.05 ) )" }
+    , { expr: "t='off',({off:'OFF',on:'ON'})[t]", expect: "OFF" }
 ];
 
 var exp = '"Hello",{},{alpha:1,beta:2,["not.valid.name"]:3},t=[9,5,1],join(t,"::"),time(),x=2*y=2*z=3,x,y,z,(9)';

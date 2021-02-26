@@ -1,4 +1,4 @@
-/* Version 21047.2225 */
+/* Version 21056.2156 */
 /* Ref: https://github.com/umdjs/umd */
 
 const version = 21047;
@@ -889,6 +889,7 @@ return new Parser;
         , rtrim     : { nargs: 1, impl: (s) => String(s).replace( /\s+$/, "" ) }
         , ltrim     : { nargs: 1, impl: (s) => String(s).replace( /^\s+/, "" ) }
         , trim      : { nargs: 1, impl: (s) => String(s).trim() }
+        , split     : { nargs: 2, impl: (s,p,n) => String(s).split( p, n ) }
         , "int"     : { nargs: 1, impl: parseInt }
         , "float"   : { nargs: 1, impl: parseFloat }
         , "bool"    : { nargs: 1, impl: function( s ) { return ! ( s === 0 || s === false || s === "" || null !== String(s).match( /^\s*(0|no|off|false)\s*$/i ) ); } }
@@ -896,7 +897,7 @@ return new Parser;
         , time      : { nargs: 0, impl: (...args) => new Date(...args).getTime() }
         , dateparts : { nargs: 0, impl: function( t ) { var d = new Date(t); return { year: d.getFullYear(), month: d.getMonth()+1, day: d.getDate(),
             hour: d.getHours(), minute: d.getMinutes(), second: d.getSeconds(), weekday: d.getDay() }; } }
-        , "isNaN"   : { nargs: 1, impl: (n) => isNaN(n) }
+        , "isNaN"   : { nargs: 1, impl: (n) => Number.isNaN(n) }
         , isnull    : { nargs: 1, impl: (s) => "undefined" === typeof s || null === s }
         , keys      : { nargs: 1, impl: Object.keys }
         , values    : { nargs: 1, impl: Object.values }
