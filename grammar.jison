@@ -16,6 +16,8 @@
 "true"                  { return 'TRUE'; }
 "false"                 { return 'FALSE'; }
 "null"                  { return 'NULL'; }
+"first"                 { return 'FIRST'; }
+"with"                  { return 'WITH'; }
 "each"                  { return 'EACH'; }
 "NaN"                   { return 'NAN'; }
 "if"                    { return 'IF'; }
@@ -25,6 +27,9 @@
 "in"                    { return 'IN'; }
 "done"                  { return 'DONE'; }
 "do"                    { return 'DO'; }
+"and"                   { return 'LAND'; }
+"or"                    { return 'LOR'; }
+"not"                   { return 'LNOT'; }
 \"[^"]*\"               { return 'QSTR'; } /* NB Jison now support start conditions */
 \'[^']*\'               { return 'QSTR'; }
 \`[^`]*\`               { return 'QSTR'; }
@@ -54,10 +59,10 @@
 "^"                   {return 'BXOR';}
 "&&"                    { return 'LAND'; }
 "||"                    { return 'LOR'; }
+"!"                     { return 'LNOT'; }
 "&"                     { return 'BAND'; }
 "|"                     { return 'BOR'; }
 "~"                     { return 'BNOT'; }
-"!"                     { return 'LNOT'; }
 "??"                    { return 'COALESCE'; }
 "?."                    { return 'QDOT'; }
 "?["                    { return 'QBRACKET'; }
@@ -146,7 +151,7 @@ arg_list
     ;
 
 /** A reference expression is an expression referring to a value or a member of a value (presumed to be an object or array).
- *  Certain expressions, such as function calls and parenthesized results, are considered reference expressions. This is a 
+ *  Certain expressions, such as function calls and parenthesized results, are considered reference expressions. This is a
  *  slight constraint to help disambiguate certain constructions that may otherwise be possible but usually aren't used
  *  (e.g. what does "A-OK"[3] mean?)
 */
@@ -198,6 +203,7 @@ array_elements
       { $$ = [ $1 ]; }
     ;
 
+/* Should this build a list atom? ??? */
 array_list
     : array_elements
         { $$ = $1; }
@@ -235,9 +241,9 @@ e
     | e BXOR e
         { $$ = atom( 'binop', { op: $2, v1: $1, v2: $3, locs: [@1,@3] } ); }
     | e LAND e
-        { $$ = atom( 'binop', { op: $2, v1: $1, v2: $3, locs: [@1,@3] } ); }
+        { $$ = atom( 'binop', { op: '&&', v1: $1, v2: $3, locs: [@1,@3] } ); }
     | e LOR e
-        { $$ = atom( 'binop', { op: $2, v1: $1, v2: $3, locs: [@1,@3] } ); }
+        { $$ = atom( 'binop', { op: '||', v1: $1, v2: $3, locs: [@1,@3] } ); }
     | e '==' e
         { $$ = atom( 'binop', { op: $2, v1: $1, v2: $3, locs: [@1,@3] } ); }
     | e '!=' e
@@ -292,6 +298,8 @@ e
         { $$ = atom( 'binop', { 'op': $2, v1: atom( 'vref', { name: $1 } ), v2: $3, locs: [@1, @3] } ); }
     | EACH IDENTIFIER IN e COLON e
         { $$ = atom( 'iter', { ident: $2, context: $4, exec: $6 } ); }
+    | FIRST IDENTIFIER IN e WITH e
+        { $$ = atom( 'search', { ident: $2, context: $4, exec: $6 } ); }
     | DO expr_list DONE
         { $$ = $2; }
     ;

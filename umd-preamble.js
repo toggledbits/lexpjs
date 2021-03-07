@@ -28,7 +28,7 @@ const version = 21047;
         , sign      : { nargs: 1, impl: Math.sign }
         , floor     : { nargs: 1, impl: Math.floor }
         , ceil      : { nargs: 1, impl: Math.ceil }
-        , round     : { nargs: 2, impl: function( n, p ) { if (p == undefined) p = 0; return Math.floor( n * Math.pow(10, p) + 0.5 ) / Math.pow(10, p); } }
+        , round     : { nargs: 2, impl: function( n, p ) { return Math.round( n * Math.pow(10, p || 0) ) / Math.pow(10, p || 0); } }
         , trunc     : { nargs: 1, impl: Math.trunc }
         , cos       : { nargs: 1, impl: Math.cos }
         , sin       : { nargs: 1, impl: Math.sin }
@@ -67,7 +67,9 @@ const version = 21047;
         , indexOf   : { nargs: 2, impl: (a,el) => a.indexOf( el ) }
         , isArray   : { nargs: 1, impl: Array.isArray }
         , isObject  : { nargs: 1, impl: (p) => "object" === typeof p && null !== p }
-/* FUTURE: 
+        , toJSON    : { nargs: 1, impl: JSON.stringify }
+        , parseJSON : { nargs: 1, impl: JSON.parse }
+/* FUTURE:
         , select: (see find below)
         , format:
         , map:
@@ -85,7 +87,9 @@ const version = 21047;
         , slice:
         , splice:
         , dateadd
-*/        
+        , hsltorgb
+        , rgbtohsl
+*/
     };
 
     var D = function() {}; /* console.log; /* */
@@ -98,7 +102,7 @@ const version = 21047;
                 "undefined" !== typeof v.__atom &&
                 ( !typ || v.__atom === typ );
         }
-        
+
         function N( v ) {
             return "undefined" === typeof v ? null : v;
         }
@@ -119,6 +123,15 @@ const version = 21047;
 
         function _run( e ) {
             if ( !is_atom( e ) ) {
+                if ( Array.isArray( e ) ) {
+                    /* Run each element within array */
+                    let n = e.length;
+                    for ( let k=0; k<n; ++k ) {
+                        e[k] = _run( e[k] );
+                    }
+                    return e;
+                }
+                /* ??? Do we need to treet object like array? */
                 return e; /* return primitive as it is. */
             } else {
                 /* Handle atom */
@@ -206,6 +219,7 @@ D("run() assign",v2eval,"to",v1.name);
                         ctx.__lvar[v1.name] = v2eval;
                         return v2eval;
                     } else {
+                        console.log( e );
                         throw new Error('BUG: unsupported op in compiled expression: ' + e.op);
                     }
                     return v1eval;
@@ -283,17 +297,37 @@ D("run() assign",v2eval,"to",v1.name);
                         // D("Assigning",element,"to",e.ident);
                         ctx.__lvar[ e.ident ] = element;
                         let v = _run( e.exec );
-                        if ( is_atom( e.exec, 'list' ) ) {
-                            /* If atom is list (as in each X of Y: do list done), use only result of last expr */
-                            if ( Array.isArray( v ) ) {
-                                v = v.pop();
-                            }
-                        }
                         // D("result",v);
                         if ( v !== null ) {
                             res.push( v );
                         }
                     });
+                    return res;
+                } else if ( is_atom( e, 'search' ) ) {
+                    ctx.__lvar = ctx.__lvar || {};
+                    var context = _run( e.context );
+                    var res = null
+                    // D(e);
+                    // D("Search",context,"using",e.ident,"for",e.exec);
+                    if ( ! Array.isArray( context ) ) {
+                        if ( "object" !== typeof context ) {
+                            context = [ context ];
+                        } else {
+                            context = Object.values( context );
+                        }
+                    } else {
+                        context = { ...context };
+                    }
+                    while ( context.length > 0 ) {
+                        let element = context.shift();
+                        // D("Assigning",element,"to",e.ident);
+                        ctx.__lvar[ e.ident ] = element;
+                        let v = _run( e.exec );
+                        if ( !!v ) {
+                            res = element;
+                            break;
+                        }
+                    }
                     return res;
                 } else {
                     D("BUG: unsupported atom:", e);

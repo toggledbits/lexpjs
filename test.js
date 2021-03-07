@@ -7,7 +7,6 @@ var ctx = {
         id: "house>123",
         name: "Some Switch",
         attributes: {
-            "power_switch.state": true,
             power_switch: {
                 state: true
             },
@@ -83,6 +82,7 @@ var test_expr = [
     , { expr: "1 == '2'", expect: false }
     , { expr: "1 != '2'", expect: true }
     , { expr: "0b1100 ^ 0b1001", expect: 5 }
+
     , { expr: "true && true", expect: true }
     , { expr: "true && false", expect: false }
     , { expr: "false && true", expect: false }
@@ -91,13 +91,24 @@ var test_expr = [
     , { expr: "true || false", expect: true }
     , { expr: "false || true", expect: true }
     , { expr: "false || false", expect: false }
+    , { expr: "!true", expect: false }
+    , { expr: "!false", expect: true }
+    , { expr: "true and true", expect: true }
+    , { expr: "true and false", expect: false }
+    , { expr: "false and true", expect: false }
+    , { expr: "false and false", expect: false }
+    , { expr: "true or true", expect: true }
+    , { expr: "true or false", expect: true }
+    , { expr: "false or true", expect: true }
+    , { expr: "false or false", expect: false }
+    , { expr: "not true", expect: false }
+    , { expr: "not false", expect: true }
+
     , { expr: "0x40 | 0x04", expect: 0x44 }
     , { expr: "0x30 | 0x10", expect: 0x30 }
     , { expr: "0x40 & 0x04", expect: 0x00 }
     , { expr: "0x30 & 0x10", expect: 0x10 }
     , { expr: "~0x10", expect: ~0x10 }
-    , { expr: "!true", expect: false }
-    , { expr: "!false", expect: true }
     , { expr: "!0", expect: true }
     , { expr: "!1", expect: false }
     , { expr: "123 ?? 456", expect: 123 }
@@ -107,7 +118,7 @@ var test_expr = [
     , { expr: "false ? 123 : 456", expect: 456 }
     , { expr: "[1,2,3]", Xxpect: [1,2,3] }
     , { expr: "{ alpha: 1, beta: 2, gamma: 3 }", Xxpect: { alpha: 1, beta: 2, gamma: 3 } }
-    , { expr: "{ first: 'a', ['strange id']: 'b', 'Another Strange ID': 'voodoo' }", Xxpect: {} }
+    , { expr: "{ 'first': 'a', ['strange id']: 'b', 'Another Strange ID': 'voodoo' }", Xxpect: {} }
 
     /* Assignment test, two steps */
     , { expr: "t = 'soul stone'", expect: "soul stone" }
@@ -143,13 +154,18 @@ var test_expr = [
     , { expr: "ltrim('    abcde')", expect: "abcde" }
     , { expr: "rtrim('work     ')", expect: "work" }
     , { expr: "trim('       tight   ')", expect: "tight" }
-    , { expr: "t='attributes',str(entity[t]['power_switch.state'])", expect: "true" }
+    , { expr: "t='attributes',str(entity[t]['power_switch']['state'])", expect: "true" }
+    , { expr: "round(3.14,0)", expect: 3 }
+    , { expr: "round(3.98,0)", expect: 4 }
+    , { expr: "round(3.14159265,3)", expect: 3.142 }
+    , { expr: "round(-1.9)", expect: -2 }
+    , { expr: "round(-1.3)", expect: -1 }
 
     /* Conditional */
-    , { expr: "if entity.attributes['power_switch.state'] then 1 else 0 endif", expect: 1 }
-    , { expr: "if !entity.attributes['power_switch.state'] then 1 else 0 endif", expect: 0 }
-    , { expr: "if entity.attributes['power_switch.state'] then 1 endif", expect: 1 }
-    , { expr: "if !entity.attributes['power_switch.state'] then 1 endif", expect: null }
+    , { expr: "if entity.attributes.power_switch.state then 1 else 0 endif", expect: 1 }
+    , { expr: "if !entity.attributes.power_switch.state then 1 else 0 endif", expect: 0 }
+    , { expr: "if entity.attributes.power_switch.state then 1 endif", expect: 1 }
+    , { expr: "if !entity.attributes.power_switch.state then 1 endif", expect: null }
 
     /* Iteration */
     , { expr: "each item in [1,2,3,4,5]: 2*item" }
@@ -157,6 +173,7 @@ var test_expr = [
     , { expr: "each item in keys(entity.attributes): item + '=' + entity.attributes[item]" }
     , { expr: "t=each item in 'hello': item + ' there', t?[0]", expect: "hello there" }
     , { expr: "t=0; each item in arr: do t=t+1; null done; t", expect: 2 }
+    , { expr: "(first item in entity.attributes with !isnull(item?.level)).level == 0.25", expect: true }
 
     /* misc */
     , { expr: "1 ?? 0 & 4" }
