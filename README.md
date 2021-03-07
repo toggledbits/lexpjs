@@ -28,12 +28,6 @@ and see if the same enhancement would be appropriate there. Since the Lua implem
 JavaScript one, I think it would be an interesting exercise to try and keep them as close functionally
 as possible.
 
-## Syntax ##
-
-As *lexpjs* now uses [Jison](http://zaa.ch/jison/) to generate its parser, the file `grammar.jison` can be examined for syntax. The TL;DR version is that it's pretty close to JavaScript expressions, as one might think, without the hazards of using `eval()`.
-
-An expression string given to *lexpjs* may contain multiple comma-separated subexpressions. Each subexpression will be evaluated, and the result is always an array containing as many results as there were subexpressions. This can be handy, as the use of assignments to variables as containers for temporary/interstitial values can simplify an otherwise very complex string if it was written as a single expression, or, for example, permit the re-use of a calculated value several times in the same calculation.
-
 ## The Basics ##
 
 ### compile( expressionString ) ###
@@ -184,40 +178,127 @@ As a further example, `degToRad` is also defined
 as an expression function that is implemented by `toRadians()`, showing that there's no required parity between
 the name used in the expression context and the name of the function implementing it.
 
-## Intrinsic Functions
+lexpjs's expression syntax is similar to the "infix" expression syntax used by most common languages (C, Java, JavaScript, etc.). The simplest expression is simply a numeric constant, such as `1234`. This is a complete expression, the result value of which is 1234. Negative numbers begin with a `-` sign, such as `-1234`. Numbers may have decimal points and decimal digits: `-12.34`. Numbers may also be given in scientific format: `1.234e3` is equal to 1234 (1.234 x 10<sup>3</sup>). Hexadecimal integers may be entered by prefixing with `0x`; for example, `0x20` is decimal 32. Likewise binary integers can be prefixed with `0b`, and octal with `0o`.
 
-The library of intrinsic functions is not meant to perfectly mirror the functions available in JavaScript. The following are defined:
+Strings are represented as characters surrounded by matching double-quotes ("), single quotes ('), or back-ticks (\`).
 
-* `abs( value )` - Return the absolute value of its numeric argument.
-* `sign( value )` - Return the sign (-1, 0, or 1) for the given numeric argument.
-* `floor( value )` - Return the closest integer equal to or lower than the given numeric argument (e.g. `floor(4.2)==4`, `floor(3.999)=3`, `floor(-4.5)==-5`).
-* `ceil( value )` - Return the closest integer equal to or greater than the given numeric argument.
-* `round( value, ndec )` - Round the given value to `ndec` decimal places.
-* `trunc( value )` - Truncate the decimals of the given value. It is different from `floor()` in that `trunc(-0.123)==0` where `floor(-0.123)=-1`.
-* `cos/sin/tan( value )` - Trig functions; pass-throughs to their respective `Math` functions.
-* `log/exp( value )` - Pass-throughs to `Math.log()` and `Math.exp()` respectively.
-* `pow( num, power )` - Returns `num` raised to the `power`th power (e.g. `pow(2,8)==256`).
-* `sqrt( num )` - Returns the square root of the given positive, non-zero real number.
-* `min/max( num [, ...] )` - Returns the minimum/maximum of its arguments. `null` values are ignored.
-* `len( string_or_array )` - Returns the length of the given string or array.
-* `substr( string, start [, end] )` - Returns a substring of `string` starting with the `start`th character (0=first), and ending at `end`th; if `end` is not given, the entire remainder of the string is returned.
-* `upper/lower( string )` - Return the given string converted to all upper/lower case.
-* `match( s, p [, n] )` - Finds pattern (regular expression) `p` in string `s` and returns the matched substring. If the pattern contains groups, the optional `n` parameter may be provided to return the string matching the `n`th group (default is 0, the entire matched string).
-* `find( s, p )` - Return the index of the pattern `p` in string `s`, or -1 if it is not found.
-* `replace( s, p, r )` - Find all occurrences of pattern `p` in string `s` and replace them with string `r`.
-* `int( value )` - Convert, if possible, the given value to an integer (passthrough to `parseInt()`. Returns `NaN` if invalid.
-* `float( value )` - Convert, if possible, the given value to a Number (passthrough to `parseFloat()`. Returns `NaN` if invalid.
-* `str( value )` - Converts the given value to a string. This is primarily to make the '+' operator deterministic and safe.
-* `time()` - Returns the current time in milliseconds since the Epoch (e.g. `Date.now()`).
-* `dateparts( time )` - Returns an object containing the various components of the given time. Keys are `year`, `month`, `day`, `hour`, `minute`, `second`, and `weekday` (0=Sunday, 1=Monday, ..., 6=Saturday).
-* `isNaN( value )` - Returns `true` if the passed value is `NaN`, otherwise false.
-* `isnull( value )` - Returns `true`if the passed value is `null`, otherwise false.
-* `if( condExpression, trueExpression [, falseExpression] )` - Evaluates `condExpression` and, if *true*, returns the result of `trueExpression`; otherwise it returns the result of `falseExpression` if given, or `null` if not given.
-* `isArray( arg )` - Returns *true* if the given item is an array.
-* `isObject( arg )` - Returns *true* if the given item is an object (and not null).
-* `keys( obj )` - Returns an array of the keys of object `obj`.
-* `values( obj )` - Returns an array of the values of object `obj`.
-* `join( array, string )` - Returns a string with all elements of `array` joined by `string` (e.g. `join({3,5,7}, ':')=="3:5:7"`).
-* `indexOf( array, val )` - Returns the index of `val` in array, or -1 if not present.
+Boolean values *true* and *false* are represented by the reserved words `true` and `false`, respectively.
+
+The reserved word `null` evaluates to the *null* value (basically means "no value").
+
+*Identifiers* are names that represent values. An identifier must begin with an upper- or lowercase alphabetic character, and may follow with any combination of alphanumeric characters and underscore. Thus `myLastSignal` is a valid identifier, but `023lastSignal` is not, and nor is `just another name!`.
+
+*Functions* are identifiers followed by a paren-enclosed list of expressions as its arguments (or empty for no arguments). The maximum value of a series of numbers, for example, can be found using the `max` function like this: `max( 1, -2, pi, lastElement )`.
+
+The expression language includes a set of *operators*. Multiplication is performed by `*`, so that `3 * 4` yields 12. Division uses `/`, while addition and subtraction use `+` and `-`, respectively, as one might expect. The full list of operators is given below, in order of *precedence*. Operators with higher precedence are performed before operators with lower precedence, so that expressions like `3 + 4 * 2` yield 11, not 14. The precedence of mathemetical operators follows the Order of Operations we are taught in elementary school. Precedence can be controlled using parentheses, so per the previous example, the result 14 could be arrived at using `(3 + 4) * 2`.
+
+In addition to the mathematical operators, there are *relational operators*: `==`, `!=`, `>`, `>=`, `<` and `<=` all return *true* if their operands are equal, not equal, etc. In addition, the two special relational operators `===` and `!==` check equality/inequality not just of value, but of data type, such that `"3" == 3` is *true*, but `"3" === 3` is *false* (because the left operand is string type, and the right a number).
+
+The *boolean operators* are `&&` for *and* and `||` for *or*, such that `false && true` is *false* and `false || true` is *true*. The `!` unary boolean operator negates its right-side operand, so `!true` is *false*.
+
+The *bitwise operators*, following "C" (and Java, and JavaScript, and others) are `&` for bitwise AND, `|` for bitwise OR, and `^` for exclusive-OR (XOR).
+
+The *array element accessor* is square brackets `[]` and should contain the array index. Arrays in expressions are zero-based, so the first element of an array is `[0]`. If the index given is less than 0, a runtime error occurs. If the index is positive or zero but off the end of the array, *null* is returned.
+
+The *member access operator* "dot" (`.`) is used to traverse objects. For example, referring to the power state of an entity may be `entity.attributes.power_switch.state`, which starts with an entity object, drops to the list of attributes within it, and the "power_switch" capability within the attributes, and finally to the "state" value. The right-side operand of the dot operator must be an identifier, so it may not contain special characters. If a member name contains any non-identifier characters, the array access syntax can be used: `entity.attributes['forbidden-name'].value`.
+
+The *ternary operator* pair `? :` common to C, C++ and Java (and others) is available: `<boolean> ? <true-expression> : <false-expression>`. If the boolean expression given is *true*, the true expression is evaluated; otherwise, the false expression is evaluated.
+
+The *coalesce operators*, borrowed from C#, are `??`, `?.` and `?[`. Coalesce operators help handle *null* values in the middle of complex expressions more gracefully. For example, `value ?? 0` will result in the value of the variable `value` if it is not *null*, but if it is *null*, will yield 0. Similarly, if an identifier `struct` is intended to hold an object, but turns out to be *null*, a reference to `struct.name` in an expression would throw a runtime evaluation error; using `struct?.name` will instead result in *null* with no exception thrown. This is convenient because you can carry it `down.?a.?long.?list.?of.?member.?names` without crashing if something is undefined. Likewise if `beans` was intended to be an array but ended up *null*, the expression `beans[2]` would throw an error, while `beans?[2]` would result in *null*.
+
+Multiple expressions can be chained together by separating them with a comma. The result of a chained expression is the last expression evaluated.
+
+The operators, in order of precedence from lowest to highest, are:
+
+* `=` (assignment, right associative)
+* `?` (ternary operator first)
+* `:` (ternary operator second)
+* `??` (coalesce)
+* `||` (logical OR)
+* `&&` (logical AND)
+* `|` (bitwise OR)
+* `^` (bitwise XOR)
+* `&` (bitwise AND)
+* `==`, `===`, `!=`, `!==` (equality/inequality, non-associative)
+* `<`, `<=`, `>`, `>=` (comparison, non-associative)
+* `<<`, `>>` (bit shift)
+* `+`, `-`
+* `*`, `/`, `%` (mod)
+* `**` (power, right associative)
+* `-` (unary minus)
+* `!` (not/negation, right-associative)
+* `.`, `?.`, `?[` (member access)
+
+Operators on the same line have equal precedence and are evaluated [left-associative](https://en.wikipedia.org/wiki/Operator_associativity) (from left to right) unless otherwise indicated.
+
+## Data Types
+
+The data types known to lexpjs are boolean, number, string, array, object, and `null`. The special value `NaN` may also be returned by some operations, but has no matching keyword. The `isNaN()` function can be used to test for `NaN`.
+
+Arrays and objects can be constructed and used on the fly: `[ 5, 99, 23, 17 ]` constructs a four-element array, while `{ name: 'spot', type: 'dog', weight: 33 }` constructs an object.
+
+## Statements
+
+The expression language has a couple of "lightweight statements" that function as a hybrid of a statement and an expression. These are:
+
+* `each <element-identifier> of <array-or-object>: <expression>` &mdash; the `each` statement will iterate over the given array or object, placing a member in the named element identifier, and execute the expression. The result of the expression, if non-`null`, is pushed to an array that forms the expression result. For example, `each num of [ 4,7,33 ]: num * 2` will return an array `[ 8, 14, 66 ]`.
+* `first <element-identifier> of <array-or-object> with <expression>` &mdash; the `first` state will search through the elements of an array or object (top level, no traversal) and return the first member that for which `<expression>` is true (or [truthy](https://developer.mozilla.org/en-US/docs/Glossary/Truthy)).
+* `do <statement-list> done` &mdash; since the limited syntax of `each` allows only a single statement to be executed, the `do...done` statement creates a statement block that appears to `each` as a single statement, thus allowing multiple statements to be executed within the loop. The standard multi-statement result rule applies: the result of the statement block is the result produced by the last expression in the block.
+* For users uncomfortable with the ternary operator syntax, an `if <conditional> then <true-expression> else <false-expression> endif` statement may be used. The true and false expressions may be a `do...done` block.
+
+## Functions
 
 I keep adding things as I need them or people ask, so [let me know](https://github.com/toggledbits/lexpjs/issues) if I'm missing what you need.
+
+### Arithmetic Functions
+
+* `abs( number )` &mdash; returns the absolute value of its argument;
+* `sign( number )` &mdash; returns the sign of its argument: -1 if negative, 0 if zero, 1 if positive;
+* `floor( number )` &mdash; returns the largest integer less than or equal to its argument;
+* `ceil( number )` &mdash; returns the next integer greater than or equal to its argument;
+* `round( number, precision )` &mdash; rounds `number` to `precision` decimal digits;
+* `trunc( number )` &mdash; returns the integer portion of its argument (e.g. trunc(-3.4) is -3, where floor(-3.4) is 4);
+* `cos/sin/tan( radians )` &mdash; trig operations;
+* `log/exp( number )` &mdash; natural logarithm and exponential;
+* `pow( base, power )` &mdash; raises `base` to the `power`th power (e.g. `pow(10,3)` is 1000);
+* `sqrt( number )` &mdash; square root (of `number` > 0);
+* `random()` &mdash; returns a random number greater than or equal to 0 and less than 1;
+* `min/max( ... )` &mdash; returns the smallest/largest value of its arguments;
+* `isNaN( various )` &mdash; returns true if the argument is non-numeric.
+
+### String Handling Functions
+
+* `len( string )` &mdash; returns the length of the string;
+* `substr( string, start, length )` &mdash; returns the portion of the string from the `start`th character for `length` characters;
+* `upper/lower( string )` &mdash; converts the string to upper/lower-case;
+* `match( string, regexp )` &mdash; matches, if possible, the regular expression to the string, and returns the matched string, or `null` if no match;
+* `find( string, regexp )` &mdash; like `match()`, but returns the index of the first character of the match, rather than the matched string, or -1 if no match;
+* `replace( string, regexp, replacement )` &mdash; replaces the string matched by the regular expression with the `replacement` string and returns the result;
+* `rtrim/ltrim/trim( string )` &mdash; removes whitespace from the right/left/both side(s) of the string;
+* `split( string, regexp [, max ] )` &mdash; splits the string at the matching regular expression and returns an array (e.g. `split( "1,5,8", "," )` returns `["1","5","8"]`).
+
+### Type Handling Functions
+
+* `int( various )` &mdash; attempts conversion of its argument to an integer; returns `NaN` if the argument cannot be converted, otherwise, it returns the integer;
+* `float( various )` &mdash; attempts conversion to a floating-point value;
+* `bool( various )` &mdash; attempts conversion to `boolean`; in this expression language, the strings "0", "no", "off" and "false", the empty string, the number 0, and boolean *false* all result in *false*; otherwise, the result is *true*;
+* `str( various )` &mdash; converts the argument to a string;
+* `isnull( various )` &mdash; more a test than a conversion, returns *true* if the argument is `null`.
+
+### Time Handling Functions
+
+* `time( [ year [, month [, day [, hour [, minute [, second ]]]]]] )` &mdash; returns the current time if no arguments are given; otherwise a date/time is constructed using as many arguments as are provided; the result is a Unix Epoch time in milliseconds;
+* `dateparts( [time] )` &mdash; returns an object with keys `year`, `month`, `day`, `hour`, `minute`, `second`, and `weekday` (0-6, 0=Sunday) for the given `time`, or the current time if not given.
+
+> Note: all time functions operate in the timezone set for the runtime. There are currently no UTC functions.
+
+### Array/Object Handling Functions
+
+* `len( array )` &mdash; returns the number of elements in the array;
+* `keys( object )` &mdash; returns, as an array, the keys in the given object;
+* `values( object )` &mdash; returns, as an array, the values in the given object;
+* `join( array, joinstring )` &mdash; returns a string with the elements of `array` converted to strings and joined by `joinstring` (e.g. `join([4,6,8], ":")` results in the string "4:6:8", while `join([9], ":")` would be simply "9");
+* `list( ... )` &mdash; returns an array of its argument; this is legacy syntax (i.e. `list(5,7,9)` is the same as writing `[5,7,9]`, so this function is now obsolete and may be removed later);
+* `indexOf( array, value )` &mdash; if `value` is present in `array`, the index (>=0) is returned; otherwise -1 is returned;
+* `isArray( various )` &mdash; returns *true* if the argument is an array (of any length);
+* `isObject( various )` &mdash; returns *true* if the argument is an object.
