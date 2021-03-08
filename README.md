@@ -13,7 +13,7 @@ See the documentation below for how to implement these.
 
 ## Known Issues ##
 
-* Lexp uses a UMD wrapper for compatibility with node, CommonJS, AMD, etc., but it has not been tested in all of these environments.
+* *lexpjs* uses a UMD wrapper for compatibility with node, CommonJS, AMD, etc., but it has not been tested in all of these environments.
 
 ## Bug Reports and Contributions ##
 
@@ -30,7 +30,7 @@ as possible.
 
 ## The Basics ##
 
-### compile( expressionString ) ###
+### `compile( expressionString )`
 
 The `compile()` function accepts a single argument, the string the containing the expression to be parsed.
 If parsing of the expression succeeds, the function returns a JavaScript object containing the parse tree 
@@ -49,7 +49,7 @@ try {
 ...
 ```
 
-### run( parsedResult [, executionContext ] ) ###
+### `run( parsedResult [, executionContext ] )`
 
 The `run()` function executes the parsed expression. It takes an optional `executionContext` argument, which 
 is an object containing pre-defined symbol names and definable functions.
@@ -70,7 +70,7 @@ var rr = lexpjs.run(pp);
 
 As of this version, *lexpjs* does not allow you to modify variables or create new ones during evaluation.
 
-### evaluate( expressionString [, executionContext ] ) ###
+### `evaluate( expressionString [, executionContext ] )`
 
 The `evaluate()` function performs the work of `compile()` and `run()` in one step. The function result (or exception thrown)
 is the same as that for `run()` above (and in fact `evaluate()` is implemented simply as `return run( compile( expressionString ), executionContext )`).
@@ -138,12 +138,12 @@ To make that a function that your expressions could use, you need to put it into
 to `run()`, which is done like this:
 
 ```
-/* First, set up an empty context, and the container __func for custom functions */
+/* First, set up an empty context, and the container _func for custom functions */
 var context = {};
-context.__func = {};
+context._func = {};
 
 /* Now define a custom function */
-context.__func.toradians = function( degrees ) {
+context._func.toradians = function( degrees ) {
     return degrees * Math.PI / 180;
 };
 ```
@@ -156,14 +156,14 @@ define a named function, and simply use a reference to the function name in the 
 this:
 
 ```
-var context = { ... } // other declarations for context elements
+var context = { _func: {}, ... } // ... means other declarations for context elements
 
 // Now define and add our function to the context
 function toRadians(degrees) {
     return degrees * Math.PI / 180;
 end
-context.toradians = toRadians;
-context.degToRad = toRadians;
+context._func.toradians = toRadians;
+context._func.degToRad = toRadians;
 ```
 
 The premise here is simple, if it's not already clear enough. The evaluator will simply look in your passed
@@ -177,6 +177,8 @@ not the actual name of the actual function (if it has one).
 As a further example, `degToRad` is also defined
 as an expression function that is implemented by `toRadians()`, showing that there's no required parity between
 the name used in the expression context and the name of the function implementing it.
+
+## Syntax
 
 lexpjs's expression syntax is similar to the "infix" expression syntax used by most common languages (C, Java, JavaScript, etc.). The simplest expression is simply a numeric constant, such as `1234`. This is a complete expression, the result value of which is 1234. Negative numbers begin with a `-` sign, such as `-1234`. Numbers may have decimal points and decimal digits: `-12.34`. Numbers may also be given in scientific format: `1.234e3` is equal to 1234 (1.234 x 10<sup>3</sup>). Hexadecimal integers may be entered by prefixing with `0x`; for example, `0x20` is decimal 32. Likewise binary integers can be prefixed with `0b`, and octal with `0o`.
 
