@@ -23,35 +23,30 @@ contribution, have at it! Please try to follow the coding style to keep it consi
 rather than tabs (4 space indenting). Please use the develop branch as the origin for your new branch
 and changes.
 
-Also, if you're making a feature enhancement contribution, consider looking at my [Luaxp project](https://github.com/toggledbits/luaxp) as well,
-and see if the same enhancement would be appropriate there. Since the Lua implementation is born of the
-JavaScript one, I think it would be an interesting exercise to try and keep them as close functionally
-as possible.
-
 ## The Basics ##
 
 ### `compile( expressionString )`
 
 The `compile()` function accepts a single argument, the string the containing the expression to be parsed.
-If parsing of the expression succeeds, the function returns a JavaScript object containing the parse tree 
+If parsing of the expression succeeds, the function returns a JavaScript object containing the parse tree
 that is used as input to `run()` later. If parsing fails, the function throws an exception.
 
-Example (node.js): 
+Example (node.js):
 
 ```
 const lexpjs = require( "./lexp.js" );
 
 try {
-	pp = lexp.compile('2 + 3 * 4 + 5");
+    pp = lexp.compile('2 + 3 * 4 + 5");
 } catch (e) {
-	console.log("Parsing failed:", e);
+    console.log("Parsing failed:", e);
 }
 ...
 ```
 
 ### `run( parsedResult [, executionContext ] )`
 
-The `run()` function executes the parsed expression. It takes an optional `executionContext` argument, which 
+The `run()` function executes the parsed expression. It takes an optional `executionContext` argument, which
 is an object containing pre-defined symbol names and definable functions.
 
 `run()` returns the result of the expression evaluation as an array, one value for each subexpression in the parsed string (see "Syntax" above).
@@ -64,7 +59,7 @@ import * as lexpjs from './lexp.js';
 
 var context = { median: 50 };
 var pp = lexpjs.compile("8 * range");
-var rr = lexpjs.run(pp); 
+var rr = lexpjs.run(pp);
 // In runtime, this example throws ReferenceError because "range" is not defined in "context"
 ```
 
@@ -119,10 +114,10 @@ In expressions, the `device.class` would result in the string "motor". The volta
 ## Custom Functions ##
 
 You can define custom functions for your expressions by defining them in the context passed to `run()` or
-`evaluate()`. 
+`evaluate()`.
 
 It's pretty straightforward to do. Your custom function must be implemented by a JavaScript function. The function is passed
-as many arguments as are parsed in the expression. Your function is responsible for checking the validity of the number and 
+as many arguments as are parsed in the expression. Your function is responsible for checking the validity of the number and
 types of arguments passed.
 
 Let's say we want to create a function to convert degrees to radians. The math for that is pretty easy.
@@ -167,18 +162,18 @@ context._func.degToRad = toRadians;
 ```
 
 The premise here is simple, if it's not already clear enough. The evaluator will simply look in your passed
-context for any name that it doesn't recognize as one of its predefined functions. 
+context for any name that it doesn't recognize as one of its predefined functions.
 If it finds an element with a key equal to the name, the value is assumed to be a function it can call.
 
 Note in the above example that we declared our function with an uppercase letter "R" in the name,
-but when we made the context assignment to "toradians", the context element key is all lower case. This means that 
+but when we made the context assignment to "toradians", the context element key is all lower case. This means that
 any expression would also need to use all lower case. The name used in evaluation is the name of the *key* in `__func`,
-not the actual name of the actual function (if it has one). 
+not the actual name of the actual function (if it has one).
 As a further example, `degToRad` is also defined
 as an expression function that is implemented by `toRadians()`, showing that there's no required parity between
 the name used in the expression context and the name of the function implementing it.
 
-## Syntax
+## Expressions Syntax
 
 lexpjs's expression syntax is similar to the "infix" expression syntax used by most common languages (C, Java, JavaScript, etc.). The simplest expression is simply a numeric constant, such as `1234`. This is a complete expression, the result value of which is 1234. Negative numbers begin with a `-` sign, such as `-1234`. Numbers may have decimal points and decimal digits: `-12.34`. Numbers may also be given in scientific format: `1.234e3` is equal to 1234 (1.234 x 10<sup>3</sup>). Hexadecimal integers may be entered by prefixing with `0x`; for example, `0x20` is decimal 32. Likewise binary integers can be prefixed with `0b`, and octal with `0o`.
 
@@ -304,3 +299,9 @@ I keep adding things as I need them or people ask, so [let me know](https://gith
 * `indexOf( array, value )` &mdash; if `value` is present in `array`, the index (>=0) is returned; otherwise -1 is returned;
 * `isArray( various )` &mdash; returns *true* if the argument is an array (of any length);
 * `isObject( various )` &mdash; returns *true* if the argument is an object.
+
+### Reserved Words
+
+As a result of the syntax, the following words are reserved and may not be used as identifiers or function names: `true, false, null, each, in, first, with, if, then, else, endif, do, done, and, or, not, NaN`. Note that keywords and identifiers are case-sensitive, so while `each` is not an acceptable identifier, `Each` or `EACH` would be.
+
+<small>Updated 2021-03-07</small>
