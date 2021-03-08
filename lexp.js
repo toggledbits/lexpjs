@@ -1,454 +1,1213 @@
-/**
- * lexp.js - A lightweight arithmetic expression parser/evaluator for JavaScript
- * Copyright (C) 2015 Patrick H. Rigney
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 3 of the License, or
- * (at your option) any later version.
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * See the file LICENSE or http://github.com/toggledbits/lexpjs/blob/master/LICENSE
- * for more information.
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
- */
+/* Version 21066.1721 */
+/* Ref: https://github.com/umdjs/umd */
 
-define( [], function() {
-	
-	return lexp = (function() {
-		'use strict'
-		
-		var stack = [];
-		var node;
-		
-		var	VREF = 'vref',
-			FREF = 'fref',
-			UNOP = 'unop',
-			BINOP = 'binop';
-			
-		var binops = [
-			  { "op":'*', "prec":3 }
-			, { "op":'/', "prec":3 }
-			, { "op":'%', "prec":3 }
-			, { "op":'+', "prec":4 }
-			, { "op":'-', "prec":4 }
-			, { "op":'<', "prec":6 }
-			, { "op":'<=', "prec":6 }
-			, { "op":'>', "prec":6 }
-			, { "op":'>=', "prec":6 }
-			, { "op":'==', "prec":7 }
-			, { "op":'<>', "prec":7 }
-			, { "op":'!=', "prec":7 }
-			, { "op":'&', "prec":8 }
-			, { "op":'^', "prec":9 }
-			, { "op":'|', "prec":10 }
-			, { "op":'=', "prec":14 }
-		];
-		var MAXPREC = 99; // value doesn't matter as long as it's >= any used in binops
-		
-		var reserved = { };
-			
-		var nativeFuncs = {
-			  abs : { nargs: 1, impl: function( v ) { return v >= 0 ? v : -v; } }
-			, sign : { nargs: 1, impl: function( n ) { return Math.sign(n); } }
-			, floor : { nargs: 1, impl: function( n ) { return Math.floor(n); } }
-			, ceil : { nargs: 1, impl: function( n ) { return Math.ceil(n); } }
-			, round : { nargs: 2, impl: function( n, p ) { if (p == undefined) p = 0; return Math.floor( n * Math.pow(10, p) + 0.5 ) / Math.pow(10, p); } }
-			, trunc : { nargs: 1, impl: function( n ) { return Math.trunc(n); } }
-			, cos : { nargs: 1, impl: function( n ) { return Math.cos(n); } }
-			, sin : { nargs: 1, impl: function( n ) { return Math.sin(n); } }
-			, tan : { nargs: 1, impl: function( n ) { return Math.tan(n); } }
-			, log : { nargs: 1, impl: function( n ) { return Math.log(n); } }
-			, exp : { nargs: 1, impl: function( n ) { return Math.exp(n); } }
-			, pow : { nargs: 2, impl: function( n, p ) { return Math.pow(n, p); } }
-			, sqrt : { nargs: 1, impl: function( n ) { return Math.sqrt( n ); } }
-			, min : { nargs: 2, impl: function( n1, n2 ) { return (n1 <= n2 ? n1 : n2); } }
-			, max : { nargs: 2, impl: function( n1, n2 ) { return (n1 >= n2 ? n1 : n2); } }
-			, len : { nargs: 1, impl: function( s ) { return s.toString().length; } }
-			, substr : { nargs: 3, impl: function( s, p, l ) { var s = s.toString(); if (l==undefined) l=s.length; return s.substr(p,l); } }
-			, toupper: { nargs: 1, impl: function( s ) { return s.toString().toUpperCase(); } }
-			, tolower: { nargs: 1, impl: function( s ) { return s.toString().toLowerCase(); } }
-			, tonumber: { nargs: 1, impl: function( s ) { return parseFloat(s); } }
-			, time: { nargs: 0, impl: function() { return Math.floor(new Date().getTime()/1000); } }
-		};
-		
-		var _comp = function( expr ) {
-			var index = 0;
-			var length = expr.length;
-			
-			var skip_white = function() {
-				var ch = expr.charCodeAt( index );
-				while ( ch <= 32 && index < length ) ch = expr.charCodeAt( ++index );
-			}
+const version = 21047;
 
-			// Starting from the current character position, peek as much of the stream as will match the provided regular expression.
-			var peek = function( reg ) {
-				var m = reg.exec( expr.substr( index ) );
-				if ( m == undefined ) return undefined;
-				return m[0];
-			}
+(function (root, factory) {
+    if (typeof define === 'function' && define.amd) {
+        // AMD. Register as an anonymous module.
+        define([], factory);
+    } else if (typeof module === 'object' && module.exports) {
+        // Node. Does not work with strict CommonJS, but
+        // only CommonJS-like environments that support module.exports,
+        // like Node.
+        module.exports = factory();
+    } else {
+        // Browser globals (root is window)
+        root.lexp = factory();
+    }
+}(typeof self !== 'undefined' ? self : this, function () {
 
-			// Scan for numeric value. Allow binary, octal and hex integers, and decimal/float.
-			var scan_numeric = function( startch ) {
-				// Peek and see if we're doing base conversion
-				var s = peek( /^0(b[01]+|x[0-9a-f]+|[0-7]+)/i );
-				if ( s != undefined ) {
-					// Handle base-specific integer.
-					var val = 0;
-					index += s.length;		// advance
-					s = s.toUpperCase();
-					var ch = s.charCodeAt(1);
-					var base;
-					if (ch == 66) base = 2;
-					else if (ch == 88) base = 16
-					else base = 8;
-					for (var ix=(base==8? 1 : 2); ix<s.length; ++ix) {
-						ch = s.charCodeAt( ix ) - 48;
-						if (ch > 9) ch -= 7;
-						val = val * base + ch;
-					}
-					return val;
-				}
+/* --------------------------------- generated grammar (DO NOT EDIT) ------------------------------- */
 
-				// Handle as decimal/float
-				var str = peek( /^[0-9]+(\.[0-9]*)?([E][+-]?[0-9]+)?/i );
-				if (str == undefined) return undefined;
-				index += str.length;
-				return parseFloat( str );
-			}
+/* parser generated by jison 0.4.18 */
+/*
+  Returns a Parser object of the following structure:
 
-			// Quoted literal string. Allow escaped quote (only).
-			var scan_string = function( qchar ) {
-				var str = "";
-				var esc = false;
-				while (1) {
-					if (++index >= length) throw new SyntaxError('Unterminated string at ' + index);
-					var ch = expr.charAt( index );
-					if (ch == '\\') {
-						esc = true;
-						continue;
-					} else if (ch == qchar && !esc) break;
-					str += ch;
-					esc = false;
-				}
-				++index; // skip closing quote
-				return str;
-			}
+  Parser: {
+    yy: {}
+  }
 
-			// Scan function reference and parse/package argument list. Only called by scan_vref()
-			var scan_funcref = function( name ) {
-				var args = [];
-				var parenLevel = 0;
-				var subexp = "";
-				while (1) {
-					if ( ++index >= length ) throw new SyntaxError('Unexpected end of argument list at ' + index);
-					var ch = expr.charAt( index );
-					if ( ch == ')' && parenLevel-- == 0 ) {
-						// done. Now what?
-						if ( !subexp.match(/^\s*$/) )
-							args.unshift( _comp( subexp ) );
-						++index;
-						break;
-					} else if ( ch == ',' && parenLevel == 0 ) {
-						// completed sub-expression.
-						if ( subexp.match(/^\s*$/) ) 
-							throw new SyntaxError('Invalid argument/sub-expression at ' + index);
-						args.unshift( _comp( subexp ) );
-						subexp = "";
-					} else {
-						subexp += ch;
-						if (ch == '(') ++parenLevel;
-					}
-				}
-				if ( nativeFuncs[name] && nativeFuncs[name].nargs != 0 && nativeFuncs[name].nargs > args.length)
-					throw new ReferenceError('Native function ' + name + ' requires at least ' + nativeFuncs[name].nargs + ' arguments');
-				return { type: FREF, args: args, name: name };
-			}
+  Parser.prototype: {
+    yy: {},
+    trace: function(),
+    symbols_: {associative list: name ==> number},
+    terminals_: {associative list: number ==> name},
+    productions_: [...],
+    performAction: function anonymous(yytext, yyleng, yylineno, yy, yystate, $$, _$),
+    table: [...],
+    defaultActions: {...},
+    parseError: function(str, hash),
+    parse: function(input),
 
-			// Scan variable reference. Allows dotted notation for simple traversal.
-			var scan_vref = function( startch ) {
-				var str = "";
-				var haveDot = false;
-				while ( index < length ) {
-					var c = expr.charCodeAt( index );
-					if ( ( c >= 65 && c <= 90 ) || ( c >= 97 && c <= 122 ) || (c >=48 && c <= 57) || c == 95 || c == 46 ) {
-							str += String.fromCharCode( c );
-							if (c == 46) haveDot = true;
-							++index;
-					} else if ( c == 40 ) {
-						// Found a paren, continue processing as function reference
-						if ( haveDot ) throw new SyntaxError('Unexpected argument list after ' + str + ' at ' + index);
-						return scan_funcref( str );
-					} else
-						break;
-				}
-				if ( !haveDot && reserved[str] ) return reserved[str];
-				return str.length ? { type: VREF, name: str } : undefined;
-			}
+    lexer: {
+        EOF: 1,
+        parseError: function(str, hash),
+        setInput: function(input),
+        input: function(),
+        unput: function(str),
+        more: function(),
+        less: function(n),
+        pastInput: function(),
+        upcomingInput: function(),
+        showPosition: function(),
+        test_match: function(regex_match_array, rule_index),
+        next: function(),
+        lex: function(),
+        begin: function(condition),
+        popState: function(),
+        _currentRules: function(),
+        topState: function(),
+        pushState: function(condition),
 
-			// Scan nested expression. Pull it out and pass it to the compile (recursion).
-			var scan_expr = function( startch ) {
-				var str = "";
-				// Scan for right bracket. Track nesting.
-				var level = 0;
-				while (1) {
-					if ( ++index >= length ) throw new SyntaxError('Unmatched paren group at ' + index);
-					var ch = expr.charAt( index );
-					if (ch == ')' && level-- == 0) break;
-					if (ch == '(') ++level;
-					str += ch;
-				}
-				++index; // skip closing paren
-				return _comp( str ); // recurse
-			}
-			
-			// Scan unary operators.
-			var scan_unop = function( ch ) {
-				if (ch == '-' || ch == '+' || ch == '!') {
-					// yes, it's a Unop
-					if ( index >= length ) throw new SyntaxError('Unexpected end of expression parsing unop at ' + index);
-					++index; // skip unop
-					var r = [ { type: UNOP, op : ch } ];
-					r.unshift( scan_token() );
-					return r;
-				}
-				return undefined;
-			}
-			
-			// Scan binary operators. Find the longest matching one.
-			var scan_binop = function() {
-				skip_white();
-				if ( index >= length ) return undefined;
-				
-				var op = "";
-				var mprec;
-				while ( index < length ) {
-					var ch = expr.charAt( index );
-					var st = op + ch;
-					var matched = false;
-					for (var ix=0; ix<binops.length; ++ix) {
-						if ( binops[ix].op.substr(0, st.length) == st ) {
-							// matches something.
-							mprec = binops[ix].prec;
-							matched = true;
-							break;
-						}
-					}
-					if ( ! matched ) {
-						if ( st.length == 1 ) throw new SyntaxError('Expecting binary operator at ' + index); // On first char, have to match something.
-						break;
-					}
+        options: {
+            ranges: boolean           (optional: true ==> token location info will include a .range[] member)
+            flex: boolean             (optional: true ==> flex-like lexing behaviour where the rules are tested exhaustively to find the longest match)
+            backtrack_lexer: boolean  (optional: true ==> lexer regexes are tested in order and for each matching regex the action code is invoked; the lexer terminates the scan when a token is returned by the action code)
+        },
 
-					// keep looping to find the longest matching binop
-					op = st;
-					++index;
-				}
-				return { type: BINOP, op: op, prec: mprec };
-			}
+        performAction: function(yy, yy_, $avoiding_name_collisions, YY_START),
+        rules: [...],
+        conditions: {associative list: name ==> set},
+    }
+  }
 
-			// Scan our next token and return it.
-			var scan_token = function() {
-				skip_white();
-				if ( index >= length ) return undefined;
-				
-				var ch = expr.charAt( index );
-				if ( ch == '.' || (ch >= '0' && ch <= '9' ) ) {
-					// Start of numeric value.
-					return scan_numeric( ch );
-				} else if ( ch == "'" || ch == '"' ) {
-					// String literal.
-					return scan_string( ch );
-				} else if ( ch == '(' ) {
-					// Nested expression.
-					return scan_expr( ch );
-				}
-				
-				// Check for unary operator.
-				var unop = scan_unop( ch );
-				if ( unop ) {
-					return unop;
-				}
-				
-				// Variable reference? (also checks special case of function reference)
-				var vref = scan_vref( ch );
-				if ( vref ) {
-					return vref;
-				}
-				
-				// Unrecognizable.
-				throw new SyntaxError('Invalid token at ' + index);
-			}
 
-			// Parse expression to RPN: nested arrays of things to do later.
-			var parse_rpn = function( lhs, lprec ) {
-				var binop, rhs;
-		
-				// Mark our current position and get next binary operator
-				var ilast = index;
-				var lop = scan_binop();
-				while (lop !== undefined && lop.prec <= lprec) {
-					// Lookahead operation is same or higher precedence (lower prec is higher precedence)
-					binop = lop;
-					rhs = scan_token();
-					if (rhs === undefined) throw new SyntaxError("Invalid token after op at " + ilast);
-					
-					// Mark our place again
-					ilast = index;
-					lop = scan_binop();
-					while (lop !== undefined && lop.prec < binop.prec) {
-						// Lookahead binop has higher precedence, new subtree.
-						index = ilast;
-						rhs = parse_rpn( rhs, lop.prec);
-						ilast = index;
-						lop = scan_binop();
-					}
-					lhs = [ lhs, rhs, binop ];
-				}
-				
-				// Back to last binop and return current subtree.
-				index = ilast;
-				return lhs;
-			}
+  token location info (@$, _$, etc.): {
+    first_line: n,
+    last_line: n,
+    first_column: n,
+    last_column: n,
+    range: [start_number, end_number]       (where the numbers are indexes into the input string, regular zero-based)
+  }
 
-			// Go! Fetch the initial token, and parse from next operator with default precedence.
-			return [ parse_rpn( scan_token(), MAXPREC) ];
-		}
-		
-		// Public wrapper method.
-		var compile = function( expr ) {
-			return { rpn: _comp( expr ) };
-		}
 
-		// Public method to execute the compiled expression. Allows a context to be passed in for variable references.
-		// Also allows functions to be defined on the context or the compiled object itself.
-		var run = function( ce, ctx ) {
-			var stack = [];
+  the parseError function receives a 'hash' object with these members for lexer and parser errors: {
+    text:        (matched text)
+    token:       (the produced terminal token, if any)
+    line:        (yylineno)
+  }
+  while parser (grammar) errors will also provide these members, i.e. parser errors deliver a superset of attributes: {
+    loc:         (yylloc)
+    expected:    (string describing the set of expected tokens)
+    recoverable: (boolean: TRUE when the parser has a error recovery rule available for this particular error)
+  }
+*/
+var parser = (function(){
+var o=function(k,v,o,l){for(o=o||{},l=k.length;l--;o[k[l]]=v);return o},$V0=[1,20],$V1=[1,8],$V2=[1,24],$V3=[1,13],$V4=[1,4],$V5=[1,5],$V6=[1,6],$V7=[1,7],$V8=[1,9],$V9=[1,10],$Va=[1,11],$Vb=[1,12],$Vc=[1,14],$Vd=[1,15],$Ve=[1,16],$Vf=[1,17],$Vg=[1,18],$Vh=[1,21],$Vi=[1,22],$Vj=[1,23],$Vk=[1,26],$Vl=[1,27],$Vm=[5,6,8,18,60,61,71],$Vn=[1,33],$Vo=[1,28],$Vp=[1,29],$Vq=[1,30],$Vr=[1,31],$Vs=[1,32],$Vt=[1,34],$Vu=[1,35],$Vv=[1,36],$Vw=[1,37],$Vx=[1,38],$Vy=[1,39],$Vz=[1,40],$VA=[1,41],$VB=[1,42],$VC=[1,43],$VD=[1,44],$VE=[1,45],$VF=[1,46],$VG=[1,47],$VH=[1,48],$VI=[1,49],$VJ=[1,50],$VK=[1,51],$VL=[1,58],$VM=[1,59],$VN=[1,60],$VO=[5,6,8,14,18,20,26,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,53,59,60,61,69,71],$VP=[5,6,8,12,13,14,15,16,18,20,26,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,53,59,60,61,69,71],$VQ=[6,53],$VR=[6,14],$VS=[5,6,8,14,18,20,26,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,53,59,60,61,69,71],$VT=[5,6,8,14,18,20,26,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,53,59,60,61,69,71],$VU=[5,6,8,14,18,20,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,53,59,60,61,69,71],$VV=[5,6,8,14,18,20,36,37,38,39,40,50,51,53,59,60,61,69,71],$VW=[5,6,8,14,18,20,36,37,38,39,40,41,42,43,44,50,51,53,59,60,61,69,71],$VX=[5,6,8,14,18,20,36,37,38,39,40,41,42,43,44,45,50,51,53,59,60,61,69,71];
+var parser = {trace: function trace () { },
+yy: {},
+symbols_: {"error":2,"expressions":3,"expr_list":4,"EOF":5,"COMMA":6,"e":7,"EXPRSEP":8,"arg_list":9,"ref_expr":10,"IDENTIFIER":11,"DOT":12,"[":13,"]":14,"QDOT":15,"QBRACKET":16,"(":17,")":18,"dict_element":19,"COLON":20,"QSTR":21,"dict_elements":22,"element_list":23,"array_elements":24,"array_list":25,"-":26,"LNOT":27,"BNOT":28,"POW":29,"*":30,"/":31,"MOD":32,"+":33,"<<":34,">>":35,"BAND":36,"BOR":37,"BXOR":38,"LAND":39,"LOR":40,"==":41,"!=":42,"===":43,"!==":44,"IN":45,"<":46,"<=":47,">":48,">=":49,"COALESCE":50,"?":51,"LCURLY":52,"RCURLY":53,"NUMBER":54,"HEXNUM":55,"OCTNUM":56,"BINNUM":57,"IF":58,"THEN":59,"ELSE":60,"ENDIF":61,"TRUE":62,"FALSE":63,"NULL":64,"NAN":65,"ASSIGN":66,"EACH":67,"FIRST":68,"WITH":69,"DO":70,"DONE":71,"$accept":0,"$end":1},
+terminals_: {2:"error",5:"EOF",6:"COMMA",8:"EXPRSEP",11:"IDENTIFIER",12:"DOT",13:"[",14:"]",15:"QDOT",16:"QBRACKET",17:"(",18:")",20:"COLON",21:"QSTR",26:"-",27:"LNOT",28:"BNOT",29:"POW",30:"*",31:"/",32:"MOD",33:"+",34:"<<",35:">>",36:"BAND",37:"BOR",38:"BXOR",39:"LAND",40:"LOR",41:"==",42:"!=",43:"===",44:"!==",45:"IN",46:"<",47:"<=",48:">",49:">=",50:"COALESCE",51:"?",52:"LCURLY",53:"RCURLY",54:"NUMBER",55:"HEXNUM",56:"OCTNUM",57:"BINNUM",58:"IF",59:"THEN",60:"ELSE",61:"ENDIF",62:"TRUE",63:"FALSE",64:"NULL",65:"NAN",66:"ASSIGN",67:"EACH",68:"FIRST",69:"WITH",70:"DO",71:"DONE"},
+productions_: [0,[3,2],[4,3],[4,3],[4,1],[9,1],[9,0],[10,1],[10,3],[10,4],[10,3],[10,4],[10,4],[10,3],[19,3],[19,5],[19,3],[22,3],[22,1],[23,1],[23,0],[24,3],[24,1],[25,1],[25,0],[7,2],[7,2],[7,2],[7,3],[7,3],[7,3],[7,3],[7,3],[7,3],[7,3],[7,3],[7,3],[7,3],[7,3],[7,3],[7,3],[7,3],[7,3],[7,3],[7,3],[7,3],[7,3],[7,3],[7,3],[7,3],[7,3],[7,5],[7,3],[7,3],[7,1],[7,1],[7,1],[7,1],[7,1],[7,7],[7,5],[7,1],[7,1],[7,1],[7,1],[7,1],[7,3],[7,6],[7,6],[7,3]],
+performAction: function anonymous(yytext, yyleng, yylineno, yy, yystate /* action[1] */, $$ /* vstack */, _$ /* lstack */) {
+/* this == yyval */
 
-			function _getcontext( name ) {
-				var p = name.split('.');
-				var node = ctx;
-				while ( p.length ) {
-					var next = p.shift();
-					if ( typeof node[next] != "undefined" )
-						node = node[next];
-					else
-						throw new ReferenceError( 'Undefined value at ' + next + ' in ' + name );
-				}
-				return node;
-			}
-						
-			function _run( arr ) {
-				var index = 0;
-				var length = arr.length;
-				while ( index < length ) {
-					var e = arr[index++];
-					// console.log('_run looking at element ' + index + ' of ' + length + ', a ' + typeof e);
-					if ( typeof e == "number" || typeof e == "string" )
-						stack.push(e);
-					else if (e.type) {
-						if (e.type == VREF) {
-							stack.push( _getcontext( e.name ) );
-						} else if (e.type == BINOP) {
-							var v2 = stack.pop();
-							var v1 = stack.pop();
-							if (e.op == '+') {
-								// Special case for plus (+): if either operand is string, treat as concat
-								if (typeof v1 == "string" || typeof v2 == "string")
-									v1 = v1.toString() + v2.toString();
-								else
-									v1 += v2;
-							}
-							else if (e.op == '-')
-								v1 -= v2;
-							else if (e.op == '*')
-								v1 *= v2;
-							else if (e.op == '/')
-								v1 /= v2;
-							else if (e.op == '%')
-								v1 %= v2;
-							else if (e.op == '&')
-								v1 &= v2;
-							else if (e.op == '|')
-								v1 |= v2;
-							else if (e.op == '^')
-								v1 ^= v2;
-							else if (e.op == '>')
-								v1 = v1 > v2 ? 1 : 0;
-							else if (e.op == '>=')
-								v1 = v1 >= v2 ? 1 : 0;
-							else if (e.op == '<')
-								v1 = v1 < v2 ? 1 : 0;
-							else if (e.op == '<=')
-								v1 = v1 <= v2 ? 1 : 0;
-							else if (e.op == '=' || e.op == '==')
-								v1 = v1 == v2 ? 1 : 0;
-							else if (e.op == '<>' || e.op == '!=')
-								v1 = v1 != v2 ? 1 : 0;
-							else 
-								throw new InternalError('BUG: unsupported op in compiled expression: ' + e.op);
-							stack.push(v1);
-						} else if (e.type == UNOP) {
-							var v = stack.pop();
-							if (e.op == '-')
-								stack.push(-v);
-							else if (e.op == '+')
-								stack.push(v);
-							else if (e.op == '!')
-								stack.push(v == 0 ? 1 : 0);
-							else
-								throw new InternalError('BUG: unsupported unop in compiled expression: ' + e.op);
-						} else if (e.type == FREF) {
-							// console.log('function ref ' + e.name + ' with ' + e.args.length + ' args');
-							var name = e.name;
-							var impl = undefined;
-							if ( nativeFuncs[name] ) {
-								// Native function implementation
-								impl = nativeFuncs[name].impl;
-							} else if (typeof ce[name] == "function") {
-								// Attached to compiled expression
-								impl = ce[name];
-							} else if ( ctx['_func'] && typeof ctx['_func'][name] == "function" ) {
-								// Attached to context
-								impl = ctx['_func'][name];
-							} else 
-								throw new ReferenceError('Undefined function: ' + name);
-								
-							// Build argument list.
-							for (var ix=0; ix<e.args.length; ++ix) _run( e.args[ix] );
-							var a = [];
-							for (var ix=0; ix<e.args.length; ++ix) a.push( stack.pop() );
-							var r = impl.apply( this, a );
-							stack.push( r );
-						} else
-							throw new InternalError('BUG: unsupported element type: ' + e.type);
-					} else if ( Array.isArray(e) )
-						_run( e );
-					else
-						throw new InternalError('BUG: unrecognized element at ' + index + ', is a ' + typeof e);
-				}
-				// console.log('_run is done, stack has ' + stack.length);
-			}
-			
-			_run( ce.rpn );
-			// console.log('run() is done, stack has ' + stack.length + ' (exactly 1 is expected)');
-			// console.log('the result is ' + stack[0]);
-			return stack.length > 0 ? stack.pop() : undefined;
-		}
-		
-		var evaluate = function( expr, context ) {
-			return run( compile( expr ), context );
-		}
-				
-		
-		return {
-			compile: compile,
-			run: run,
-			evaluate: evaluate
-		}
+var $0 = $$.length - 1;
+switch (yystate) {
+case 1:
+ return $$[$0-1]; 
+break;
+case 2: case 3:
+ $$[$0-2].expr.push( $$[$0] ); this.$ = $$[$0-2]; 
+break;
+case 4:
+ this.$ = atom( 'list', { expr: [ $$[$0] ] } ); 
+break;
+case 5: case 19: case 23: case 65:
+ this.$ = $$[$0]; 
+break;
+case 6:
+ this.$ = atom( 'list', { expr: [] } ); 
+break;
+case 7:
+ this.$ = atom( 'vref', { name: $$[$0] } ); 
+break;
+case 8:
+ this.$ = atom( 'deref', { context: $$[$0-2], member: $$[$0], locs: [_$[$0-2], _$[$0]] } ); 
+break;
+case 9:
+ this.$ = atom( 'deref', { context: $$[$0-3], member: $$[$0-1], locs: [_$[$0-3], _$[$0-1]] } ); 
+break;
+case 10:
+ this.$ = atom( 'deref', { context: $$[$0-2], member: $$[$0], locs: [_$[$0-2], _$[$0]], op: $$[$0-1] } ); 
+break;
+case 11:
+ this.$ = atom( 'deref', { context: $$[$0-3], member: $$[$0-1], locs: [_$[$0-3], _$[$0-1]], op: $$[$0-2] } ); 
+break;
+case 12:
+ this.$ = atom( 'fref', { name: $$[$0-3], args: is_atom( $$[$0-1], 'list') ? ($$[$0-1]).expr : [ $$[$0-1] ], locs: [_$[$0-3]] } ); 
+break;
+case 13: case 52: case 53: case 69:
+ this.$ = $$[$0-1]; 
+break;
+case 14:
+ this.$ = { key: $$[$0-2], value: $$[$0] }; 
+break;
+case 15:
+ this.$ = { key: $$[$0-3].slice( 1, -1 ), value: $$[$0] }; 
+break;
+case 16:
+ this.$ = { key: $$[$0-2].slice( 1, -1 ), value: $$[$0] }; 
+break;
+case 17:
+ ($$[$0-2])[($$[$0]).key] = ($$[$0]).value; this.$ = $$[$0-2]; 
+break;
+case 18:
+ this.$ = { [($$[$0]).key]: ($$[$0]).value }; 
+break;
+case 20:
+ this.$ = {}; 
+break;
+case 21:
+ $$[$0-2].push( $$[$0] ); this.$ = $$[$0-2]; 
+break;
+case 22:
+ this.$ = [ $$[$0] ]; 
+break;
+case 24:
+ this.$ = []; 
+break;
+case 25:
+ this.$ = atom( 'unop', { op: '-', val: $$[$0] } ); 
+break;
+case 26:
+ this.$ = atom( 'unop', { op: '!', val: $$[$0] } ); 
+break;
+case 27:
+ this.$ = atom( 'unop', { op: '~', val: $$[$0] } ); 
+break;
+case 28: case 29: case 30: case 31: case 32: case 33: case 34: case 35: case 36: case 37: case 38: case 41: case 42: case 43: case 44: case 45: case 46: case 47: case 48: case 49: case 50:
+ this.$ = atom( 'binop', { op: $$[$0-1], v1: $$[$0-2], v2: $$[$0], locs: [_$[$0-2],_$[$0]] } ); 
+break;
+case 39:
+ this.$ = atom( 'binop', { op: '&&', v1: $$[$0-2], v2: $$[$0], locs: [_$[$0-2],_$[$0]] } ); 
+break;
+case 40:
+ this.$ = atom( 'binop', { op: '||', v1: $$[$0-2], v2: $$[$0], locs: [_$[$0-2],_$[$0]] } ); 
+break;
+case 51:
+ this.$ = atom( 'if', { test: $$[$0-4], tc: $$[$0-2], fc: $$[$0], locs: [_$[$0-4], _$[$0-2], _$[$0]] } ); 
+break;
+case 54:
+ this.$ = Number(yytext); 
+break;
+case 55:
+ this.$ = parseInt( yytext.substr( 2 ), 16 ); 
+break;
+case 56:
+ this.$ = parseInt( yytext.substr( 2 ), 8 ); 
+break;
+case 57:
+ this.$ = parseInt( yytext.substr( 2 ), 2 ); 
+break;
+case 58:
+ this.$ = yytext.slice( 1, -1 ); 
+break;
+case 59:
+ this.$ = atom( 'if', { test: $$[$0-5], tc: $$[$0-3], fc: $$[$0-1], locs: [_$[$0-5], _$[$0-3], _$[$0-1]] } ); 
+break;
+case 60:
+ this.$ = atom( 'if', { test: $$[$0-3], tc: $$[$0-1], locs: [_$[$0-3], _$[$0-1]] } ); 
+break;
+case 61:
+ this.$ = true; 
+break;
+case 62:
+ this.$ = false; 
+break;
+case 63:
+ this.$ = null; 
+break;
+case 64:
+ this.$ = NaN; 
+break;
+case 66:
+ this.$ = atom( 'binop', { 'op': $$[$0-1], v1: atom( 'vref', { name: $$[$0-2] } ), v2: $$[$0], locs: [_$[$0-2], _$[$0]] } ); 
+break;
+case 67:
+ this.$ = atom( 'iter', { ident: $$[$0-4], context: $$[$0-2], exec: $$[$0] } ); 
+break;
+case 68:
+ this.$ = atom( 'search', { ident: $$[$0-4], context: $$[$0-2], exec: $$[$0] } ); 
+break;
+}
+},
+table: [{3:1,4:2,7:3,10:19,11:$V0,13:$V1,17:$V2,21:$V3,26:$V4,27:$V5,28:$V6,52:$V7,54:$V8,55:$V9,56:$Va,57:$Vb,58:$Vc,62:$Vd,63:$Ve,64:$Vf,65:$Vg,67:$Vh,68:$Vi,70:$Vj},{1:[3]},{5:[1,25],6:$Vk,8:$Vl},o($Vm,[2,4],{26:$Vn,29:$Vo,30:$Vp,31:$Vq,32:$Vr,33:$Vs,34:$Vt,35:$Vu,36:$Vv,37:$Vw,38:$Vx,39:$Vy,40:$Vz,41:$VA,42:$VB,43:$VC,44:$VD,45:$VE,46:$VF,47:$VG,48:$VH,49:$VI,50:$VJ,51:$VK}),{7:52,10:19,11:$V0,13:$V1,17:$V2,21:$V3,26:$V4,27:$V5,28:$V6,52:$V7,54:$V8,55:$V9,56:$Va,57:$Vb,58:$Vc,62:$Vd,63:$Ve,64:$Vf,65:$Vg,67:$Vh,68:$Vi,70:$Vj},{7:53,10:19,11:$V0,13:$V1,17:$V2,21:$V3,26:$V4,27:$V5,28:$V6,52:$V7,54:$V8,55:$V9,56:$Va,57:$Vb,58:$Vc,62:$Vd,63:$Ve,64:$Vf,65:$Vg,67:$Vh,68:$Vi,70:$Vj},{7:54,10:19,11:$V0,13:$V1,17:$V2,21:$V3,26:$V4,27:$V5,28:$V6,52:$V7,54:$V8,55:$V9,56:$Va,57:$Vb,58:$Vc,62:$Vd,63:$Ve,64:$Vf,65:$Vg,67:$Vh,68:$Vi,70:$Vj},{11:$VL,13:$VM,19:57,21:$VN,22:56,23:55,53:[2,20]},{7:63,10:19,11:$V0,13:$V1,14:[2,24],17:$V2,21:$V3,24:62,25:61,26:$V4,27:$V5,28:$V6,52:$V7,54:$V8,55:$V9,56:$Va,57:$Vb,58:$Vc,62:$Vd,63:$Ve,64:$Vf,65:$Vg,67:$Vh,68:$Vi,70:$Vj},o($VO,[2,54]),o($VO,[2,55]),o($VO,[2,56]),o($VO,[2,57]),o($VO,[2,58]),{7:64,10:19,11:$V0,13:$V1,17:$V2,21:$V3,26:$V4,27:$V5,28:$V6,52:$V7,54:$V8,55:$V9,56:$Va,57:$Vb,58:$Vc,62:$Vd,63:$Ve,64:$Vf,65:$Vg,67:$Vh,68:$Vi,70:$Vj},o($VO,[2,61]),o($VO,[2,62]),o($VO,[2,63]),o($VO,[2,64]),o($VO,[2,65],{12:[1,65],13:[1,66],15:[1,67],16:[1,68]}),o($VP,[2,7],{17:[1,70],66:[1,69]}),{11:[1,71]},{11:[1,72]},{4:73,7:3,10:19,11:$V0,13:$V1,17:$V2,21:$V3,26:$V4,27:$V5,28:$V6,52:$V7,54:$V8,55:$V9,56:$Va,57:$Vb,58:$Vc,62:$Vd,63:$Ve,64:$Vf,65:$Vg,67:$Vh,68:$Vi,70:$Vj},{7:74,10:19,11:$V0,13:$V1,17:$V2,21:$V3,26:$V4,27:$V5,28:$V6,52:$V7,54:$V8,55:$V9,56:$Va,57:$Vb,58:$Vc,62:$Vd,63:$Ve,64:$Vf,65:$Vg,67:$Vh,68:$Vi,70:$Vj},{1:[2,1]},{7:75,10:19,11:$V0,13:$V1,17:$V2,21:$V3,26:$V4,27:$V5,28:$V6,52:$V7,54:$V8,55:$V9,56:$Va,57:$Vb,58:$Vc,62:$Vd,63:$Ve,64:$Vf,65:$Vg,67:$Vh,68:$Vi,70:$Vj},{7:76,10:19,11:$V0,13:$V1,17:$V2,21:$V3,26:$V4,27:$V5,28:$V6,52:$V7,54:$V8,55:$V9,56:$Va,57:$Vb,58:$Vc,62:$Vd,63:$Ve,64:$Vf,65:$Vg,67:$Vh,68:$Vi,70:$Vj},{7:77,10:19,11:$V0,13:$V1,17:$V2,21:$V3,26:$V4,27:$V5,28:$V6,52:$V7,54:$V8,55:$V9,56:$Va,57:$Vb,58:$Vc,62:$Vd,63:$Ve,64:$Vf,65:$Vg,67:$Vh,68:$Vi,70:$Vj},{7:78,10:19,11:$V0,13:$V1,17:$V2,21:$V3,26:$V4,27:$V5,28:$V6,52:$V7,54:$V8,55:$V9,56:$Va,57:$Vb,58:$Vc,62:$Vd,63:$Ve,64:$Vf,65:$Vg,67:$Vh,68:$Vi,70:$Vj},{7:79,10:19,11:$V0,13:$V1,17:$V2,21:$V3,26:$V4,27:$V5,28:$V6,52:$V7,54:$V8,55:$V9,56:$Va,57:$Vb,58:$Vc,62:$Vd,63:$Ve,64:$Vf,65:$Vg,67:$Vh,68:$Vi,70:$Vj},{7:80,10:19,11:$V0,13:$V1,17:$V2,21:$V3,26:$V4,27:$V5,28:$V6,52:$V7,54:$V8,55:$V9,56:$Va,57:$Vb,58:$Vc,62:$Vd,63:$Ve,64:$Vf,65:$Vg,67:$Vh,68:$Vi,70:$Vj},{7:81,10:19,11:$V0,13:$V1,17:$V2,21:$V3,26:$V4,27:$V5,28:$V6,52:$V7,54:$V8,55:$V9,56:$Va,57:$Vb,58:$Vc,62:$Vd,63:$Ve,64:$Vf,65:$Vg,67:$Vh,68:$Vi,70:$Vj},{7:82,10:19,11:$V0,13:$V1,17:$V2,21:$V3,26:$V4,27:$V5,28:$V6,52:$V7,54:$V8,55:$V9,56:$Va,57:$Vb,58:$Vc,62:$Vd,63:$Ve,64:$Vf,65:$Vg,67:$Vh,68:$Vi,70:$Vj},{7:83,10:19,11:$V0,13:$V1,17:$V2,21:$V3,26:$V4,27:$V5,28:$V6,52:$V7,54:$V8,55:$V9,56:$Va,57:$Vb,58:$Vc,62:$Vd,63:$Ve,64:$Vf,65:$Vg,67:$Vh,68:$Vi,70:$Vj},{7:84,10:19,11:$V0,13:$V1,17:$V2,21:$V3,26:$V4,27:$V5,28:$V6,52:$V7,54:$V8,55:$V9,56:$Va,57:$Vb,58:$Vc,62:$Vd,63:$Ve,64:$Vf,65:$Vg,67:$Vh,68:$Vi,70:$Vj},{7:85,10:19,11:$V0,13:$V1,17:$V2,21:$V3,26:$V4,27:$V5,28:$V6,52:$V7,54:$V8,55:$V9,56:$Va,57:$Vb,58:$Vc,62:$Vd,63:$Ve,64:$Vf,65:$Vg,67:$Vh,68:$Vi,70:$Vj},{7:86,10:19,11:$V0,13:$V1,17:$V2,21:$V3,26:$V4,27:$V5,28:$V6,52:$V7,54:$V8,55:$V9,56:$Va,57:$Vb,58:$Vc,62:$Vd,63:$Ve,64:$Vf,65:$Vg,67:$Vh,68:$Vi,70:$Vj},{7:87,10:19,11:$V0,13:$V1,17:$V2,21:$V3,26:$V4,27:$V5,28:$V6,52:$V7,54:$V8,55:$V9,56:$Va,57:$Vb,58:$Vc,62:$Vd,63:$Ve,64:$Vf,65:$Vg,67:$Vh,68:$Vi,70:$Vj},{7:88,10:19,11:$V0,13:$V1,17:$V2,21:$V3,26:$V4,27:$V5,28:$V6,52:$V7,54:$V8,55:$V9,56:$Va,57:$Vb,58:$Vc,62:$Vd,63:$Ve,64:$Vf,65:$Vg,67:$Vh,68:$Vi,70:$Vj},{7:89,10:19,11:$V0,13:$V1,17:$V2,21:$V3,26:$V4,27:$V5,28:$V6,52:$V7,54:$V8,55:$V9,56:$Va,57:$Vb,58:$Vc,62:$Vd,63:$Ve,64:$Vf,65:$Vg,67:$Vh,68:$Vi,70:$Vj},{7:90,10:19,11:$V0,13:$V1,17:$V2,21:$V3,26:$V4,27:$V5,28:$V6,52:$V7,54:$V8,55:$V9,56:$Va,57:$Vb,58:$Vc,62:$Vd,63:$Ve,64:$Vf,65:$Vg,67:$Vh,68:$Vi,70:$Vj},{7:91,10:19,11:$V0,13:$V1,17:$V2,21:$V3,26:$V4,27:$V5,28:$V6,52:$V7,54:$V8,55:$V9,56:$Va,57:$Vb,58:$Vc,62:$Vd,63:$Ve,64:$Vf,65:$Vg,67:$Vh,68:$Vi,70:$Vj},{7:92,10:19,11:$V0,13:$V1,17:$V2,21:$V3,26:$V4,27:$V5,28:$V6,52:$V7,54:$V8,55:$V9,56:$Va,57:$Vb,58:$Vc,62:$Vd,63:$Ve,64:$Vf,65:$Vg,67:$Vh,68:$Vi,70:$Vj},{7:93,10:19,11:$V0,13:$V1,17:$V2,21:$V3,26:$V4,27:$V5,28:$V6,52:$V7,54:$V8,55:$V9,56:$Va,57:$Vb,58:$Vc,62:$Vd,63:$Ve,64:$Vf,65:$Vg,67:$Vh,68:$Vi,70:$Vj},{7:94,10:19,11:$V0,13:$V1,17:$V2,21:$V3,26:$V4,27:$V5,28:$V6,52:$V7,54:$V8,55:$V9,56:$Va,57:$Vb,58:$Vc,62:$Vd,63:$Ve,64:$Vf,65:$Vg,67:$Vh,68:$Vi,70:$Vj},{7:95,10:19,11:$V0,13:$V1,17:$V2,21:$V3,26:$V4,27:$V5,28:$V6,52:$V7,54:$V8,55:$V9,56:$Va,57:$Vb,58:$Vc,62:$Vd,63:$Ve,64:$Vf,65:$Vg,67:$Vh,68:$Vi,70:$Vj},{7:96,10:19,11:$V0,13:$V1,17:$V2,21:$V3,26:$V4,27:$V5,28:$V6,52:$V7,54:$V8,55:$V9,56:$Va,57:$Vb,58:$Vc,62:$Vd,63:$Ve,64:$Vf,65:$Vg,67:$Vh,68:$Vi,70:$Vj},{7:97,10:19,11:$V0,13:$V1,17:$V2,21:$V3,26:$V4,27:$V5,28:$V6,52:$V7,54:$V8,55:$V9,56:$Va,57:$Vb,58:$Vc,62:$Vd,63:$Ve,64:$Vf,65:$Vg,67:$Vh,68:$Vi,70:$Vj},{7:98,10:19,11:$V0,13:$V1,17:$V2,21:$V3,26:$V4,27:$V5,28:$V6,52:$V7,54:$V8,55:$V9,56:$Va,57:$Vb,58:$Vc,62:$Vd,63:$Ve,64:$Vf,65:$Vg,67:$Vh,68:$Vi,70:$Vj},{7:99,10:19,11:$V0,13:$V1,17:$V2,21:$V3,26:$V4,27:$V5,28:$V6,52:$V7,54:$V8,55:$V9,56:$Va,57:$Vb,58:$Vc,62:$Vd,63:$Ve,64:$Vf,65:$Vg,67:$Vh,68:$Vi,70:$Vj},{7:100,10:19,11:$V0,13:$V1,17:$V2,21:$V3,26:$V4,27:$V5,28:$V6,52:$V7,54:$V8,55:$V9,56:$Va,57:$Vb,58:$Vc,62:$Vd,63:$Ve,64:$Vf,65:$Vg,67:$Vh,68:$Vi,70:$Vj},o($VO,[2,25]),o($VO,[2,26]),o($VO,[2,27]),{53:[1,101]},{6:[1,102],53:[2,19]},o($VQ,[2,18]),{20:[1,103]},{21:[1,104]},{20:[1,105]},{14:[1,106]},{6:[1,107],14:[2,23]},o($VR,[2,22],{26:$Vn,29:$Vo,30:$Vp,31:$Vq,32:$Vr,33:$Vs,34:$Vt,35:$Vu,36:$Vv,37:$Vw,38:$Vx,39:$Vy,40:$Vz,41:$VA,42:$VB,43:$VC,44:$VD,45:$VE,46:$VF,47:$VG,48:$VH,49:$VI,50:$VJ,51:$VK}),{26:$Vn,29:$Vo,30:$Vp,31:$Vq,32:$Vr,33:$Vs,34:$Vt,35:$Vu,36:$Vv,37:$Vw,38:$Vx,39:$Vy,40:$Vz,41:$VA,42:$VB,43:$VC,44:$VD,45:$VE,46:$VF,47:$VG,48:$VH,49:$VI,50:$VJ,51:$VK,59:[1,108]},{11:[1,109]},{7:110,10:19,11:$V0,13:$V1,17:$V2,21:$V3,26:$V4,27:$V5,28:$V6,52:$V7,54:$V8,55:$V9,56:$Va,57:$Vb,58:$Vc,62:$Vd,63:$Ve,64:$Vf,65:$Vg,67:$Vh,68:$Vi,70:$Vj},{11:[1,111]},{7:112,10:19,11:$V0,13:$V1,17:$V2,21:$V3,26:$V4,27:$V5,28:$V6,52:$V7,54:$V8,55:$V9,56:$Va,57:$Vb,58:$Vc,62:$Vd,63:$Ve,64:$Vf,65:$Vg,67:$Vh,68:$Vi,70:$Vj},{7:113,10:19,11:$V0,13:$V1,17:$V2,21:$V3,26:$V4,27:$V5,28:$V6,52:$V7,54:$V8,55:$V9,56:$Va,57:$Vb,58:$Vc,62:$Vd,63:$Ve,64:$Vf,65:$Vg,67:$Vh,68:$Vi,70:$Vj},{4:115,7:3,9:114,10:19,11:$V0,13:$V1,17:$V2,18:[2,6],21:$V3,26:$V4,27:$V5,28:$V6,52:$V7,54:$V8,55:$V9,56:$Va,57:$Vb,58:$Vc,62:$Vd,63:$Ve,64:$Vf,65:$Vg,67:$Vh,68:$Vi,70:$Vj},{45:[1,116]},{45:[1,117]},{6:$Vk,8:$Vl,71:[1,118]},{18:[1,119],26:$Vn,29:$Vo,30:$Vp,31:$Vq,32:$Vr,33:$Vs,34:$Vt,35:$Vu,36:$Vv,37:$Vw,38:$Vx,39:$Vy,40:$Vz,41:$VA,42:$VB,43:$VC,44:$VD,45:$VE,46:$VF,47:$VG,48:$VH,49:$VI,50:$VJ,51:$VK},o($Vm,[2,2],{26:$Vn,29:$Vo,30:$Vp,31:$Vq,32:$Vr,33:$Vs,34:$Vt,35:$Vu,36:$Vv,37:$Vw,38:$Vx,39:$Vy,40:$Vz,41:$VA,42:$VB,43:$VC,44:$VD,45:$VE,46:$VF,47:$VG,48:$VH,49:$VI,50:$VJ,51:$VK}),o($Vm,[2,3],{26:$Vn,29:$Vo,30:$Vp,31:$Vq,32:$Vr,33:$Vs,34:$Vt,35:$Vu,36:$Vv,37:$Vw,38:$Vx,39:$Vy,40:$Vz,41:$VA,42:$VB,43:$VC,44:$VD,45:$VE,46:$VF,47:$VG,48:$VH,49:$VI,50:$VJ,51:$VK}),o($VS,[2,28],{29:$Vo}),o($VS,[2,29],{29:$Vo}),o($VS,[2,30],{29:$Vo}),o($VS,[2,31],{29:$Vo}),o($VT,[2,32],{29:$Vo,30:$Vp,31:$Vq,32:$Vr}),o($VT,[2,33],{29:$Vo,30:$Vp,31:$Vq,32:$Vr}),o($VU,[2,34],{26:$Vn,29:$Vo,30:$Vp,31:$Vq,32:$Vr,33:$Vs}),o($VU,[2,35],{26:$Vn,29:$Vo,30:$Vp,31:$Vq,32:$Vr,33:$Vs}),o($VV,[2,36],{26:$Vn,29:$Vo,30:$Vp,31:$Vq,32:$Vr,33:$Vs,34:$Vt,35:$Vu,41:$VA,42:$VB,43:$VC,44:$VD,45:$VE,46:$VF,47:$VG,48:$VH,49:$VI}),o([5,6,8,14,18,20,37,39,40,50,51,53,59,60,61,69,71],[2,37],{26:$Vn,29:$Vo,30:$Vp,31:$Vq,32:$Vr,33:$Vs,34:$Vt,35:$Vu,36:$Vv,38:$Vx,41:$VA,42:$VB,43:$VC,44:$VD,45:$VE,46:$VF,47:$VG,48:$VH,49:$VI}),o([5,6,8,14,18,20,37,38,39,40,50,51,53,59,60,61,69,71],[2,38],{26:$Vn,29:$Vo,30:$Vp,31:$Vq,32:$Vr,33:$Vs,34:$Vt,35:$Vu,36:$Vv,41:$VA,42:$VB,43:$VC,44:$VD,45:$VE,46:$VF,47:$VG,48:$VH,49:$VI}),o([5,6,8,14,18,20,39,40,50,51,53,59,60,61,69,71],[2,39],{26:$Vn,29:$Vo,30:$Vp,31:$Vq,32:$Vr,33:$Vs,34:$Vt,35:$Vu,36:$Vv,37:$Vw,38:$Vx,41:$VA,42:$VB,43:$VC,44:$VD,45:$VE,46:$VF,47:$VG,48:$VH,49:$VI}),o([5,6,8,14,18,20,40,50,51,53,59,60,61,69,71],[2,40],{26:$Vn,29:$Vo,30:$Vp,31:$Vq,32:$Vr,33:$Vs,34:$Vt,35:$Vu,36:$Vv,37:$Vw,38:$Vx,39:$Vy,41:$VA,42:$VB,43:$VC,44:$VD,45:$VE,46:$VF,47:$VG,48:$VH,49:$VI}),o($VV,[2,41],{26:$Vn,29:$Vo,30:$Vp,31:$Vq,32:$Vr,33:$Vs,34:$Vt,35:$Vu,45:$VE,46:$VF,47:$VG,48:$VH,49:$VI}),o($VV,[2,42],{26:$Vn,29:$Vo,30:$Vp,31:$Vq,32:$Vr,33:$Vs,34:$Vt,35:$Vu,45:$VE,46:$VF,47:$VG,48:$VH,49:$VI}),o($VV,[2,43],{26:$Vn,29:$Vo,30:$Vp,31:$Vq,32:$Vr,33:$Vs,34:$Vt,35:$Vu,45:$VE,46:$VF,47:$VG,48:$VH,49:$VI}),o($VV,[2,44],{26:$Vn,29:$Vo,30:$Vp,31:$Vq,32:$Vr,33:$Vs,34:$Vt,35:$Vu,45:$VE,46:$VF,47:$VG,48:$VH,49:$VI}),o($VW,[2,45],{26:$Vn,29:$Vo,30:$Vp,31:$Vq,32:$Vr,33:$Vs,34:$Vt,35:$Vu,46:$VF,47:$VG,48:$VH,49:$VI}),o($VX,[2,46],{26:$Vn,29:$Vo,30:$Vp,31:$Vq,32:$Vr,33:$Vs,34:$Vt,35:$Vu}),o($VX,[2,47],{26:$Vn,29:$Vo,30:$Vp,31:$Vq,32:$Vr,33:$Vs,34:$Vt,35:$Vu}),o($VX,[2,48],{26:$Vn,29:$Vo,30:$Vp,31:$Vq,32:$Vr,33:$Vs,34:$Vt,35:$Vu}),o($VX,[2,49],{26:$Vn,29:$Vo,30:$Vp,31:$Vq,32:$Vr,33:$Vs,34:$Vt,35:$Vu}),o([5,6,8,14,18,20,50,51,53,59,60,61,69,71],[2,50],{26:$Vn,29:$Vo,30:$Vp,31:$Vq,32:$Vr,33:$Vs,34:$Vt,35:$Vu,36:$Vv,37:$Vw,38:$Vx,39:$Vy,40:$Vz,41:$VA,42:$VB,43:$VC,44:$VD,45:$VE,46:$VF,47:$VG,48:$VH,49:$VI}),{20:[1,120],26:$Vn,29:$Vo,30:$Vp,31:$Vq,32:$Vr,33:$Vs,34:$Vt,35:$Vu,36:$Vv,37:$Vw,38:$Vx,39:$Vy,40:$Vz,41:$VA,42:$VB,43:$VC,44:$VD,45:$VE,46:$VF,47:$VG,48:$VH,49:$VI,50:$VJ,51:$VK},o($VO,[2,52]),{11:$VL,13:$VM,19:121,21:$VN},{7:122,10:19,11:$V0,13:$V1,17:$V2,21:$V3,26:$V4,27:$V5,28:$V6,52:$V7,54:$V8,55:$V9,56:$Va,57:$Vb,58:$Vc,62:$Vd,63:$Ve,64:$Vf,65:$Vg,67:$Vh,68:$Vi,70:$Vj},{14:[1,123]},{7:124,10:19,11:$V0,13:$V1,17:$V2,21:$V3,26:$V4,27:$V5,28:$V6,52:$V7,54:$V8,55:$V9,56:$Va,57:$Vb,58:$Vc,62:$Vd,63:$Ve,64:$Vf,65:$Vg,67:$Vh,68:$Vi,70:$Vj},o($VO,[2,53]),{7:125,10:19,11:$V0,13:$V1,17:$V2,21:$V3,26:$V4,27:$V5,28:$V6,52:$V7,54:$V8,55:$V9,56:$Va,57:$Vb,58:$Vc,62:$Vd,63:$Ve,64:$Vf,65:$Vg,67:$Vh,68:$Vi,70:$Vj},{4:126,7:3,10:19,11:$V0,13:$V1,17:$V2,21:$V3,26:$V4,27:$V5,28:$V6,52:$V7,54:$V8,55:$V9,56:$Va,57:$Vb,58:$Vc,62:$Vd,63:$Ve,64:$Vf,65:$Vg,67:$Vh,68:$Vi,70:$Vj},o($VP,[2,8]),{14:[1,127],26:$Vn,29:$Vo,30:$Vp,31:$Vq,32:$Vr,33:$Vs,34:$Vt,35:$Vu,36:$Vv,37:$Vw,38:$Vx,39:$Vy,40:$Vz,41:$VA,42:$VB,43:$VC,44:$VD,45:$VE,46:$VF,47:$VG,48:$VH,49:$VI,50:$VJ,51:$VK},o($VP,[2,10]),{14:[1,128],26:$Vn,29:$Vo,30:$Vp,31:$Vq,32:$Vr,33:$Vs,34:$Vt,35:$Vu,36:$Vv,37:$Vw,38:$Vx,39:$Vy,40:$Vz,41:$VA,42:$VB,43:$VC,44:$VD,45:$VE,46:$VF,47:$VG,48:$VH,49:$VI,50:$VJ,51:$VK},o([5,6,8,14,18,20,53,59,60,61,69,71],[2,66],{26:$Vn,29:$Vo,30:$Vp,31:$Vq,32:$Vr,33:$Vs,34:$Vt,35:$Vu,36:$Vv,37:$Vw,38:$Vx,39:$Vy,40:$Vz,41:$VA,42:$VB,43:$VC,44:$VD,45:$VE,46:$VF,47:$VG,48:$VH,49:$VI,50:$VJ,51:$VK}),{18:[1,129]},{6:$Vk,8:$Vl,18:[2,5]},{7:130,10:19,11:$V0,13:$V1,17:$V2,21:$V3,26:$V4,27:$V5,28:$V6,52:$V7,54:$V8,55:$V9,56:$Va,57:$Vb,58:$Vc,62:$Vd,63:$Ve,64:$Vf,65:$Vg,67:$Vh,68:$Vi,70:$Vj},{7:131,10:19,11:$V0,13:$V1,17:$V2,21:$V3,26:$V4,27:$V5,28:$V6,52:$V7,54:$V8,55:$V9,56:$Va,57:$Vb,58:$Vc,62:$Vd,63:$Ve,64:$Vf,65:$Vg,67:$Vh,68:$Vi,70:$Vj},o($VO,[2,69]),o($VP,[2,13]),{7:132,10:19,11:$V0,13:$V1,17:$V2,21:$V3,26:$V4,27:$V5,28:$V6,52:$V7,54:$V8,55:$V9,56:$Va,57:$Vb,58:$Vc,62:$Vd,63:$Ve,64:$Vf,65:$Vg,67:$Vh,68:$Vi,70:$Vj},o($VQ,[2,17]),o($VQ,[2,14],{26:$Vn,29:$Vo,30:$Vp,31:$Vq,32:$Vr,33:$Vs,34:$Vt,35:$Vu,36:$Vv,37:$Vw,38:$Vx,39:$Vy,40:$Vz,41:$VA,42:$VB,43:$VC,44:$VD,45:$VE,46:$VF,47:$VG,48:$VH,49:$VI,50:$VJ,51:$VK}),{20:[1,133]},o($VQ,[2,16],{26:$Vn,29:$Vo,30:$Vp,31:$Vq,32:$Vr,33:$Vs,34:$Vt,35:$Vu,36:$Vv,37:$Vw,38:$Vx,39:$Vy,40:$Vz,41:$VA,42:$VB,43:$VC,44:$VD,45:$VE,46:$VF,47:$VG,48:$VH,49:$VI,50:$VJ,51:$VK}),o($VR,[2,21],{26:$Vn,29:$Vo,30:$Vp,31:$Vq,32:$Vr,33:$Vs,34:$Vt,35:$Vu,36:$Vv,37:$Vw,38:$Vx,39:$Vy,40:$Vz,41:$VA,42:$VB,43:$VC,44:$VD,45:$VE,46:$VF,47:$VG,48:$VH,49:$VI,50:$VJ,51:$VK}),{6:$Vk,8:$Vl,60:[1,134],61:[1,135]},o($VP,[2,9]),o($VP,[2,11]),o($VP,[2,12]),{20:[1,136],26:$Vn,29:$Vo,30:$Vp,31:$Vq,32:$Vr,33:$Vs,34:$Vt,35:$Vu,36:$Vv,37:$Vw,38:$Vx,39:$Vy,40:$Vz,41:$VA,42:$VB,43:$VC,44:$VD,45:$VE,46:$VF,47:$VG,48:$VH,49:$VI,50:$VJ,51:$VK},{26:$Vn,29:$Vo,30:$Vp,31:$Vq,32:$Vr,33:$Vs,34:$Vt,35:$Vu,36:$Vv,37:$Vw,38:$Vx,39:$Vy,40:$Vz,41:$VA,42:$VB,43:$VC,44:$VD,45:$VE,46:$VF,47:$VG,48:$VH,49:$VI,50:$VJ,51:$VK,69:[1,137]},o([5,6,8,14,18,20,51,53,59,60,61,69,71],[2,51],{26:$Vn,29:$Vo,30:$Vp,31:$Vq,32:$Vr,33:$Vs,34:$Vt,35:$Vu,36:$Vv,37:$Vw,38:$Vx,39:$Vy,40:$Vz,41:$VA,42:$VB,43:$VC,44:$VD,45:$VE,46:$VF,47:$VG,48:$VH,49:$VI,50:$VJ}),{7:138,10:19,11:$V0,13:$V1,17:$V2,21:$V3,26:$V4,27:$V5,28:$V6,52:$V7,54:$V8,55:$V9,56:$Va,57:$Vb,58:$Vc,62:$Vd,63:$Ve,64:$Vf,65:$Vg,67:$Vh,68:$Vi,70:$Vj},{4:139,7:3,10:19,11:$V0,13:$V1,17:$V2,21:$V3,26:$V4,27:$V5,28:$V6,52:$V7,54:$V8,55:$V9,56:$Va,57:$Vb,58:$Vc,62:$Vd,63:$Ve,64:$Vf,65:$Vg,67:$Vh,68:$Vi,70:$Vj},o($VO,[2,60]),{7:140,10:19,11:$V0,13:$V1,17:$V2,21:$V3,26:$V4,27:$V5,28:$V6,52:$V7,54:$V8,55:$V9,56:$Va,57:$Vb,58:$Vc,62:$Vd,63:$Ve,64:$Vf,65:$Vg,67:$Vh,68:$Vi,70:$Vj},{7:141,10:19,11:$V0,13:$V1,17:$V2,21:$V3,26:$V4,27:$V5,28:$V6,52:$V7,54:$V8,55:$V9,56:$Va,57:$Vb,58:$Vc,62:$Vd,63:$Ve,64:$Vf,65:$Vg,67:$Vh,68:$Vi,70:$Vj},o($VQ,[2,15],{26:$Vn,29:$Vo,30:$Vp,31:$Vq,32:$Vr,33:$Vs,34:$Vt,35:$Vu,36:$Vv,37:$Vw,38:$Vx,39:$Vy,40:$Vz,41:$VA,42:$VB,43:$VC,44:$VD,45:$VE,46:$VF,47:$VG,48:$VH,49:$VI,50:$VJ,51:$VK}),{6:$Vk,8:$Vl,61:[1,142]},o($VW,[2,67],{26:$Vn,29:$Vo,30:$Vp,31:$Vq,32:$Vr,33:$Vs,34:$Vt,35:$Vu,46:$VF,47:$VG,48:$VH,49:$VI}),o($VW,[2,68],{26:$Vn,29:$Vo,30:$Vp,31:$Vq,32:$Vr,33:$Vs,34:$Vt,35:$Vu,46:$VF,47:$VG,48:$VH,49:$VI}),o($VO,[2,59])],
+defaultActions: {25:[2,1]},
+parseError: function parseError (str, hash) {
+    if (hash.recoverable) {
+        this.trace(str);
+    } else {
+        var error = new Error(str);
+        error.hash = hash;
+        throw error;
+    }
+},
+parse: function parse(input) {
+    var self = this, stack = [0], tstack = [], vstack = [null], lstack = [], table = this.table, yytext = '', yylineno = 0, yyleng = 0, recovering = 0, TERROR = 2, EOF = 1;
+    var args = lstack.slice.call(arguments, 1);
+    var lexer = Object.create(this.lexer);
+    var sharedState = { yy: {} };
+    for (var k in this.yy) {
+        if (Object.prototype.hasOwnProperty.call(this.yy, k)) {
+            sharedState.yy[k] = this.yy[k];
+        }
+    }
+    lexer.setInput(input, sharedState.yy);
+    sharedState.yy.lexer = lexer;
+    sharedState.yy.parser = this;
+    if (typeof lexer.yylloc == 'undefined') {
+        lexer.yylloc = {};
+    }
+    var yyloc = lexer.yylloc;
+    lstack.push(yyloc);
+    var ranges = lexer.options && lexer.options.ranges;
+    if (typeof sharedState.yy.parseError === 'function') {
+        this.parseError = sharedState.yy.parseError;
+    } else {
+        this.parseError = Object.getPrototypeOf(this).parseError;
+    }
+    function popStack(n) {
+        stack.length = stack.length - 2 * n;
+        vstack.length = vstack.length - n;
+        lstack.length = lstack.length - n;
+    }
+    _token_stack:
+        var lex = function () {
+            var token;
+            token = lexer.lex() || EOF;
+            if (typeof token !== 'number') {
+                token = self.symbols_[token] || token;
+            }
+            return token;
+        };
+    var symbol, preErrorSymbol, state, action, a, r, yyval = {}, p, len, newState, expected;
+    while (true) {
+        state = stack[stack.length - 1];
+        if (this.defaultActions[state]) {
+            action = this.defaultActions[state];
+        } else {
+            if (symbol === null || typeof symbol == 'undefined') {
+                symbol = lex();
+            }
+            action = table[state] && table[state][symbol];
+        }
+                    if (typeof action === 'undefined' || !action.length || !action[0]) {
+                var errStr = '';
+                expected = [];
+                for (p in table[state]) {
+                    if (this.terminals_[p] && p > TERROR) {
+                        expected.push('\'' + this.terminals_[p] + '\'');
+                    }
+                }
+                if (lexer.showPosition) {
+                    errStr = 'Parse error on line ' + (yylineno + 1) + ':\n' + lexer.showPosition() + '\nExpecting ' + expected.join(', ') + ', got \'' + (this.terminals_[symbol] || symbol) + '\'';
+                } else {
+                    errStr = 'Parse error on line ' + (yylineno + 1) + ': Unexpected ' + (symbol == EOF ? 'end of input' : '\'' + (this.terminals_[symbol] || symbol) + '\'');
+                }
+                this.parseError(errStr, {
+                    text: lexer.match,
+                    token: this.terminals_[symbol] || symbol,
+                    line: lexer.yylineno,
+                    loc: yyloc,
+                    expected: expected
+                });
+            }
+        if (action[0] instanceof Array && action.length > 1) {
+            throw new Error('Parse Error: multiple actions possible at state: ' + state + ', token: ' + symbol);
+        }
+        switch (action[0]) {
+        case 1:
+            stack.push(symbol);
+            vstack.push(lexer.yytext);
+            lstack.push(lexer.yylloc);
+            stack.push(action[1]);
+            symbol = null;
+            if (!preErrorSymbol) {
+                yyleng = lexer.yyleng;
+                yytext = lexer.yytext;
+                yylineno = lexer.yylineno;
+                yyloc = lexer.yylloc;
+                if (recovering > 0) {
+                    recovering--;
+                }
+            } else {
+                symbol = preErrorSymbol;
+                preErrorSymbol = null;
+            }
+            break;
+        case 2:
+            len = this.productions_[action[1]][1];
+            yyval.$ = vstack[vstack.length - len];
+            yyval._$ = {
+                first_line: lstack[lstack.length - (len || 1)].first_line,
+                last_line: lstack[lstack.length - 1].last_line,
+                first_column: lstack[lstack.length - (len || 1)].first_column,
+                last_column: lstack[lstack.length - 1].last_column
+            };
+            if (ranges) {
+                yyval._$.range = [
+                    lstack[lstack.length - (len || 1)].range[0],
+                    lstack[lstack.length - 1].range[1]
+                ];
+            }
+            r = this.performAction.apply(yyval, [
+                yytext,
+                yyleng,
+                yylineno,
+                sharedState.yy,
+                action[1],
+                vstack,
+                lstack
+            ].concat(args));
+            if (typeof r !== 'undefined') {
+                return r;
+            }
+            if (len) {
+                stack = stack.slice(0, -1 * len * 2);
+                vstack = vstack.slice(0, -1 * len);
+                lstack = lstack.slice(0, -1 * len);
+            }
+            stack.push(this.productions_[action[1]][0]);
+            vstack.push(yyval.$);
+            lstack.push(yyval._$);
+            newState = table[stack[stack.length - 2]][stack[stack.length - 1]];
+            stack.push(newState);
+            break;
+        case 3:
+            return true;
+        }
+    }
+    return true;
+}};
 
-	})();
-	
+    function is_atom( v, typ ) {
+        return null !== v && "object" === typeof( v ) &&
+            "undefined" !== typeof v.__atom &&
+            ( !typ || v.__atom === typ );
+    }
+
+    function atom( t, vs ) {
+        var a = { __atom: t };
+        Object.keys(vs || {}).forEach( function( key ) {
+            a[key] = vs[key];
+        });
+        return a;
+    }
+
+    function D( ...args ) {
+        console.log( ...args );
+    }
+/* generated by jison-lex 0.3.4 */
+var lexer = (function(){
+var lexer = ({
+
+EOF:1,
+
+parseError:function parseError(str, hash) {
+        if (this.yy.parser) {
+            this.yy.parser.parseError(str, hash);
+        } else {
+            throw new Error(str);
+        }
+    },
+
+// resets the lexer, sets new input
+setInput:function (input, yy) {
+        this.yy = yy || this.yy || {};
+        this._input = input;
+        this._more = this._backtrack = this.done = false;
+        this.yylineno = this.yyleng = 0;
+        this.yytext = this.matched = this.match = '';
+        this.conditionStack = ['INITIAL'];
+        this.yylloc = {
+            first_line: 1,
+            first_column: 0,
+            last_line: 1,
+            last_column: 0
+        };
+        if (this.options.ranges) {
+            this.yylloc.range = [0,0];
+        }
+        this.offset = 0;
+        return this;
+    },
+
+// consumes and returns one char from the input
+input:function () {
+        var ch = this._input[0];
+        this.yytext += ch;
+        this.yyleng++;
+        this.offset++;
+        this.match += ch;
+        this.matched += ch;
+        var lines = ch.match(/(?:\r\n?|\n).*/g);
+        if (lines) {
+            this.yylineno++;
+            this.yylloc.last_line++;
+        } else {
+            this.yylloc.last_column++;
+        }
+        if (this.options.ranges) {
+            this.yylloc.range[1]++;
+        }
+
+        this._input = this._input.slice(1);
+        return ch;
+    },
+
+// unshifts one char (or a string) into the input
+unput:function (ch) {
+        var len = ch.length;
+        var lines = ch.split(/(?:\r\n?|\n)/g);
+
+        this._input = ch + this._input;
+        this.yytext = this.yytext.substr(0, this.yytext.length - len);
+        //this.yyleng -= len;
+        this.offset -= len;
+        var oldLines = this.match.split(/(?:\r\n?|\n)/g);
+        this.match = this.match.substr(0, this.match.length - 1);
+        this.matched = this.matched.substr(0, this.matched.length - 1);
+
+        if (lines.length - 1) {
+            this.yylineno -= lines.length - 1;
+        }
+        var r = this.yylloc.range;
+
+        this.yylloc = {
+            first_line: this.yylloc.first_line,
+            last_line: this.yylineno + 1,
+            first_column: this.yylloc.first_column,
+            last_column: lines ?
+                (lines.length === oldLines.length ? this.yylloc.first_column : 0)
+                 + oldLines[oldLines.length - lines.length].length - lines[0].length :
+              this.yylloc.first_column - len
+        };
+
+        if (this.options.ranges) {
+            this.yylloc.range = [r[0], r[0] + this.yyleng - len];
+        }
+        this.yyleng = this.yytext.length;
+        return this;
+    },
+
+// When called from action, caches matched text and appends it on next action
+more:function () {
+        this._more = true;
+        return this;
+    },
+
+// When called from action, signals the lexer that this rule fails to match the input, so the next matching rule (regex) should be tested instead.
+reject:function () {
+        if (this.options.backtrack_lexer) {
+            this._backtrack = true;
+        } else {
+            return this.parseError('Lexical error on line ' + (this.yylineno + 1) + '. You can only invoke reject() in the lexer when the lexer is of the backtracking persuasion (options.backtrack_lexer = true).\n' + this.showPosition(), {
+                text: "",
+                token: null,
+                line: this.yylineno
+            });
+
+        }
+        return this;
+    },
+
+// retain first n characters of the match
+less:function (n) {
+        this.unput(this.match.slice(n));
+    },
+
+// displays already matched input, i.e. for error messages
+pastInput:function () {
+        var past = this.matched.substr(0, this.matched.length - this.match.length);
+        return (past.length > 20 ? '...':'') + past.substr(-20).replace(/\n/g, "");
+    },
+
+// displays upcoming input, i.e. for error messages
+upcomingInput:function () {
+        var next = this.match;
+        if (next.length < 20) {
+            next += this._input.substr(0, 20-next.length);
+        }
+        return (next.substr(0,20) + (next.length > 20 ? '...' : '')).replace(/\n/g, "");
+    },
+
+// displays the character position where the lexing error occurred, i.e. for error messages
+showPosition:function () {
+        var pre = this.pastInput();
+        var c = new Array(pre.length + 1).join("-");
+        return pre + this.upcomingInput() + "\n" + c + "^";
+    },
+
+// test the lexed token: return FALSE when not a match, otherwise return token
+test_match:function(match, indexed_rule) {
+        var token,
+            lines,
+            backup;
+
+        if (this.options.backtrack_lexer) {
+            // save context
+            backup = {
+                yylineno: this.yylineno,
+                yylloc: {
+                    first_line: this.yylloc.first_line,
+                    last_line: this.last_line,
+                    first_column: this.yylloc.first_column,
+                    last_column: this.yylloc.last_column
+                },
+                yytext: this.yytext,
+                match: this.match,
+                matches: this.matches,
+                matched: this.matched,
+                yyleng: this.yyleng,
+                offset: this.offset,
+                _more: this._more,
+                _input: this._input,
+                yy: this.yy,
+                conditionStack: this.conditionStack.slice(0),
+                done: this.done
+            };
+            if (this.options.ranges) {
+                backup.yylloc.range = this.yylloc.range.slice(0);
+            }
+        }
+
+        lines = match[0].match(/(?:\r\n?|\n).*/g);
+        if (lines) {
+            this.yylineno += lines.length;
+        }
+        this.yylloc = {
+            first_line: this.yylloc.last_line,
+            last_line: this.yylineno + 1,
+            first_column: this.yylloc.last_column,
+            last_column: lines ?
+                         lines[lines.length - 1].length - lines[lines.length - 1].match(/\r?\n?/)[0].length :
+                         this.yylloc.last_column + match[0].length
+        };
+        this.yytext += match[0];
+        this.match += match[0];
+        this.matches = match;
+        this.yyleng = this.yytext.length;
+        if (this.options.ranges) {
+            this.yylloc.range = [this.offset, this.offset += this.yyleng];
+        }
+        this._more = false;
+        this._backtrack = false;
+        this._input = this._input.slice(match[0].length);
+        this.matched += match[0];
+        token = this.performAction.call(this, this.yy, this, indexed_rule, this.conditionStack[this.conditionStack.length - 1]);
+        if (this.done && this._input) {
+            this.done = false;
+        }
+        if (token) {
+            return token;
+        } else if (this._backtrack) {
+            // recover context
+            for (var k in backup) {
+                this[k] = backup[k];
+            }
+            return false; // rule action called reject() implying the next rule should be tested instead.
+        }
+        return false;
+    },
+
+// return next match in input
+next:function () {
+        if (this.done) {
+            return this.EOF;
+        }
+        if (!this._input) {
+            this.done = true;
+        }
+
+        var token,
+            match,
+            tempMatch,
+            index;
+        if (!this._more) {
+            this.yytext = '';
+            this.match = '';
+        }
+        var rules = this._currentRules();
+        for (var i = 0; i < rules.length; i++) {
+            tempMatch = this._input.match(this.rules[rules[i]]);
+            if (tempMatch && (!match || tempMatch[0].length > match[0].length)) {
+                match = tempMatch;
+                index = i;
+                if (this.options.backtrack_lexer) {
+                    token = this.test_match(tempMatch, rules[i]);
+                    if (token !== false) {
+                        return token;
+                    } else if (this._backtrack) {
+                        match = false;
+                        continue; // rule action called reject() implying a rule MISmatch.
+                    } else {
+                        // else: this is a lexer rule which consumes input without producing a token (e.g. whitespace)
+                        return false;
+                    }
+                } else if (!this.options.flex) {
+                    break;
+                }
+            }
+        }
+        if (match) {
+            token = this.test_match(match, rules[index]);
+            if (token !== false) {
+                return token;
+            }
+            // else: this is a lexer rule which consumes input without producing a token (e.g. whitespace)
+            return false;
+        }
+        if (this._input === "") {
+            return this.EOF;
+        } else {
+            return this.parseError('Lexical error on line ' + (this.yylineno + 1) + '. Unrecognized text.\n' + this.showPosition(), {
+                text: "",
+                token: null,
+                line: this.yylineno
+            });
+        }
+    },
+
+// return next match that has a token
+lex:function lex () {
+        var r = this.next();
+        if (r) {
+            return r;
+        } else {
+            return this.lex();
+        }
+    },
+
+// activates a new lexer condition state (pushes the new lexer condition state onto the condition stack)
+begin:function begin (condition) {
+        this.conditionStack.push(condition);
+    },
+
+// pop the previously active lexer condition state off the condition stack
+popState:function popState () {
+        var n = this.conditionStack.length - 1;
+        if (n > 0) {
+            return this.conditionStack.pop();
+        } else {
+            return this.conditionStack[0];
+        }
+    },
+
+// produce the lexer rule set which is active for the currently active lexer condition state
+_currentRules:function _currentRules () {
+        if (this.conditionStack.length && this.conditionStack[this.conditionStack.length - 1]) {
+            return this.conditions[this.conditionStack[this.conditionStack.length - 1]].rules;
+        } else {
+            return this.conditions["INITIAL"].rules;
+        }
+    },
+
+// return the currently active lexer condition state; when an index argument is provided it produces the N-th previous condition state, if available
+topState:function topState (n) {
+        n = this.conditionStack.length - 1 - Math.abs(n || 0);
+        if (n >= 0) {
+            return this.conditionStack[n];
+        } else {
+            return "INITIAL";
+        }
+    },
+
+// alias for begin(condition)
+pushState:function pushState (condition) {
+        this.begin(condition);
+    },
+
+// return the number of states currently on the stack
+stateStackSize:function stateStackSize() {
+        return this.conditionStack.length;
+    },
+options: {},
+performAction: function anonymous(yy,yy_,$avoiding_name_collisions,YY_START) {
+var YYSTATE=YY_START;
+switch($avoiding_name_collisions) {
+case 0: /* skip comment */ 
+break;
+case 1: /* skip whitespace */ 
+break;
+case 2: /* skip */ 
+break;
+case 3: /* skip */ 
+break;
+case 4: return 6; 
+break;
+case 5: return 8; 
+break;
+case 6: return 62; 
+break;
+case 7: return 63; 
+break;
+case 8: return 64; 
+break;
+case 9: return 68; 
+break;
+case 10: return 69; 
+break;
+case 11: return 67; 
+break;
+case 12: return 65; 
+break;
+case 13: return 58; 
+break;
+case 14: return 59; 
+break;
+case 15: return 60; 
+break;
+case 16: return 61; 
+break;
+case 17: return 45; 
+break;
+case 18: return 71; 
+break;
+case 19: return 70; 
+break;
+case 20: return 39; 
+break;
+case 21: return 40; 
+break;
+case 22: return 27; 
+break;
+case 23: return 21; 
+break;
+case 24: return 21; 
+break;
+case 25: return 21; 
+break;
+case 26: return 11; 
+break;
+case 27:return 54; 
+break;
+case 28: return 55; 
+break;
+case 29: return 56; 
+break;
+case 30: return 57; 
+break;
+case 31: return 20; 
+break;
+case 32: return 29; 
+break;
+case 33:return 30;
+break;
+case 34:return 31;
+break;
+case 35: return 32; 
+break;
+case 36:return 26;
+break;
+case 37:return 33;
+break;
+case 38: return 34; 
+break;
+case 39: return 35; 
+break;
+case 40: return 47; 
+break;
+case 41: return 49; 
+break;
+case 42: return 46; 
+break;
+case 43: return 48; 
+break;
+case 44: return 43; 
+break;
+case 45: return 41; 
+break;
+case 46: return 44; 
+break;
+case 47: return 42; 
+break;
+case 48: return 42; 
+break;
+case 49:return 38;
+break;
+case 50: return 39; 
+break;
+case 51: return 40; 
+break;
+case 52: return 27; 
+break;
+case 53: return 36; 
+break;
+case 54: return 37; 
+break;
+case 55: return 28; 
+break;
+case 56: return 50; 
+break;
+case 57: return 15; 
+break;
+case 58: return 16; 
+break;
+case 59: return 51; 
+break;
+case 60: return 66; 
+break;
+case 61: return 12; 
+break;
+case 62: return 13; 
+break;
+case 63: return 14; 
+break;
+case 64:return 17;
+break;
+case 65:return 18;
+break;
+case 66:return 52;
+break;
+case 67:return 53;
+break;
+case 68:return 5;
+break;
+}
+},
+rules: [/^(?:#[^\n]*)/,/^(?:\s+)/,/^(?:\r)/,/^(?:\n)/,/^(?:,)/,/^(?:;)/,/^(?:true\b)/,/^(?:false\b)/,/^(?:null\b)/,/^(?:first\b)/,/^(?:with\b)/,/^(?:each\b)/,/^(?:NaN\b)/,/^(?:if\b)/,/^(?:then\b)/,/^(?:else\b)/,/^(?:endif\b)/,/^(?:in\b)/,/^(?:done\b)/,/^(?:do\b)/,/^(?:and\b)/,/^(?:or\b)/,/^(?:not\b)/,/^(?:"[^"]*")/,/^(?:'[^']*')/,/^(?:`[^`]*`)/,/^(?:[A-Za-z_$][A-Za-z0-9_$]*\b)/,/^(?:[0-9]+(\.[0-9]+)?([eE][+-]?[0-9]+)?\b)/,/^(?:0x[0-9A-Fa-f]+\b)/,/^(?:0o[0-7]+\b)/,/^(?:0b[01]+\b)/,/^(?::)/,/^(?:\*\*)/,/^(?:\*)/,/^(?:\/)/,/^(?:%)/,/^(?:-)/,/^(?:\+)/,/^(?:<<)/,/^(?:>>)/,/^(?:<=)/,/^(?:>=)/,/^(?:<)/,/^(?:>)/,/^(?:===)/,/^(?:==)/,/^(?:!==)/,/^(?:!=)/,/^(?:<>)/,/^(?:\^)/,/^(?:&&)/,/^(?:\|\|)/,/^(?:!)/,/^(?:&)/,/^(?:\|)/,/^(?:~)/,/^(?:\?\?)/,/^(?:\?\.)/,/^(?:\?\[)/,/^(?:\?)/,/^(?:=)/,/^(?:\.)/,/^(?:\[)/,/^(?:\])/,/^(?:\()/,/^(?:\))/,/^(?:\{)/,/^(?:\})/,/^(?:$)/],
+conditions: {"INITIAL":{"rules":[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68],"inclusive":true}}
 });
+return lexer;
+})();
+parser.lexer = lexer;
+function Parser () {
+  this.yy = {};
+}
+Parser.prototype = parser;parser.Parser = Parser;
+return new Parser;
+})();
+/* --------------------------------- lexp executive ------------------------------- */
+
+    const nativeFuncs = {
+          abs       : { nargs: 1, impl: (v) => v >= 0 ? v : -v }
+        , sign      : { nargs: 1, impl: Math.sign }
+        , floor     : { nargs: 1, impl: Math.floor }
+        , ceil      : { nargs: 1, impl: Math.ceil }
+        , round     : { nargs: 2, impl: function( n, p ) { return Math.round( n * Math.pow(10, p || 0) ) / Math.pow(10, p || 0); } }
+        , trunc     : { nargs: 1, impl: Math.trunc }
+        , cos       : { nargs: 1, impl: Math.cos }
+        , sin       : { nargs: 1, impl: Math.sin }
+        , tan       : { nargs: 1, impl: Math.tan }
+        , log       : { nargs: 1, impl: Math.log }
+        , exp       : { nargs: 1, impl: Math.exp }
+        , pow       : { nargs: 2, impl: Math.pow }
+        , sqrt      : { nargs: 1, impl: Math.sqrt }
+        , random    : { nargs: 0, impl: Math.random }
+        , min       : { nargs: 2, impl: Math.min } /* ??? should take arrays, too */
+        , max       : { nargs: 2, impl: Math.max } /* ??? should take arrays, too */
+        , len       : { nargs: 1, impl: (s) => s.length }
+        , substr    : { nargs: 2, impl: function( s, p, l ) { s = String(s); if (l==undefined) l=s.length; return s.substr(p,l); } }
+        , upper     : { nargs: 1, impl: (s) => String(s).toUpperCase() }
+        , lower     : { nargs: 1, impl: (s) => String(s).toLowerCase() }
+        , match     : { nargs: 2, impl: function( s, p, n ) { var r = String(s).match( p ); return ( r === null ) ? null : r[n || 0]; } }
+        , find      : { nargs: 2, impl: function( s, p ) { var r = String(s).match( p ); return ( r === null ) ? -1 : r.index; } }
+        , replace   : { nargs: 3, impl: function( s, p, r ) { return String(s).replace( p, r ); } }
+        , rtrim     : { nargs: 1, impl: (s) => String(s).replace( /\s+$/, "" ) }
+        , ltrim     : { nargs: 1, impl: (s) => String(s).replace( /^\s+/, "" ) }
+        , trim      : { nargs: 1, impl: (s) => String(s).trim() }
+        , split     : { nargs: 2, impl: (s,p,n) => String(s).split( p, n ) }
+        , "int"     : { nargs: 1, impl: parseInt }
+        , "float"   : { nargs: 1, impl: parseFloat }
+        , "bool"    : { nargs: 1, impl: function( s ) { return ! ( s === 0 || s === false || s === "" || null !== String(s).match( /^\s*(0|no|off|false)\s*$/i ) ); } }
+        , str       : { nargs: 1, impl: (s) => String(s) }
+        , time      : { nargs: 0, impl: (...args) => new Date(...args).getTime() }
+        , dateparts : { nargs: 0, impl: function( t ) { var d = new Date(t); return { year: d.getFullYear(), month: d.getMonth()+1, day: d.getDate(),
+            hour: d.getHours(), minute: d.getMinutes(), second: d.getSeconds(), weekday: d.getDay() }; } }
+        , "isNaN"   : { nargs: 1, impl: (n) => Number.isNaN(n) }
+        , isnull    : { nargs: 1, impl: (s) => "undefined" === typeof s || null === s }
+        , keys      : { nargs: 1, impl: Object.keys }
+        , values    : { nargs: 1, impl: Object.values }
+        , join      : { nargs: 2, impl: (a,s) => a.join(s) }
+        , list      : { nargs: 0, impl: function( ...args ) { return args; } }
+        , indexOf   : { nargs: 2, impl: (a,el) => a.indexOf( el ) }
+        , isArray   : { nargs: 1, impl: Array.isArray }
+        , isObject  : { nargs: 1, impl: (p) => "object" === typeof p && null !== p }
+        , toJSON    : { nargs: 1, impl: JSON.stringify }
+        , parseJSON : { nargs: 1, impl: JSON.parse }
+/* FUTURE:
+        , select: (see find below)
+        , format:
+        , map:
+        , reduce:
+        , every:
+        , some:
+        , pop:
+        , push:
+        , shift:
+        , unshift:
+        , sort:
+        , concat:
+        , filter:
+        , find:
+        , slice:
+        , splice:
+        , dateadd
+        , hsltorgb
+        , rgbtohsl
+*/
+    };
+
+    var D = function() {}; /* console.log; /* */
+
+    var run = function( ce, ctx ) {
+        ctx = ctx || {};
+
+        function is_atom( v, typ ) {
+            return null !== v && "object" === typeof( v ) &&
+                "undefined" !== typeof v.__atom &&
+                ( !typ || v.__atom === typ );
+        }
+
+        function N( v ) {
+            return "undefined" === typeof v ? null : v;
+        }
+
+        /* Resolve a VREF atom */
+        function _resolve( a ) {
+            /* Scope priority: local, context, external resolver */
+            var res;
+            if ( "undefined" !== typeof (ctx.__lvar || {})[a.name] ) {
+                res = ctx.__lvar[a.name];
+            } else if ( "undefined" !== typeof ctx[a.name] ) {
+                res = ctx[a.name];
+            } else if ( "function" === typeof (ctx._func || {})._resolve ) {
+                res = ctx._func._resolve( a.name, ctx );
+            }
+            return N(res);
+        }
+
+        function _run( e ) {
+            if ( !is_atom( e ) ) {
+                if ( Array.isArray( e ) ) {
+                    /* Run each element within array */
+                    let n = e.length;
+                    for ( let k=0; k<n; ++k ) {
+                        e[k] = _run( e[k] );
+                    }
+                    return e;
+                }
+                /* ??? Do we need to treet object like array? */
+                return e; /* return primitive as it is. */
+            } else {
+                /* Handle atom */
+                if ( is_atom( e, 'list' ) ) {
+                    let v = null;
+                    e.expr.forEach( function( se ) {
+                        v = _run( se );
+                    });
+                    return N(v);
+                } else if ( is_atom( e, 'vref' ) ) {
+                    return N( _resolve( e ) );
+                } else if ( is_atom( e, 'binop' ) ) {
+                    var v2 = e.v2;
+                    var v1 = e.v1;
+                    var v1eval, v2eval;
+                    if ( "=" !== e.op ) {
+                        v1eval = _run( v1 );
+                    }
+                    if ( e.op !== "&&" && e.op !== "||" && e.op !== '&&' ) {
+                        v2eval = _run( v2 );
+                    }
+                    D("binop v1=",v1,", v1eval=",v1eval,", v2=",v2,", v2eval=",v2);
+                    if (e.op == '+') {
+                        // Special case for plus (+): if either operand is string, treat as concat
+                        if (typeof v1eval == "string" || typeof v2eval == "string")
+                            v1eval = v1eval.toString() + v2eval.toString();
+                        else
+                            v1eval += v2eval;
+                    }
+                    else if (e.op == '-')
+                        v1eval -= v2eval;
+                    else if (e.op == '*')
+                        v1eval *= v2eval;
+                    else if (e.op == '/')
+                        v1eval /= v2eval;
+                    else if (e.op == '**')
+                        v1eval = v1eval**v2eval;
+                    else if (e.op == '%')
+                        v1eval %= v2eval;
+                    else if (e.op == '&')
+                        v1eval &= v2eval;
+                    else if (e.op == '|')
+                        v1eval |= v2eval;
+                    else if (e.op == '^')
+                        v1eval ^= v2eval;
+                    else if (e.op == '>')
+                        v1eval = v1eval > v2eval;
+                    else if (e.op == '>=')
+                        v1eval = v1eval >= v2eval;
+                    else if (e.op == '<')
+                        v1eval = v1eval < v2eval;
+                    else if (e.op == '<=')
+                        v1eval = v1eval <= v2eval;
+                    else if (e.op == '==')
+                        v1eval = v1eval == v2eval;
+                    else if (e.op == '===')
+                        v1eval = v1eval === v2eval;
+                    else if (e.op == '!=')
+                        v1eval = v1eval != v2eval;
+                    else if (e.op == '!==')
+                        v1eval = v1eval !== v2eval;
+                    else if (e.op == '<<' )
+                        v1eval = v1eval << v2eval;
+                    else if (e.op == '>>' )
+                        v1eval = v1eval >> v2eval;
+                    else if (e.op == '&&') {
+                        /* short-cut evaluation */
+                        v1eval = v1eval ? _run( v2 ) : false;
+                    } else if (e.op == '||') {
+                        /* short-cut evaluation */
+                        v1eval = v1eval ? true : _run( v2 );
+                    } else if (e.op == 'in' )
+                        v1eval = v1eval in v2eval;
+                    else if (e.op == '??' )
+                        v1eval = ( null === N(v1eval) ) ? _run( v2 ) : v1eval;
+                    else if (e.op == '=' ) {
+                        /* Assignment */
+                        if ( ! is_atom( v1, 'vref' ) ) {
+                            throw new SyntaxError("Invalid assignment target");
+                        }
+                        if ( ! ( ctx.__lvar && "object" === typeof ctx.__lvar ) ) {
+                            throw new Error("Assignments not permitted here; or did you mean to use \"==\" ?");
+                        }
+D("run() assign",v2eval,"to",v1.name);
+                        ctx.__lvar[v1.name] = v2eval;
+                        return v2eval;
+                    } else {
+                        console.log( e );
+                        throw new Error('BUG: unsupported op in compiled expression: ' + e.op);
+                    }
+                    return v1eval;
+                } else if ( is_atom( e, 'unop' ) ) {
+                    var veval = _run( e.val );
+                    if (e.op == '-')
+                        veval = -veval;
+                    else if (e.op == '!')
+                        veval = !veval;
+                    else if (e.op == '~')
+                        veval = ~veval;
+                    else
+                        throw new Error('BUG: unsupported unop in compiled expression: ' + e.op);
+                    return veval;
+                } else if ( is_atom( e, 'deref' ) ) {
+                    var scope = _run( e.context );
+                    /* Watch for null-conditional operators */
+                    if ( ( e.op === '?.' || e.op == '?[' ) && scope === null ) {
+                        return null;
+                    }
+                    if ( "object" !== typeof scope || null === scope ) {
+                        throw new ReferenceError("Invalid reference to member "+String(e.member)+" of "+String(scope));
+                    }
+                    var member = _run( e.member );
+                    /* ??? member must be primitive? */
+                    var res = scope[ member ];
+                    return N(res);
+                } else if ( is_atom( e, 'if' ) ) {
+                    /* Special short-cut function */
+                    var cond = _run( e.test );
+                    var ifresult;
+                    if ( cond ) {
+                        ifresult = _run( e.tc );
+                    } else if ( "undefined" !== typeof e.fc ) {
+                        ifresult = _run( e.fc );
+                    } else {
+                        ifresult = null;
+                    }
+                    return N(ifresult);
+                } else if ( is_atom( e, 'fref' ) ) {
+                    D('function ref ' + e.name + ' with ' + e.args.length + ' args');
+                    var name = e.name;
+                    var impl = undefined;
+                    if ( nativeFuncs[name] ) {
+                        // Native function implementation
+                        impl = nativeFuncs[name].impl;
+                    } else if ( ctx._func && "function" === typeof ctx._func[name] ) {
+                        // Attached to context
+                        impl = ctx._func[name];
+                    } else {
+                        throw new ReferenceError('Undefined function: ' + name);
+                    }
+
+                    // Build argument list.
+                    var a = [];
+                    e.args.forEach( function( se ) {
+                        a.push( _run( se ) );
+                    });
+                    var r = impl.apply( null, a );
+                    return N(r);
+                } else if ( is_atom( e, 'iter' ) ) {
+                    ctx.__lvar = ctx.__lvar || {};
+                    var context = _run( e.context );
+                    var res = [];
+                    // D(e);
+                    // D("Iterate over",context,"using",e.ident,"apply",e.exec);
+                    if ( ! Array.isArray( context ) ) {
+                        if ( "object" !== typeof context ) {
+                            context = [ context ];
+                        } else {
+                            context = Object.values( context );
+                        }
+                    }
+                    context.forEach( element => {
+                        // D("Assigning",element,"to",e.ident);
+                        ctx.__lvar[ e.ident ] = element;
+                        let v = _run( e.exec );
+                        // D("result",v);
+                        if ( v !== null ) {
+                            res.push( v );
+                        }
+                    });
+                    return res;
+                } else if ( is_atom( e, 'search' ) ) {
+                    ctx.__lvar = ctx.__lvar || {};
+                    var context = _run( e.context );
+                    var res = null
+                    // D(e);
+                    // D("Search",context,"using",e.ident,"for",e.exec);
+                    if ( ! Array.isArray( context ) ) {
+                        if ( "object" !== typeof context ) {
+                            context = [ context ];
+                        } else {
+                            context = Object.values( context );
+                        }
+                    } else {
+                        context = { ...context };
+                    }
+                    while ( context.length > 0 ) {
+                        let element = context.shift();
+                        // D("Assigning",element,"to",e.ident);
+                        ctx.__lvar[ e.ident ] = element;
+                        let v = _run( e.exec );
+                        if ( !!v ) {
+                            res = element;
+                            break;
+                        }
+                    }
+                    return res;
+                } else {
+                    D("BUG: unsupported atom:", e);
+                    throw new Error('BUG: unsupported atom ' + String(e.__atom));
+                }
+            }
+        } /* function _run() */
+
+        D("lexp.run()", ce, ctx);
+        var result = _run( ce );
+        D("lexp.run() finished with", result);
+        return result;
+    };
+
+    return {
+        version: version,
+        compile: function( expr ) {
+            return parser.parse( expr );
+        },
+        run: run,
+        evaluate: function( expr, context ) {
+            return run( parser.parse( expr ), context );
+        }
+    };
+}));
