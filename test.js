@@ -10,6 +10,9 @@ var ctx = {
             power_switch: {
                 state: true
             },
+            position: {
+                level: 0.1
+            },
             volume: {
                 level: 0.25
             }
@@ -173,7 +176,7 @@ var test_expr = [
     , { expr: "each item in keys(entity.attributes): item + '=' + entity.attributes[item]" }
     , { expr: "t=each item in 'hello': item + ' there', t?[0]", expect: "hello there" }
     , { expr: "t=0; each item in arr: do t=t+1; null done; t", expect: 2 }
-    , { expr: "(first item in entity.attributes with !isnull(item?.level)).level == 0.25", expect: true }
+    , { expr: "(first item in entity.attributes with !isnull(item?.level)).level == 0.1", expect: true }
 
     /* misc */
     , { expr: "1 ?? 0 & 4" }
@@ -185,6 +188,9 @@ var test_expr = [
     , { expr: "time(2021,1,17)", expect: new Date(2021,1,17).getTime() }
     , { expr: "min( 1, entity.attributes.volume.level - ( parameters.amount ?? 0.05 ) )" }
     , { expr: "t='off',({off:'OFF',on:'ON'})[t]", expect: "OFF" }
+    , { expr: "first item in entity.attributes with (item?.level ?? 0) > 0.2" }
+    , { expr: "modes={home:{hm:1,ac:'home'},away:{hm:2,ac:'away'},sleep:{hm:3,ac:'sleep'},smart1:{hm:4,ac:'smart1'}}, \
+               (first item in modes with item.hm == 2).ac", expect: 'away' }
 ];
 
 var exp = '"Hello",{},{alpha:1,beta:2,["not.valid.name"]:3},t=[9,5,1],join(t,"::"),time(),x=2*y=2*z=3,x,y,z,(9)';

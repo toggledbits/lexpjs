@@ -1,6 +1,6 @@
 /* Ref: https://github.com/umdjs/umd */
 
-const version = 21047;
+const version = 21074;
 
 (function (root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -130,8 +130,13 @@ const version = 21047;
                         e[k] = _run( e[k] );
                     }
                     return e;
+                } else if ( null !== e && "object" === typeof e ) {
+                    for ( let key in e ) {
+                        if ( e.hasOwnProperty( key ) ) {
+                            e[ key ] = _run( e[ key ] );
+                        }
+                    }
                 }
-                /* ??? Do we need to treet object like array? */
                 return e; /* return primitive as it is. */
             } else {
                 /* Handle atom */
@@ -215,7 +220,7 @@ const version = 21047;
                         if ( ! ( ctx.__lvar && "object" === typeof ctx.__lvar ) ) {
                             throw new Error("Assignments not permitted here; or did you mean to use \"==\" ?");
                         }
-D("run() assign",v2eval,"to",v1.name);
+// D("run() assign",v2eval,"to",v1.name);
                         ctx.__lvar[v1.name] = v2eval;
                         return v2eval;
                     } else {
@@ -245,7 +250,7 @@ D("run() assign",v2eval,"to",v1.name);
                     }
                     var member = _run( e.member );
                     /* ??? member must be primitive? */
-                    var res = scope[ member ];
+                    var res = _run( scope[ member ] );
                     return N(res);
                 } else if ( is_atom( e, 'if' ) ) {
                     /* Special short-cut function */

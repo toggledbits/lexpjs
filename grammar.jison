@@ -82,6 +82,7 @@
 /* Operator associativity and precedence */
 
 %right ASSIGN
+%right FIRST EACH IN WITH
 %left '?'
 %left COLON
 %left COALESCE
