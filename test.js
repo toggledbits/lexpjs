@@ -181,6 +181,14 @@ var test_expr = [
     , { expr: "round(3.14159265,3)", expect: 3.142 }
     , { expr: "round(-1.9)", expect: -2 }
     , { expr: "round(-1.3)", expect: -1 }
+    , { expr: "time(2021,1,17)", expect: new Date(2021,0,17).getTime() }    /* Assumes FEATURE_MONTH_BASE == 1 (default) */
+    , { expr: "dateparts(time(2021,1,17,3,4,5)).year", expect: 2021 }
+    , { expr: "dateparts(time(2021,1,17,3,4,5)).month", expect: 1 }
+    , { expr: "dateparts(time(2021,1,17,3,4,5)).day", expect: 17 }
+    , { expr: "dateparts(time(2021,1,17,3,4,5)).hour", expect: 3 }
+    , { expr: "dateparts(time(2021,1,17,3,4,5)).minute", expect: 4 }
+    , { expr: "dateparts(time(2021,1,17,3,4,5)).second", expect: 5 }
+    , { expr: "dateparts(time(2021,2,16,12,0,0)).weekday", expect: 2 }
 
     /* Conditional */
     , { expr: "if entity.attributes.power_switch.state then 1 else 0 endif", expect: 1 }
@@ -203,7 +211,6 @@ var test_expr = [
     , { expr: "'nice' # this is a comment", expect: "nice" }
     , { expr: "# this is a comment\n'hello'", expect: "hello" }
     , { expr: "([1,2,3])[1]", expect: 2 }
-    , { expr: "time(2021,1,17)", expect: new Date(2021,1,17).getTime() }
     , { expr: "min( 1, entity.attributes.volume.level - ( parameters.amount ?? 0.05 ) )" }
     , { expr: "t='off',({off:'OFF',on:'ON'})[t]", expect: "OFF" }
     , { expr: "first item in entity.attributes with (item?.level ?? 0) > 0.2" }
