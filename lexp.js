@@ -1,4 +1,4 @@
-/* Version 21074.1321 */
+/* Version 21075.1419 */
 /* Ref: https://github.com/umdjs/umd */
 
 const version = 21074;
@@ -914,7 +914,7 @@ return new Parser;
         , "bool"    : { nargs: 1, impl: function( s ) { return ! ( s === 0 || s === false || s === "" || null !== String(s).match( /^\s*(0|no|off|false)\s*$/i ) ); } }
         , str       : { nargs: 1, impl: (s) => String(s) }
         , time      : { nargs: 0, impl: (...args) => new Date(...args).getTime() }
-        , dateparts : { nargs: 0, impl: function( t ) { var d = new Date(t); return { year: d.getFullYear(), month: d.getMonth()+1, day: d.getDate(),
+        , dateparts : { nargs: 0, impl: function( t ) { var d = new Date(t); return { year: d.getFullYear(), month: d.getMonth(), day: d.getDate(),
             hour: d.getHours(), minute: d.getMinutes(), second: d.getSeconds(), weekday: d.getDay() }; } }
         , "isNaN"   : { nargs: 1, impl: (n) => Number.isNaN(n) }
         , isnull    : { nargs: 1, impl: (s) => "undefined" === typeof s || null === s }
@@ -1013,7 +1013,7 @@ return new Parser;
                     if ( "=" !== e.op ) {
                         v1eval = _run( v1 );
                     }
-                    if ( e.op !== "&&" && e.op !== "||" && e.op !== '&&' ) {
+                    if ( e.op !== "&&" && e.op !== "||" && e.op !== '??' ) {
                         v2eval = _run( v2 );
                     }
                     D("binop v1=",v1,", v1eval=",v1eval,", v2=",v2,", v2eval=",v2);
@@ -1062,15 +1062,15 @@ return new Parser;
                         v1eval = v1eval >> v2eval;
                     else if (e.op == '&&') {
                         /* short-cut evaluation */
-                        v1eval = v1eval ? _run( v2 ) : false;
+                        v1eval = v1eval && _run( v2 );
                     } else if (e.op == '||') {
                         /* short-cut evaluation */
-                        v1eval = v1eval ? true : _run( v2 );
-                    } else if (e.op == 'in' )
+                        v1eval = v1eval || _run( v2 );
+                    } else if (e.op == 'in' ) {
                         v1eval = v1eval in v2eval;
-                    else if (e.op == '??' )
+                    } else if (e.op == '??' ) {
                         v1eval = ( null === N(v1eval) ) ? _run( v2 ) : v1eval;
-                    else if (e.op == '=' ) {
+                    } else if (e.op == '=' ) {
                         /* Assignment */
                         if ( ! is_atom( v1, 'vref' ) ) {
                             throw new SyntaxError("Invalid assignment target");

@@ -90,10 +90,16 @@ var test_expr = [
     , { expr: "true && false", expect: false }
     , { expr: "false && true", expect: false }
     , { expr: "false && false", expect: false }
+    , { expr: "99 && 44", expect: 44 }
+    , { expr: "56 && 0", expect: 0 }
+    , { expr: "0 && 55", expect: 0 }
     , { expr: "true || true", expect: true }
     , { expr: "true || false", expect: true }
     , { expr: "false || true", expect: true }
     , { expr: "false || false", expect: false }
+    , { expr: "0 || 47", expect: 47 }
+    , { expr: "43 || 0", expect: 43 }
+    , { expr: "44 || 33", expect: 44 }
     , { expr: "!true", expect: false }
     , { expr: "!false", expect: true }
     , { expr: "true and true", expect: true }
@@ -117,11 +123,23 @@ var test_expr = [
     , { expr: "123 ?? 456", expect: 123 }
     , { expr: "123 ?? null", expect: 123 }
     , { expr: "null ?? 456", expect: 456 }
+    , { expr: "t=0, 123 ?? (t=456)", expect: 123 }		/* test shortcut eval */
+    , { expr: "t=0, 123 ?? (t=456), t", expect: 0 }		/* test shortcut eval */
+    , { expr: "t=0, null ?? (t=456)", expect: 456 }		/* test shortcut eval */
+    , { expr: "t=0, null ?? (t=456), t", expect: 456 }	/* test shortcut eval */
     , { expr: "true ? 123 : 456", expect: 123 }
     , { expr: "false ? 123 : 456", expect: 456 }
     , { expr: "[1,2,3]", Xxpect: [1,2,3] }
     , { expr: "{ alpha: 1, beta: 2, gamma: 3 }", Xxpect: { alpha: 1, beta: 2, gamma: 3 } }
     , { expr: "{ 'first': 'a', ['strange id']: 'b', 'Another Strange ID': 'voodoo' }", Xxpect: {} }
+
+    , { expr: "1 in [ 5,6,4 ]", expect: true }	/* JS semantics: 1 is valid array index and existing member */
+    , { expr: "4 in [ 5,6,4 ]", expect: false }	/* JS semantics: 4 is not valid array index/existing */
+    , { expr: "1 in { one: 1, two: 2 }", expect: false }	/* in inspects keys, not values */
+    , { expr: "2 in { one: 1, two: 2 }", expect: false }
+    , { expr: "'one' in { one: 1, two: 2 }", expect: true }
+    , { expr: "'two' in { one: 1, two: 2 }", expect: true }
+    , { expr: "'three' in { one: 1, two: 2 }", expect: false }
 
     /* Assignment test, two steps */
     , { expr: "t = 'soul stone'", expect: "soul stone" }

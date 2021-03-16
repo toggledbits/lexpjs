@@ -203,6 +203,8 @@ The *ternary operator* pair `? :` common to C, C++ and Java (and others) is avai
 
 The *coalesce operators*, borrowed from C#, are `??`, `?.` and `?[`. Coalesce operators help handle *null* values in the middle of complex expressions more gracefully. For example, `value ?? 0` will result in the value of the variable `value` if it is not *null*, but if it is *null*, will yield 0. Similarly, if an identifier `struct` is intended to hold an object, but turns out to be *null*, a reference to `struct.name` in an expression would throw a runtime evaluation error; using `struct?.name` will instead result in *null* with no exception thrown. This is convenient because you can carry it `down.?a.?long.?list.?of.?member.?names` without crashing if something is undefined. Likewise if `beans` was intended to be an array but ended up *null*, the expression `beans[2]` would throw an error, while `beans?[2]` would result in *null*.
 
+The `in` operator is used to establish if an object contains a specified key (e.g. `key in obj`) or an array contains an element at the given index (e.g. `15 in arr`). It is important to note that this operator works on *keys* only, not values, and in particular, cannot be used to search an array for a value (i.e. `4 in [ 4, 5, 6 ]` is *false*). To find an array element, use the `indexOf()` function. The `first` statement can be used to find a value in an object.
+
 Multiple expressions can be chained together by separating them with a comma. The result of a chained expression is the last expression evaluated.
 
 The operators, in order of precedence from lowest to highest, are:
@@ -217,6 +219,7 @@ The operators, in order of precedence from lowest to highest, are:
 * `^` (bitwise XOR)
 * `&` (bitwise AND)
 * `==`, `===`, `!=`, `!==` (equality/inequality, non-associative)
+* `in` (presence of key/index in object/array, non-associative)
 * `<`, `<=`, `>`, `>=` (comparison, non-associative)
 * `<<`, `>>` (bit shift)
 * `+`, `-`
