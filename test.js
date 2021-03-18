@@ -43,9 +43,12 @@ var test_expr = [
     , { expr: "-4.88", expect: -4.88 }
     , { expr: "1e2", expect: 100 }
     , { expr: "1e-3", expect: 0.001 }
+
     , { expr: '"Hello"', expect: "Hello" }
     , { expr: "'There'", expect: "There" }
     , { expr: "`lexpjs`", expect: "lexpjs" }
+    , { expr: '"he\\x40\\u0041llo\\u{000021} " + ' + "'there' + `\\nagain`", expect: "he@Allo! there\nagain" }
+
     , { expr: "true", expect: true }
     , { expr: "false", expect: false }
     , { expr: "null", expect: null }
@@ -295,14 +298,6 @@ function compareObjects( a, b ) {
     }
     return true;
 }
-
-
-var exp = '"Hello",{},{alpha:1,beta:2,["not.valid.name"]:3},t=[9,5,1],join(t,"::"),time(),x=2*y=2*z=3,x,y,z,(9)';
-
-console.log("Expression:",exp);
-var t1 = Date.now();
-console.log(lexp.evaluate(exp, ctx));
-console.log("Parse time:",Date.now()-t1,"ms");
 
 var num_errors = 0;
 test_expr.forEach( function( e ) {
