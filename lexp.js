@@ -1,7 +1,7 @@
-/* Version 21077.1232 */
+/* Version 21077.1251 */
 /* Ref: https://github.com/umdjs/umd */
 
-const version = 21075;
+const version = 21077;
 
 const FEATURE_MONTH_BASE = 1;       /* 1 = months 1-12; set to 0 if you prefer JS semantics where 0=Jan,11=Dec */
 
