@@ -12,28 +12,28 @@
 
 %%
 
-["]                         			{ this.begin("STRD"); buffer = ""; }
-[']                        				{ this.begin("STRS"); buffer = ""; }
-[`]                        				{ this.begin("STRB"); buffer = ""; }
-<STRD>["]                   			{ this.popState(); return 'QSTR'; }
-<STRS>[']                   			{ this.popState(); return 'QSTR'; }
-<STRB>[`]                   			{ this.popState(); return 'QSTR'; }
-<STRD,STRS,STRB>\\x[0-9a-fA-F]{2}		{ buffer += String.fromCharCode( parseInt( yytext.substring( 2 ), 16 ) ); }
-<STRD,STRS,STRB>\\u[0-9a-fA-F]{4}		{ buffer += String.fromCodePoint( parseInt( yytext.substring( 2 ), 16 ) ); }
-<STRD,STRS,STRB>\\u\{[0-9a-fA-F]{1,6}\}	{ buffer += String.fromCodePoint( parseInt( yytext.slice( 3, -1 ), 16 ) ); }
-<STRD,STRS,STRB>"\\0"       			{ buffer += "\0"; }
-<STRD,STRS,STRB>"\\'"       			{ buffer += "'"; }
-<STRD,STRS,STRB>"\\\""      			{ buffer += '"'; }
-<STRD,STRS,STRB>"\\\\"      			{ buffer += "\\"; }
-<STRD,STRS,STRB>"\\n"       			{ buffer += "\n"; }
-<STRD,STRS,STRB>"\\r"       			{ buffer += "\r"; }
-<STRD,STRS,STRB>"\\v"       			{ buffer += "\v"; }
-<STRD,STRS,STRB>"\\t"       			{ buffer += "\t"; }
-<STRD,STRS,STRB>"\\b"       			{ buffer += "\b"; }
-<STRD,STRS,STRB>"\\f"       			{ buffer += "\f"; }
-<STRD,STRS,STRB>[\n\r]      			{ return 'NEWLINE_IN_STRING'; }
-<STRD,STRS,STRB><<EOF>>     			{ return 'EOF_IN_STRING'; }
-<STRD,STRS,STRB>.           			{ buffer += yytext; }
+["]                                     { this.begin("STRD"); buffer = ""; }
+[']                                     { this.begin("STRS"); buffer = ""; }
+[`]                                     { this.begin("STRB"); buffer = ""; }
+<STRD>["]                               { this.popState(); return 'QSTR'; }
+<STRS>[']                               { this.popState(); return 'QSTR'; }
+<STRB>[`]                               { this.popState(); return 'QSTR'; }
+<STRD,STRS,STRB>\\x[0-9a-fA-F]{2}       { buffer += String.fromCharCode( parseInt( yytext.substring( 2 ), 16 ) ); }
+<STRD,STRS,STRB>\\u[0-9a-fA-F]{4}       { buffer += String.fromCodePoint( parseInt( yytext.substring( 2 ), 16 ) ); }
+<STRD,STRS,STRB>\\u\{[0-9a-fA-F]{1,6}\} { buffer += String.fromCodePoint( parseInt( yytext.slice( 3, -1 ), 16 ) ); }
+<STRD,STRS,STRB>"\\0"                   { buffer += "\0"; }
+<STRD,STRS,STRB>"\\'"                   { buffer += "'"; }
+<STRD,STRS,STRB>"\\\""                  { buffer += '"'; }
+<STRD,STRS,STRB>"\\\\"                  { buffer += "\\"; }
+<STRD,STRS,STRB>"\\n"                   { buffer += "\n"; }
+<STRD,STRS,STRB>"\\r"                   { buffer += "\r"; }
+<STRD,STRS,STRB>"\\v"                   { buffer += "\v"; }
+<STRD,STRS,STRB>"\\t"                   { buffer += "\t"; }
+<STRD,STRS,STRB>"\\b"                   { buffer += "\b"; }
+<STRD,STRS,STRB>"\\f"                   { buffer += "\f"; }
+<STRD,STRS,STRB>[\n\r]                  { return 'NEWLINE_IN_STRING'; }
+<STRD,STRS,STRB><<EOF>>                 { return 'EOF_IN_STRING'; }
+<STRD,STRS,STRB>.                       { buffer += yytext; }
 
 \#[^\n]*                { /* skip comment */ }
 \s+                     { /* skip whitespace */ }
@@ -201,7 +201,7 @@ ref_expr
         { $$ = $2; }
     ;
 
-quoted_string : QSTR { $$ = buffer; } ;	/* creates necessary indirection (vs using QSTR below directly) */
+quoted_string : QSTR { $$ = buffer; } ; /* creates necessary indirection (vs using QSTR below directly) */
 
 dict_element
     : IDENTIFIER COLON e
