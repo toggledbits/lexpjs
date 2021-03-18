@@ -207,7 +207,8 @@ The `in` operator is used to establish if an object contains a specified key (e.
 
 Multiple expressions can be chained together by separating them with a comma. The result of a chained expression is the last expression evaluated.
 
-The operators, in order of precedence from lowest to highest, are:
+The following is the list of operators supported in order from lowest to highest. Operators on the same line have equal precedence and are evaluated
+[left-associative](https://en.wikipedia.org/wiki/Operator_associativity) (from left to right) unless otherwise indicated:
 
 * `=` (assignment, right associative)
 * `?` (ternary operator first)
@@ -228,8 +229,6 @@ The operators, in order of precedence from lowest to highest, are:
 * `-` (unary minus)
 * `!` (not/negation, right-associative)
 * `.`, `?.`, `?[` (member access)
-
-Operators on the same line have equal precedence and are evaluated [left-associative](https://en.wikipedia.org/wiki/Operator_associativity) (from left to right) unless otherwise indicated.
 
 ## Data Types
 
@@ -290,7 +289,10 @@ I keep adding things as I need them or people ask, so [let me know](https://gith
 * `time( [ year [, month [, day [, hour [, minute [, second ]]]]]] )` &mdash; returns the current time if no arguments are given; otherwise a date/time is constructed using as many arguments as are provided; the result is a Unix Epoch time in milliseconds;
 * `dateparts( [time] )` &mdash; returns an object with keys `year`, `month`, `day`, `hour`, `minute`, `second`, and `weekday` (0-6, 0=Sunday) for the given `time`, or the current time if not given.
 
-> Note: all time functions operate in the timezone set for the runtime. There are currently no UTC functions.
+Important notes with respect to date handling (currently; this will evolve):
+
+* Where *month* is an argument (`time()`) or return value (`dateparts()`), there is a configuration flag in the code for whether months should numbered 0-11 (like JavaScript) or 1-12 (for hoomans); the *lexpjs* default is **1** (months 1-12).
+* All time functions operate in the timezone set for the runtime. There are currently no UTC functions.
 
 ### Array/Object Handling Functions
 
@@ -305,8 +307,8 @@ I keep adding things as I need them or people ask, so [let me know](https://gith
 * `slice( array, start, end )` &mdash; returns a new array containing the elements of *array* from *start* (zero-based) to, but not including, *end*;
 * `insert( array, pos, newElement )` &mdash; inserts *newElement* into *array* before *pos* (zero-based); the array is modified in place and is also returned as the function value;
 * `remove( array, pos [ , numRemove ] )` &mdash; removes elements from *array* starting at *pos*; if *numRemove* is not given, only the one element at *pos* is removed, otherwise *numRemove* elements are removed from the array; the array is modified in place and also returned as the function value;
-* `push( array, value [ , maxlen ] ) &mdash; appends *value* at the end of *array*; if *maxlen* is given, elements are removed from the head of the array to limit its length to *maxlen* elements; the array is modified in place and also returned as the function value;
-* `unshift( array, value [ , maxlen ] ) &mdash; insert *value* at the beginning of *array*; if *maxlen* is given, elements are removed from the end of the array to limit its length to *maxlen* elements; the array is modified in place and also returned as the function value;
+* `push( array, value [ , maxlen ] )` &mdash; appends *value* at the end of *array*; if *maxlen* is given, elements are removed from the head of the array to limit its length to *maxlen* elements; the array is modified in place and also returned as the function value;
+* `unshift( array, value [ , maxlen ] )` &mdash; insert *value* at the beginning of *array*; if *maxlen* is given, elements are removed from the end of the array to limit its length to *maxlen* elements; the array is modified in place and also returned as the function value;
 * `pop( array )` &mdash; removes the last element of *array* and returns it; returns `null` if *array* is empty; the array is modified in place;
 * `shift( array )` &mdash; removes the first element of *array* and returns it; returns `null` if *array* is empty; the array is modified in place;
 * `isArray( various )` &mdash; returns *true* if the argument is an array (of any length);
@@ -316,4 +318,4 @@ I keep adding things as I need them or people ask, so [let me know](https://gith
 
 As a result of the syntax, the following words are reserved and may not be used as identifiers or function names: `true, false, null, each, in, first, with, if, then, else, endif, do, done, and, or, not, NaN`. Note that keywords and identifiers are case-sensitive, so while `each` is not an acceptable identifier, `Each` or `EACH` would be.
 
-<small>Updated 2021-03-07</small>
+<small>Updated 2021-03-18</small>
