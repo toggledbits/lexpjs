@@ -1,4 +1,4 @@
-/* Version 21075.1501 */
+/* Version 21077.1232 */
 /* Ref: https://github.com/umdjs/umd */
 
 const version = 21075;
@@ -904,9 +904,9 @@ return new Parser;
         , substr    : { nargs: 2, impl: function( s, p, l ) { s = String(s); if (l==undefined) l=s.length; return s.substr(p,l); } }
         , upper     : { nargs: 1, impl: (s) => String(s).toUpperCase() }
         , lower     : { nargs: 1, impl: (s) => String(s).toLowerCase() }
-        , match     : { nargs: 2, impl: function( s, p, n ) { var r = String(s).match( p ); return ( r === null ) ? null : r[n || 0]; } }
-        , find      : { nargs: 2, impl: function( s, p ) { var r = String(s).match( p ); return ( r === null ) ? -1 : r.index; } }
-        , replace   : { nargs: 3, impl: function( s, p, r ) { return String(s).replace( p, r ); } }
+        , match     : { nargs: 2, impl: function( s, p, n, f ) { var r = String(s).match( new RegExp( p, f ) ); return ( r === null ) ? null : r[n || 0]; } }
+        , find      : { nargs: 2, impl: function( s, p, f ) { var r = String(s).match( new RegExp( p, f ) ); return ( r === null ) ? -1 : r.index; } }
+        , replace   : { nargs: 3, impl: function( s, p, r, f ) { return String(s).replace( new RegExp( p, f ), r ); } }
         , rtrim     : { nargs: 1, impl: (s) => String(s).replace( /\s+$/, "" ) }
         , ltrim     : { nargs: 1, impl: (s) => String(s).replace( /^\s+/, "" ) }
         , trim      : { nargs: 1, impl: (s) => String(s).trim() }
@@ -925,6 +925,16 @@ return new Parser;
         , join      : { nargs: 2, impl: (a,s) => a.join(s) }
         , list      : { nargs: 0, impl: function( ...args ) { return args; } }
         , indexOf   : { nargs: 2, impl: (a,el) => a.indexOf( el ) }
+        , count     : { nargs: 1, impl: function( a ) { let n=0; Array.isArray( a ) ? a.forEach( el => { ( "undefined" !== typeof el && null !== el ) ? ++n : n } ) : n; return n; } }
+        , sum       : { nargs: 1, impl: function( a ) { let n=0; Array.isArray( a ) ? a.forEach( el => { ( "number" === typeof el ) ? n += el : 0 } ) : 0; return n; } }
+        , concat    : { nargs: 2, impl: (a,b) => (a||[]).concat(b||[]) }
+        , slice     : { nargs: 2, impl: (a,s,e) => (a||[]).slice( s, e ) }
+        , insert    : { nargs: 2, impl: (a,p,...el) => { a.splice( p, 0, ...el ); return a; } }
+        , remove    : { nargs: 2, impl: (a,s,n) => { a.splice( s, "undefined" === typeof n ? 1 : n ); return a; } }
+        , push      : { nargs: 2, impl: (a,v,n) => { a.push(v); if ( n && a.length > n ) a.splice( 0, a.length-n ); return a } }
+        , pop       : { nargs: 1, impl: (a) => a.pop() }
+        , unshift   : { nargs: 2, impl: (a,v,n) => { a.unshift(v); if ( n && a.length > n ) a.splice( n, a.length-n ); return a } }
+        , shift   : { nargs: 1, impl: (a) => a.shift() }
         , isArray   : { nargs: 1, impl: Array.isArray }
         , isObject  : { nargs: 1, impl: (p) => "object" === typeof p && null !== p }
         , toJSON    : { nargs: 1, impl: JSON.stringify }

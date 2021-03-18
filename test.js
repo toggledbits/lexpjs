@@ -129,9 +129,9 @@ var test_expr = [
     , { expr: "t=0, null ?? (t=456), t", expect: 456 }	/* test shortcut eval */
     , { expr: "true ? 123 : 456", expect: 123 }
     , { expr: "false ? 123 : 456", expect: 456 }
-    , { expr: "[1,2,3]", Xxpect: [1,2,3] }
-    , { expr: "{ alpha: 1, beta: 2, gamma: 3 }", Xxpect: { alpha: 1, beta: 2, gamma: 3 } }
-    , { expr: "{ 'first': 'a', ['strange id']: 'b', 'Another Strange ID': 'voodoo' }", Xxpect: {} }
+    , { expr: "[1,2,3]", expect: [1,2,3] }
+    , { expr: "{ alpha: 1, beta: 2, gamma: 3 }", expect: { alpha: 1, beta: 2, gamma: 3 } }
+    , { expr: "{ 'first': 'a', ['strange id']: 'b', 'Another Strange ID': 'voodoo' }", expect: { first: 'a', 'strange id': 'b', 'Another Strange ID': 'voodoo' } }
 
     , { expr: "1 in [ 5,6,4 ]", expect: true }	/* JS semantics: 1 is valid array index and existing member */
     , { expr: "4 in [ 5,6,4 ]", expect: false }	/* JS semantics: 4 is not valid array index/existing */
@@ -189,6 +189,36 @@ var test_expr = [
     , { expr: "dateparts(time(2021,1,17,3,4,5)).minute", expect: 4 }
     , { expr: "dateparts(time(2021,1,17,3,4,5)).second", expect: 5 }
     , { expr: "dateparts(time(2021,2,16,12,0,0)).weekday", expect: 2 }
+    , { expr: "match( 'The rain in Spain stays mainly in the plain.', 'rain' )", expect: "rain" }
+    , { expr: "match( 'The rain in Spain stays mainly in the plain.', 'Sp(ai)n', 1 )", expect: "ai" }
+    , { expr: "match( 'The rain in Spain stays mainly in the plain.', 'RAIN', 0, 'i' )", expect: "rain" }
+    , { expr: "find( 'The rain in Spain stays mainly in the plain.', 'main' )", expect: 24 }
+    , { expr: "find( 'The rain in Spain stays mainly in the plain.', 'RAIN', 'i' )", expect: 4 }
+    , { expr: "replace( 'The quick brown fox', 'b[a-z]+', 'gray' )", expect: "The quick gray fox" }
+    , { expr: "replace( 'The quick brown fox', 'o', 'A', 'ig' )", expect: "The quick brAwn fAx" }
+    , { expr: "replace( 'Who hears the fishes when they cry?', 'w', 'Z', 'ig' )", expect: "Zho hears the fishes Zhen they cry?" }
+    , { expr: "count( [ 1,5,9 ] )", expect: 3 }
+    , { expr: "count( [ 1, null, 9, false, 0 ] )", expect: 4 }
+    , { expr: "sum( [ 1,5,9 ] )", expect: 15 }
+    , { expr: "sum( 56 )", expect: 0 } /* only accepts array */
+    , { expr: "concat( [1,2,3], [4,5,6] )", expect: [1,2,3,4,5,6] }
+    , { expr: "slice( [10,20,30,40,50,60], 2, 3 )", expect: [ 30 ] }
+    , { expr: "slice( [10,20,30,40,50,60], 3 )", expect: [ 40,50,60 ] }
+    , { expr: "t=[10,20,30], insert( t, 1, 99 )", expect: [ 10,99,20,30 ] }
+    , { expr: "t=[10,20,30], insert( t, 1, 99 ), t", expect: [ 10,99,20,30 ] }  /* confirm original array modified in place */
+    , { expr: "t=[11,22,33,44,55,66], remove( t, 2 )", expect: [ 11, 22, 44, 55, 66 ] }
+    , { expr: "t=[11,22,33,44,55,66], remove( t, 1, 3 )", expect: [ 11, 55, 66 ] }
+    , { expr: "t=[11,22,33,44,55,66], remove( t, 1, 3 ), t", expect: [ 11, 55, 66 ] }    /* confirm original array modified in place */
+    , { expr: "t=[ 'dog', 'cat' ], push( t, 'wombat' )", expect: [ 'dog', 'cat', 'wombat' ] }
+    , { expr: "t=[ 'dog', 'cat' ], push( t, 'wombat' ), t", expect: [ 'dog', 'cat', 'wombat' ] } /* confirm modified in place */
+    , { expr: "t=[ 'dog', 'cat' ], pop( t )", expect: "cat" }
+    , { expr: "t=[ 'dog', 'cat' ], pop( t ), t", expect: [ "dog" ] }     /* confirm modified in place */
+    , { expr: "t=[ 'dog', 'cat' ], unshift( t, 'wombat' )", expect: [ 'wombat', 'dog', 'cat' ] }
+    , { expr: "t=[ 'dog', 'cat' ], unshift( t, 'wombat' ), t", expect: [ 'wombat', 'dog', 'cat' ] } /* confirm modified in place */
+    , { expr: "t=[ 'dog', 'cat' ], shift( t )", expect: "dog" }
+    , { expr: "t=[ 'dog', 'cat' ], shift( t ), t", expect: [ "cat" ] }     /* confirm modified in place */
+    , { expr: "t=[1,2,3,4,5,6,7,8,9,10], push( t, 11, 4 )", expect: [ 8,9,10,11 ] }
+    , { expr: "t=[1,2,3,4,5,6,7,8,9,10], unshift( t, 0, 5 )", expect: [ 0,1,2,3,4 ] }
 
     /* Conditional */
     , { expr: "if entity.attributes.power_switch.state then 1 else 0 endif", expect: 1 }
@@ -218,6 +248,55 @@ var test_expr = [
                (first item in modes with item.hm == 2).ac", expect: 'away' }
 ];
 
+
+function compareArrays( a, b ) {
+    let n = a.length;
+    if ( n !== b.length ) {
+        return false;
+    }
+    for ( let k=0; k<n; ++k ) {
+        if ( a[k] !== b[k] ) {
+            return false;
+        }
+    }
+    return true;
+}
+
+function compareObjects( a, b ) {
+    let ak = Object.keys( a ).sort();
+    let bk = Object.keys( b ).sort();
+    if ( !compareArrays( ak, bk ) ) {
+        return false;
+    }
+    let n = ak.length;
+    for ( let k=0; k<n; ++k ) {
+        key = ak[ k ];
+        if ( Array.isArray( a[key] ) ) {
+            if ( ! Array.isArray( b[key] ) ) {
+                return false;
+            }
+            if ( !compareArrays( a[key], b[key] ) ) {
+                return false;
+            }
+        } else if ( null === a[key] ) {
+            if ( null !== b[key] ) {
+                return false;
+            }
+        } else if ( "object" === typeof a[key] ) {
+            if ( "object" !== typeof b[key] ) {
+                return false;
+            }
+            if ( !compareObjects( a[key], b[key] ) ) {
+                return false;
+            }
+        } else if ( a[key] !== b[key] ) {
+            return false;
+        }
+    }
+    return true;
+}
+
+
 var exp = '"Hello",{},{alpha:1,beta:2,["not.valid.name"]:3},t=[9,5,1],join(t,"::"),time(),x=2*y=2*z=3,x,y,z,(9)';
 
 console.log("Expression:",exp);
@@ -234,9 +313,25 @@ test_expr.forEach( function( e ) {
         try {
             res = lexp.run( ce, ctx );
             console.log( "     Result:", res );
-            if ( "undefined" !== typeof e.expect && res !== e.expect ) {
-                console.log("**** Unexpected result; got", typeof res, res,", expected",typeof e.expect,e.expect);
-                ++num_errors;
+            if ( "undefined" !== typeof e.expect ) {
+                let failed = true;
+                if ( Array.isArray( e.expect ) ) {
+                    if ( Array.isArray( res ) ) {
+                        failed = !compareArrays( e.expect, res );
+                    }
+                } else if ( null === e.expect ) {
+                    failed = null !== res;
+                } else if ( "object" === typeof e.expect ) {
+                    if ( "object" === typeof res ) {
+                        failed = !compareObjects( e.expect, res );
+                    }
+                } else if ( res === e.expect ) {
+                    failed = false;
+                }
+                if ( failed ) {
+                    console.error("**** Unexpected result; got", typeof res, res, ", expected", typeof e.expect, e.expect);
+                    ++num_errors;
+                }
             }
         } catch ( err ) {
             console.log("**** Eval error:", err );

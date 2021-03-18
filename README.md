@@ -201,7 +201,7 @@ The *member access operator* "dot" (`.`) is used to traverse objects. For exampl
 
 The *ternary operator* pair `? :` common to C, C++ and Java (and others) is available: `<boolean> ? <true-expression> : <false-expression>`. If the boolean expression given is *true*, the true expression is evaluated; otherwise, the false expression is evaluated.
 
-The *coalesce operators*, borrowed from C#, are `??`, `?.` and `?[`. Coalesce operators help handle *null* values in the middle of complex expressions more gracefully. For example, `value ?? 0` will result in the value of the variable `value` if it is not *null*, but if it is *null*, will yield 0. Similarly, if an identifier `struct` is intended to hold an object, but turns out to be *null*, a reference to `struct.name` in an expression would throw a runtime evaluation error; using `struct?.name` will instead result in *null* with no exception thrown. This is convenient because you can carry it `down.?a.?long.?list.?of.?member.?names` without crashing if something is undefined. Likewise if `beans` was intended to be an array but ended up *null*, the expression `beans[2]` would throw an error, while `beans?[2]` would result in *null*.
+The *coalesce operators*, borrowed from C#, are `??`, `?.` and `?[`. Coalesce operators help handle *null* values in the middle of complex expressions more gracefully. For example, `value ?? 0` will result in the value of the variable `value` if it is not *null*, but if it is *null*, will yield 0. Similarly, if an identifier `struct` is intended to hold an object, but turns out to be *null*, a reference to `struct.name` in an expression would throw a runtime evaluation error; using `struct?.name` will instead result in *null* with no exception thrown. This is convenient because you can carry it `down?.a?.long?.list?.of?.member?.names` without crashing if something is undefined. Likewise if `beans` was intended to be an array but ended up *null*, the expression `beans[2]` would throw an error, while `beans?[2]` would result in *null*.
 
 The `in` operator is used to establish if an object contains a specified key (e.g. `key in obj`) or an array contains an element at the given index (e.g. `15 in arr`). It is important to note that this operator works on *keys* only, not values, and in particular, cannot be used to search an array for a value (i.e. `4 in [ 4, 5, 6 ]` is *false*). To find an array element, use the `indexOf()` function. The `first` statement can be used to find a value in an object.
 
@@ -271,9 +271,9 @@ I keep adding things as I need them or people ask, so [let me know](https://gith
 * `len( string )` &mdash; returns the length of the string;
 * `substr( string, start, length )` &mdash; returns the portion of the string from the `start`th character for `length` characters;
 * `upper/lower( string )` &mdash; converts the string to upper/lower-case;
-* `match( string, regexp )` &mdash; matches, if possible, the regular expression to the string, and returns the matched string, or `null` if no match;
-* `find( string, regexp )` &mdash; like `match()`, but returns the index of the first character of the match, rather than the matched string, or -1 if no match;
-* `replace( string, regexp, replacement )` &mdash; replaces the string matched by the regular expression with the `replacement` string and returns the result;
+* `match( string, regexp [ , ngroup [ , flags ] ] )` &mdash; matches, if possible, the regular expression *regexp* to the *string*, and returns the matched string, or `null` if no match; if *ngroup* is given and the *regexp* contains groups, the matched part of that group is returned; if *flags* is "i", a case-insensitive match is done;
+* `find( string, regexp [ , flags ] )` &mdash; like `match()`, but returns the index of the first character of the match, rather than the matched string, or -1 if no match; the meaning of (optional) *flags* is the same as for `match()`;
+* `replace( string, regexp, replacement [ , flags ] )` &mdash; replaces the first substring matched by the regular expression *regexp* with the *replacement* string and returns the result; the optional *flags* (a string) may include "i" for case-insensitive search, and "g" for global replacement (all matches in *string* are replaced; combined would be "ig"); the `$` is a special character in the *replacement* string and follows the JavaScript semantics (for [`String.replace()`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/replace)).
 * `rtrim/ltrim/trim( string )` &mdash; removes whitespace from the right/left/both side(s) of the string;
 * `split( string, regexp [, max ] )` &mdash; splits the string at the matching regular expression and returns an array (e.g. `split( "1,5,8", "," )` returns `["1","5","8"]`).
 
@@ -299,7 +299,16 @@ I keep adding things as I need them or people ask, so [let me know](https://gith
 * `values( object )` &mdash; returns, as an array, the values in the given object;
 * `join( array, joinstring )` &mdash; returns a string with the elements of `array` converted to strings and joined by `joinstring` (e.g. `join([4,6,8], ":")` results in the string "4:6:8", while `join([9], ":")` would be simply "9");
 * `list( ... )` &mdash; returns an array of its argument; this is legacy syntax (i.e. `list(5,7,9)` is the same as writing `[5,7,9]`, so this function is now obsolete and may be removed later);
-* `indexOf( array, value )` &mdash; if `value` is present in `array`, the index (>=0) is returned; otherwise -1 is returned;
+* `indexOf( array, value )` &mdash; if *value* is present in *array*, the index (>=0) is returned; otherwise -1 is returned;
+* `count( array )` &mdash; returns the number of non-null elements of *array*;
+* `sum( array )` &mdash; returns the sum of non-null elements of *array*; note that only a single argument, which must be an array, is accepted;
+* `slice( array, start, end )` &mdash; returns a new array containing the elements of *array* from *start* (zero-based) to, but not including, *end*;
+* `insert( array, pos, newElement )` &mdash; inserts *newElement* into *array* before *pos* (zero-based); the array is modified in place and is also returned as the function value;
+* `remove( array, pos [ , numRemove ] )` &mdash; removes elements from *array* starting at *pos*; if *numRemove* is not given, only the one element at *pos* is removed, otherwise *numRemove* elements are removed from the array; the array is modified in place and also returned as the function value;
+* `push( array, value [ , maxlen ] ) &mdash; appends *value* at the end of *array*; if *maxlen* is given, elements are removed from the head of the array to limit its length to *maxlen* elements; the array is modified in place and also returned as the function value;
+* `unshift( array, value [ , maxlen ] ) &mdash; insert *value* at the beginning of *array*; if *maxlen* is given, elements are removed from the end of the array to limit its length to *maxlen* elements; the array is modified in place and also returned as the function value;
+* `pop( array )` &mdash; removes the last element of *array* and returns it; returns `null` if *array* is empty; the array is modified in place;
+* `shift( array )` &mdash; removes the first element of *array* and returns it; returns `null` if *array* is empty; the array is modified in place;
 * `isArray( various )` &mdash; returns *true* if the argument is an array (of any length);
 * `isObject( various )` &mdash; returns *true* if the argument is an object.
 
