@@ -207,7 +207,7 @@ The `in` operator is used to establish if an object contains a specified key (e.
 
 Multiple expressions can be chained together by separating them with a comma. The result of a chained expression is the last expression evaluated.
 
-The following is the list of operators supported in order from lowest to highest. Operators on the same line have equal precedence and are evaluated
+The following is the list of operators supported in order from lowest precedence to highest. Operators on the same line have equal precedence and are evaluated
 [left-associative](https://en.wikipedia.org/wiki/Operator_associativity) (from left to right) unless otherwise indicated:
 
 * `=` (assignment, right associative)
