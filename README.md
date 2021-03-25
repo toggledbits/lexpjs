@@ -189,6 +189,8 @@ The reserved word `null` evaluates to the *null* value (basically means "no valu
 
 The expression language includes a set of *operators*. Multiplication is performed by `*`, so that `3 * 4` yields 12. Division uses `/`, while addition and subtraction use `+` and `-`, respectively, as one might expect. The full list of operators is given below, in order of *precedence*. Operators with higher precedence are performed before operators with lower precedence, so that expressions like `3 + 4 * 2` yield 11, not 14. The precedence of mathemetical operators follows the Order of Operations we are taught in elementary school. Precedence can be controlled using parentheses, so per the previous example, the result 14 could be arrived at using `(3 + 4) * 2`.
 
+String concatenation is performed using the `+` operator; if either operand is a string, the result will be a concatenated string in which the non-string operand was converted to its string representation (i.e. `"123" + 456` results in the string `"123456"`). The *null* value is coerced to an empty string (so `null + "abc"` results in `"abc"`).
+
 In addition to the mathematical operators, there are *relational operators*: `==`, `!=`, `>`, `>=`, `<` and `<=` all return *true* if their operands are equal, not equal, etc. In addition, the two special relational operators `===` and `!==` check equality/inequality not just of value, but of data type, such that `"3" == 3` is *true*, but `"3" === 3` is *false* (because the left operand is string type, and the right a number).
 
 The *boolean operators* are `&&` for *and* and `||` for *or*, such that `false && true` is *false* and `false || true` is *true*. The `!` unary boolean operator negates its right-side operand, so `!true` is *false*.
@@ -263,7 +265,7 @@ I keep adding things as I need them or people ask, so [let me know](https://gith
 * `sqrt( number )` &mdash; square root (of `number` > 0);
 * `random()` &mdash; returns a random number greater than or equal to 0 and less than 1;
 * `min/max( ... )` &mdash; returns the smallest/largest value of its arguments;
-* `isNaN( various )` &mdash; returns true if the argument is non-numeric.
+* `isNaN( various )` &mdash; returns true if the argument is `NaN`, or if it would be if conversion was attempted (e.g. `isNaN( 'not a number' )` is *true*, but `isNaN( '123' )` is *false*).
 
 ### String Handling Functions
 

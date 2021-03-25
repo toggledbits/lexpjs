@@ -60,7 +60,7 @@ const FEATURE_MONTH_BASE = 1;       /* 1 = months 1-12; set to 0 if you prefer J
         , time      : { nargs: 0, impl: function(...args) { if ( args.length > 1 && "number" === typeof( args[1] ) ) { args[1] -= FEATURE_MONTH_BASE; } return new Date(...args).getTime() } }
         , dateparts : { nargs: 0, impl: function( t ) { var d = new Date(t); return { year: d.getFullYear(), month: d.getMonth()+FEATURE_MONTH_BASE, day: d.getDate(),
             hour: d.getHours(), minute: d.getMinutes(), second: d.getSeconds(), weekday: d.getDay() }; } }
-        , "isNaN"   : { nargs: 1, impl: (n) => Number.isNaN(n) }
+        , "isNaN"   : { nargs: 1, impl: (n) => Number.isNaN(n) || isNaN(n) }
         , isnull    : { nargs: 1, impl: (s) => "undefined" === typeof s || null === s }
         , keys      : { nargs: 1, impl: Object.keys }
         , values    : { nargs: 1, impl: Object.values }
@@ -173,10 +173,11 @@ const FEATURE_MONTH_BASE = 1;       /* 1 = months 1-12; set to 0 if you prefer J
                     D("binop v1=",v1,", v1eval=",v1eval,", v2=",v2,", v2eval=",v2);
                     if (e.op == '+') {
                         // Special case for plus (+): if either operand is string, treat as concat
-                        if (typeof v1eval == "string" || typeof v2eval == "string")
-                            v1eval = v1eval.toString() + v2eval.toString();
-                        else
+                        if ( "string" === typeof v1eval || "string" === typeof v2eval ) {
+                            v1eval = ( null === v1eval ? "" : v1eval.toString() ) + ( null === v2eval ? "" : v2eval.toString() );
+                        } else {
                             v1eval += v2eval;
+                        }
                     }
                     else if (e.op == '-')
                         v1eval -= v2eval;
@@ -236,7 +237,7 @@ const FEATURE_MONTH_BASE = 1;       /* 1 = months 1-12; set to 0 if you prefer J
                         ctx.__lvar[v1.name] = v2eval;
                         return v2eval;
                     } else {
-                        console.log( e );
+                        D( e );
                         throw new Error('BUG: unsupported op in compiled expression: ' + e.op);
                     }
                     return v1eval;
@@ -302,7 +303,6 @@ const FEATURE_MONTH_BASE = 1;       /* 1 = months 1-12; set to 0 if you prefer J
                     var context = _run( e.context );
                     var res = [];
                     // D(e);
-                    // D("Iterate over",context,"using",e.ident,"apply",e.exec);
                     if ( ! Array.isArray( context ) ) {
                         if ( "object" !== typeof context ) {
                             context = [ context ];
@@ -310,6 +310,7 @@ const FEATURE_MONTH_BASE = 1;       /* 1 = months 1-12; set to 0 if you prefer J
                             context = Object.values( context );
                         }
                     }
+                    // D("Iterate over",context,"using",e.ident,"apply",e.exec);
                     context.forEach( element => {
                         // D("Assigning",element,"to",e.ident);
                         ctx.__lvar[ e.ident ] = element;
