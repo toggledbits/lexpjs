@@ -1,6 +1,6 @@
 /* Ref: https://github.com/umdjs/umd */
 
-const version = 21077;
+const version = 21082;
 
 const FEATURE_MONTH_BASE = 1;       /* 1 = months 1-12; set to 0 if you prefer JS semantics where 0=Jan,11=Dec */
 

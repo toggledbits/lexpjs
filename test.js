@@ -29,8 +29,19 @@ var ctx = {
 };
 
 var test_expr = [
-      { expr: "0", expect: 0 }
+      { expr: '"Hello"', expect: "Hello" }
+    , { expr: "'There'", expect: "There" }
+    , { expr: "`lexpjs`", expect: "lexpjs" }
+    , { expr: "`This is \\`fine\\``", expect: "This is `fine`" }
+    , { expr: '"So \\"is\\" this"', expect: "So \"is\" this" }
+    , { expr: "'\\t\\n'", expect: "\t\n" }
+    , { expr: "`I'm a little \\\n\t\tteapot`", expect: "I'm a little teapot" }
+    , { expr: '"he\\x40\\u0041llo\\u{000021} " + ' + "'there' + `\\nagain`", expect: "he@Allo! there\nagain" }
+    , { expr: "# Evaluate the string as best we can\n1 + 1\n# That's it; that's the expression.", expect: 2 }
+
     , { expr: "\n\n\n\t\t1\t\t\n\n\r", expect: 1 }
+
+    , { expr: "0", expect: 0 }
     , { expr: "99221", expect: 99221 }
     , { expr: "-2", expect: -2 }
     , { expr: "0x40", expect: 64 }
@@ -44,10 +55,6 @@ var test_expr = [
     , { expr: "1e2", expect: 100 }
     , { expr: "1e-3", expect: 0.001 }
 
-    , { expr: '"Hello"', expect: "Hello" }
-    , { expr: "'There'", expect: "There" }
-    , { expr: "`lexpjs`", expect: "lexpjs" }
-    , { expr: '"he\\x40\\u0041llo\\u{000021} " + ' + "'there' + `\\nagain`", expect: "he@Allo! there\nagain" }
 
     , { expr: "true", expect: true }
     , { expr: "false", expect: false }
@@ -330,11 +337,11 @@ test_expr.forEach( function( e ) {
             }
         } catch ( err ) {
             console.log("**** Eval error:", err );
-            console.log( JSON.stringify(ce) );
+            console.log("ce", JSON.stringify(ce) );
             ++num_errors;
         }
     } catch ( err ) {
-        console.log( "**** Compile error:", err );
+        console.error( "**** Compile error:", err );
         ++num_errors;
     }
 });

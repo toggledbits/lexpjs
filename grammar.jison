@@ -15,15 +15,13 @@
 ["]                                     { this.begin("STRD"); buffer = ""; }
 [']                                     { this.begin("STRS"); buffer = ""; }
 [`]                                     { this.begin("STRB"); buffer = ""; }
-<STRD>["]                               { this.popState(); return 'QSTR'; }
-<STRS>[']                               { this.popState(); return 'QSTR'; }
-<STRB>[`]                               { this.popState(); return 'QSTR'; }
 <STRD,STRS,STRB>\\x[0-9a-fA-F]{2}       { buffer += String.fromCharCode( parseInt( yytext.substring( 2 ), 16 ) ); }
 <STRD,STRS,STRB>\\u[0-9a-fA-F]{4}       { buffer += String.fromCodePoint( parseInt( yytext.substring( 2 ), 16 ) ); }
 <STRD,STRS,STRB>\\u\{[0-9a-fA-F]{1,6}\} { buffer += String.fromCodePoint( parseInt( yytext.slice( 3, -1 ), 16 ) ); }
 <STRD,STRS,STRB>"\\0"                   { buffer += "\0"; }
 <STRD,STRS,STRB>"\\'"                   { buffer += "'"; }
 <STRD,STRS,STRB>"\\\""                  { buffer += '"'; }
+<STRD,STRS,STRB>"\\`"                   { buffer += '`'; }
 <STRD,STRS,STRB>"\\\\"                  { buffer += "\\"; }
 <STRD,STRS,STRB>"\\n"                   { buffer += "\n"; }
 <STRD,STRS,STRB>"\\r"                   { buffer += "\r"; }
@@ -31,11 +29,15 @@
 <STRD,STRS,STRB>"\\t"                   { buffer += "\t"; }
 <STRD,STRS,STRB>"\\b"                   { buffer += "\b"; }
 <STRD,STRS,STRB>"\\f"                   { buffer += "\f"; }
-<STRD,STRS,STRB>[\n\r]                  { return 'NEWLINE_IN_STRING'; }
+<STRD,STRS,STRB>[\\](\r\n|\r|\n)\s*     { /* escape EOL: discard */ }
+<STRD,STRS,STRB>(\r\n|\r|\n)+           { buffer += yytext; }
 <STRD,STRS,STRB><<EOF>>                 { return 'EOF_IN_STRING'; }
+<STRD>["]                               { this.popState(); return 'QSTR'; }
+<STRS>[']                               { this.popState(); return 'QSTR'; }
+<STRB>[`]                               { this.popState(); return 'QSTR'; }
 <STRD,STRS,STRB>.                       { buffer += yytext; }
 
-\#[^\n]*                { /* skip comment */ }
+\#[^\r\n]*              { /* skip comment */ }
 \s+                     { /* skip whitespace */ }
 \r                      { /* skip */ }
 \n                      { /* skip */ }
@@ -60,16 +62,16 @@
 "not"                   { return 'LNOT'; }
 [A-Za-z_$][A-Za-z0-9_$]*\b  { return 'IDENTIFIER'; }
 [0-9]+("."[0-9]+)?([eE][+-]?[0-9]+)?\b  {return 'NUMBER'; }
-0x[0-9A-Fa-f]+\b          { return 'HEXNUM'; }
-0o[0-7]+\b                { return 'OCTNUM'; }
-0b[01]+\b                { return 'BINNUM'; }
+0x[0-9A-Fa-f]+\b        { return 'HEXNUM'; }
+0o[0-7]+\b              { return 'OCTNUM'; }
+0b[01]+\b               { return 'BINNUM'; }
 ":"                     { return 'COLON'; }
 "**"                    { return 'POW'; }
-"*"                   {return '*';}
-"/"                   {return '/';}
+"*"                     { return '*'; }
+"/"                     { return '/'; }
 "%"                     { return 'MOD'; }
-"-"                   {return '-';}
-"+"                   {return '+';}
+"-"                     { return '-'; }
+"+"                     { return '+'; }
 "<<"                    { return '<<'; }
 ">>"                    { return '>>'; }
 "<="                    { return '<='; }
@@ -81,7 +83,7 @@
 "!=="                   { return '!=='; }
 "!="                    { return '!='; }
 "<>"                    { return '!='; }
-"^"                   {return 'BXOR';}
+"^"                     { return 'BXOR'; }
 "&&"                    { return 'LAND'; }
 "||"                    { return 'LOR'; }
 "!"                     { return 'LNOT'; }
@@ -96,11 +98,11 @@
 "."                     { return 'DOT'; }
 "["                     { return '['; }
 "]"                     { return ']'; }
-"("                   {return '(';}
-")"                   {return ')';}
-"{"                     return 'LCURLY';
-"}"                     return 'RCURLY';
-<<EOF>>               {return 'EOF';}
+"("                     { return '('; }
+")"                     { return ')'; }
+"{"                     { return 'LCURLY'; }
+"}"                     { return 'RCURLY'; }
+<<EOF>>                 { return 'EOF'; }
 
 /lex
 
