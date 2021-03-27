@@ -320,4 +320,4 @@ Important notes with respect to date handling (currently; this will evolve):
 
 As a result of the syntax, the following words are reserved and may not be used as identifiers or function names: `true, false, null, each, in, first, with, if, then, else, endif, do, done, and, or, not, NaN`. Note that keywords and identifiers are case-sensitive, so while `each` is not an acceptable identifier, `Each` or `EACH` would be.
 
-<small>Updated 2021-03-18</small>
+<small>Updated 2021-03-25</small>

@@ -38,7 +38,7 @@ var test_expr = [
     , { expr: "`I'm a little \\\n\t\tteapot`", expect: "I'm a little teapot" }
     , { expr: '"he\\x40\\u0041llo\\u{000021} " + ' + "'there' + `\\nagain`", expect: "he@Allo! there\nagain" }
     , { expr: "# Evaluate the string as best we can\n1 + 1\n# That's it; that's the expression.", expect: 2 }
-
+    , { expr: "'\\t\\\\t\\z\\.'", expect: "\t\\tz." }
     , { expr: "\n\n\n\t\t1\t\t\n\n\r", expect: 1 }
 
     , { expr: "0", expect: 0 }
@@ -137,19 +137,19 @@ var test_expr = [
     , { expr: "123 ?? 456", expect: 123 }
     , { expr: "123 ?? null", expect: 123 }
     , { expr: "null ?? 456", expect: 456 }
-    , { expr: "t=0, 123 ?? (t=456)", expect: 123 }		/* test shortcut eval */
-    , { expr: "t=0, 123 ?? (t=456), t", expect: 0 }		/* test shortcut eval */
-    , { expr: "t=0, null ?? (t=456)", expect: 456 }		/* test shortcut eval */
-    , { expr: "t=0, null ?? (t=456), t", expect: 456 }	/* test shortcut eval */
+    , { expr: "t=0, 123 ?? (t=456)", expect: 123 }      /* test shortcut eval */
+    , { expr: "t=0, 123 ?? (t=456), t", expect: 0 }     /* test shortcut eval */
+    , { expr: "t=0, null ?? (t=456)", expect: 456 }     /* test shortcut eval */
+    , { expr: "t=0, null ?? (t=456), t", expect: 456 }  /* test shortcut eval */
     , { expr: "true ? 123 : 456", expect: 123 }
     , { expr: "false ? 123 : 456", expect: 456 }
     , { expr: "[1,2,3]", expect: [1,2,3] }
     , { expr: "{ alpha: 1, beta: 2, gamma: 3 }", expect: { alpha: 1, beta: 2, gamma: 3 } }
     , { expr: "{ 'first': 'a', ['strange id']: 'b', 'Another Strange ID': 'voodoo' }", expect: { first: 'a', 'strange id': 'b', 'Another Strange ID': 'voodoo' } }
 
-    , { expr: "1 in [ 5,6,4 ]", expect: true }	/* JS semantics: 1 is valid array index and existing member */
-    , { expr: "4 in [ 5,6,4 ]", expect: false }	/* JS semantics: 4 is not valid array index/existing */
-    , { expr: "1 in { one: 1, two: 2 }", expect: false }	/* in inspects keys, not values */
+    , { expr: "1 in [ 5,6,4 ]", expect: true }  /* JS semantics: 1 is valid array index and existing member */
+    , { expr: "4 in [ 5,6,4 ]", expect: false } /* JS semantics: 4 is not valid array index/existing */
+    , { expr: "1 in { one: 1, two: 2 }", expect: false }    /* in inspects keys, not values */
     , { expr: "2 in { one: 1, two: 2 }", expect: false }
     , { expr: "'one' in { one: 1, two: 2 }", expect: true }
     , { expr: "'two' in { one: 1, two: 2 }", expect: true }
@@ -171,7 +171,7 @@ var test_expr = [
     , { expr: "27 / 3 * 4", expect: 36 }
     , { expr: "4 * 8 + 2", expect: 34 }
     , { expr: "4 - 8 * 2", expect: -12 }
-    
+
     /* Null-conditional operators */
     , { expr: "entity?.id", expect: "house>123" }
     , { expr: "entity?.attributes" }
@@ -210,6 +210,8 @@ var test_expr = [
     , { expr: "match( 'The rain in Spain stays mainly in the plain.', 'rain' )", expect: "rain" }
     , { expr: "match( 'The rain in Spain stays mainly in the plain.', 'Sp(ai)n', 1 )", expect: "ai" }
     , { expr: "match( 'The rain in Spain stays mainly in the plain.', 'RAIN', 0, 'i' )", expect: "rain" }
+    , { expr: "t='Does this work?', match( t, '\\st' )", expect: null }
+    , { expr: "t='Does this work?', match( t, '\\\\st' )", expect: " t" }
     , { expr: "find( 'The rain in Spain stays mainly in the plain.', 'main' )", expect: 24 }
     , { expr: "find( 'The rain in Spain stays mainly in the plain.', 'RAIN', 'i' )", expect: 4 }
     , { expr: "replace( 'The quick brown fox', 'b[a-z]+', 'gray' )", expect: "The quick gray fox" }
@@ -250,6 +252,9 @@ var test_expr = [
     , { expr: "each item in keys(entity.attributes): item + '=' + entity.attributes[item]" }
     , { expr: "t=each item in 'hello': item + ' there', t?[0]", expect: "hello there" }
     , { expr: "t=0; each item in arr: do t=t+1; null done; t", expect: 2 }
+    , { expr: "each n in [1,2,3]: [4,5,6]", expect: [ [4,5,6],[4,5,6],[4,5,6] ] }
+    , { expr: "each n in [4,5,6]: [n,n+1,n+2]", expect: [ [4,5,6],[5,6,7],[6,7,8] ] }
+    , { expr: 'testArr = [ ["dog",1,{a:"b"}] , [1,"five",[]] , ["1","one",[1]] ], each element in testArr: indexOf(element,1)', expect: [ 1, 0, -1 ] }
     , { expr: "(first item in entity.attributes with !isnull(item?.level)).level == 0.1", expect: true }
 
     /* misc */
@@ -264,6 +269,7 @@ var test_expr = [
     , { expr: "first item in entity.attributes with (item?.level ?? 0) > 0.2" }
     , { expr: "modes={home:{hm:1,ac:'home'},away:{hm:2,ac:'away'},sleep:{hm:3,ac:'sleep'},smart1:{hm:4,ac:'smart1'}}, \
                (first item in modes with item.hm == 2).ac", expect: 'away' }
+
 ];
 
 
@@ -273,7 +279,14 @@ function compareArrays( a, b ) {
         return false;
     }
     for ( let k=0; k<n; ++k ) {
-        if ( a[k] !== b[k] ) {
+        if ( typeof a[k] !== typeof b[k] ) {
+            return false;
+        }
+        if ( Array.isArray( a[k] ) ) {
+            return compareArrays( a[k], b[k] );
+        } else if ( null !== a[k] && "object" === typeof a[k] ) {
+            return compareObjects( a[k], b[k] );
+        } else if ( a[k] !== b[k] ) {
             return false;
         }
     }

@@ -1,6 +1,6 @@
 /* Ref: https://github.com/umdjs/umd */
 
-const version = 21082;
+const version = 21085;
 
 const FEATURE_MONTH_BASE = 1;       /* 1 = months 1-12; set to 0 if you prefer JS semantics where 0=Jan,11=Dec */
 
@@ -137,17 +137,18 @@ const FEATURE_MONTH_BASE = 1;       /* 1 = months 1-12; set to 0 if you prefer J
             if ( !is_atom( e ) ) {
                 if ( Array.isArray( e ) ) {
                     /* Run each element within array */
+                    let res = [];
                     let n = e.length;
                     for ( let k=0; k<n; ++k ) {
-                        e[k] = _run( e[k] );
+                        res[k] = _run( e[k] );
                     }
-                    return e;
+                    return res;
                 } else if ( null !== e && "object" === typeof e ) {
-                    for ( let key in e ) {
-                        if ( e.hasOwnProperty( key ) ) {
-                            e[ key ] = _run( e[ key ] );
-                        }
-                    }
+                    let res = {};
+                    Object.keys( e ).forEach( key => {
+                        res[ key ] = _run( e[ key ] );
+                    });
+                    return res;
                 }
                 return e; /* return primitive as it is. */
             } else {
@@ -312,10 +313,11 @@ const FEATURE_MONTH_BASE = 1;       /* 1 = months 1-12; set to 0 if you prefer J
                     }
                     // D("Iterate over",context,"using",e.ident,"apply",e.exec);
                     context.forEach( element => {
-                        // D("Assigning",element,"to",e.ident);
+                        D("Assigning",element,"to",e.ident);
                         ctx.__lvar[ e.ident ] = element;
+                        D("Running",e.exec);
                         let v = _run( e.exec );
-                        // D("result",v);
+                        D("result",v);
                         if ( v !== null ) {
                             res.push( v );
                         }

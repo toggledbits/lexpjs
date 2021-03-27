@@ -1,7 +1,7 @@
-/* Version 21084.1842 */
+/* Version 21086.1449 */
 /* Ref: https://github.com/umdjs/umd */
 
-const version = 21082;
+const version = 21085;
 
 const FEATURE_MONTH_BASE = 1;       /* 1 = months 1-12; set to 0 if you prefer JS semantics where 0=Jan,11=Dec */
 
@@ -764,154 +764,156 @@ case 16: buffer += "\f";
 break;
 case 17: /* escape EOL: discard */ 
 break;
-case 18: buffer += yy_.yytext; 
+case 18: buffer += yy_.yytext.charAt( 1 ); /* bogus escape => literal char */ 
 break;
-case 19: return 'EOF_IN_STRING'; 
+case 19: buffer += yy_.yytext; 
 break;
-case 20: this.popState(); return 20; 
+case 20: return 'EOF_IN_STRING'; 
 break;
 case 21: this.popState(); return 20; 
 break;
 case 22: this.popState(); return 20; 
 break;
-case 23: buffer += yy_.yytext; 
+case 23: this.popState(); return 20; 
 break;
-case 24: /* skip comment */ 
+case 24: buffer += yy_.yytext; 
 break;
-case 25: /* skip whitespace */ 
+case 25: /* skip comment */ 
 break;
-case 26: /* skip */ 
+case 26: /* skip whitespace */ 
 break;
 case 27: /* skip */ 
 break;
-case 28: return 6; 
+case 28: /* skip */ 
 break;
-case 29: return 8; 
+case 29: return 6; 
 break;
-case 30: return 63; 
+case 30: return 8; 
 break;
-case 31: return 64; 
+case 31: return 63; 
 break;
-case 32: return 65; 
+case 32: return 64; 
 break;
-case 33: return 69; 
+case 33: return 65; 
 break;
-case 34: return 70; 
+case 34: return 69; 
 break;
-case 35: return 68; 
+case 35: return 70; 
 break;
-case 36: return 66; 
+case 36: return 68; 
 break;
-case 37: return 59; 
+case 37: return 66; 
 break;
-case 38: return 60; 
+case 38: return 59; 
 break;
-case 39: return 61; 
+case 39: return 60; 
 break;
-case 40: return 62; 
+case 40: return 61; 
 break;
-case 41: return 46; 
+case 41: return 62; 
 break;
-case 42: return 72; 
+case 42: return 46; 
 break;
-case 43: return 71; 
+case 43: return 72; 
 break;
-case 44: return 40; 
+case 44: return 71; 
 break;
-case 45: return 41; 
+case 45: return 40; 
 break;
-case 46: return 28; 
+case 46: return 41; 
 break;
-case 47: return 11; 
+case 47: return 28; 
 break;
-case 48:return 55; 
+case 48: return 11; 
 break;
-case 49: return 56; 
+case 49:return 55; 
 break;
-case 50: return 57; 
+case 50: return 56; 
 break;
-case 51: return 58; 
+case 51: return 57; 
 break;
-case 52: return 22; 
+case 52: return 58; 
 break;
-case 53: return 30; 
+case 53: return 22; 
 break;
-case 54: return 31; 
+case 54: return 30; 
 break;
-case 55: return 32; 
+case 55: return 31; 
 break;
-case 56: return 33; 
+case 56: return 32; 
 break;
-case 57: return 27; 
+case 57: return 33; 
 break;
-case 58: return 34; 
+case 58: return 27; 
 break;
-case 59: return 35; 
+case 59: return 34; 
 break;
-case 60: return 36; 
+case 60: return 35; 
 break;
-case 61: return 48; 
+case 61: return 36; 
 break;
-case 62: return 50; 
+case 62: return 48; 
 break;
-case 63: return 47; 
+case 63: return 50; 
 break;
-case 64: return 49; 
+case 64: return 47; 
 break;
-case 65: return 44; 
+case 65: return 49; 
 break;
-case 66: return 42; 
+case 66: return 44; 
 break;
-case 67: return 45; 
+case 67: return 42; 
 break;
-case 68: return 43; 
+case 68: return 45; 
 break;
 case 69: return 43; 
 break;
-case 70: return 39; 
+case 70: return 43; 
 break;
-case 71: return 40; 
+case 71: return 39; 
 break;
-case 72: return 41; 
+case 72: return 40; 
 break;
-case 73: return 28; 
+case 73: return 41; 
 break;
-case 74: return 37; 
+case 74: return 28; 
 break;
-case 75: return 38; 
+case 75: return 37; 
 break;
-case 76: return 29; 
+case 76: return 38; 
 break;
-case 77: return 51; 
+case 77: return 29; 
 break;
-case 78: return 15; 
+case 78: return 51; 
 break;
-case 79: return 16; 
+case 79: return 15; 
 break;
-case 80: return 52; 
+case 80: return 16; 
 break;
-case 81: return 67; 
+case 81: return 52; 
 break;
-case 82: return 12; 
+case 82: return 67; 
 break;
-case 83: return 13; 
+case 83: return 12; 
 break;
-case 84: return 14; 
+case 84: return 13; 
 break;
-case 85: return 17; 
+case 85: return 14; 
 break;
-case 86: return 18; 
+case 86: return 17; 
 break;
-case 87: return 53; 
+case 87: return 18; 
 break;
-case 88: return 54; 
+case 88: return 53; 
 break;
-case 89: return 5; 
+case 89: return 54; 
+break;
+case 90: return 5; 
 break;
 }
 },
-rules: [/^(?:["])/,/^(?:['])/,/^(?:[`])/,/^(?:\\x[0-9a-fA-F]{2})/,/^(?:\\u[0-9a-fA-F]{4})/,/^(?:\\u\{[0-9a-fA-F]{1,6}\})/,/^(?:\\0)/,/^(?:\\')/,/^(?:\\")/,/^(?:\\`)/,/^(?:\\\\)/,/^(?:\\n)/,/^(?:\\r)/,/^(?:\\v)/,/^(?:\\t)/,/^(?:\\b)/,/^(?:\\f)/,/^(?:[\\](\r\n|\r|\n)\s*)/,/^(?:(\r\n|\r|\n)+)/,/^(?:$)/,/^(?:["])/,/^(?:['])/,/^(?:[`])/,/^(?:.)/,/^(?:#[^\r\n]*)/,/^(?:\s+)/,/^(?:\r)/,/^(?:\n)/,/^(?:,)/,/^(?:;)/,/^(?:true\b)/,/^(?:false\b)/,/^(?:null\b)/,/^(?:first\b)/,/^(?:with\b)/,/^(?:each\b)/,/^(?:NaN\b)/,/^(?:if\b)/,/^(?:then\b)/,/^(?:else\b)/,/^(?:endif\b)/,/^(?:in\b)/,/^(?:done\b)/,/^(?:do\b)/,/^(?:and\b)/,/^(?:or\b)/,/^(?:not\b)/,/^(?:[A-Za-z_$][A-Za-z0-9_$]*\b)/,/^(?:[0-9]+(\.[0-9]+)?([eE][+-]?[0-9]+)?\b)/,/^(?:0x[0-9A-Fa-f]+\b)/,/^(?:0o[0-7]+\b)/,/^(?:0b[01]+\b)/,/^(?::)/,/^(?:\*\*)/,/^(?:\*)/,/^(?:\/)/,/^(?:%)/,/^(?:-)/,/^(?:\+)/,/^(?:<<)/,/^(?:>>)/,/^(?:<=)/,/^(?:>=)/,/^(?:<)/,/^(?:>)/,/^(?:===)/,/^(?:==)/,/^(?:!==)/,/^(?:!=)/,/^(?:<>)/,/^(?:\^)/,/^(?:&&)/,/^(?:\|\|)/,/^(?:!)/,/^(?:&)/,/^(?:\|)/,/^(?:~)/,/^(?:\?\?)/,/^(?:\?\.)/,/^(?:\?\[)/,/^(?:\?)/,/^(?:=)/,/^(?:\.)/,/^(?:\[)/,/^(?:\])/,/^(?:\()/,/^(?:\))/,/^(?:\{)/,/^(?:\})/,/^(?:$)/],
-conditions: {"STRB":{"rules":[3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,22,23],"inclusive":false},"STRS":{"rules":[3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,21,23],"inclusive":false},"STRD":{"rules":[3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,23],"inclusive":false},"INITIAL":{"rules":[0,1,2,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89],"inclusive":true}}
+rules: [/^(?:["])/,/^(?:['])/,/^(?:[`])/,/^(?:\\x[0-9a-fA-F]{2})/,/^(?:\\u[0-9a-fA-F]{4})/,/^(?:\\u\{[0-9a-fA-F]{1,6}\})/,/^(?:\\0)/,/^(?:\\')/,/^(?:\\")/,/^(?:\\`)/,/^(?:\\\\)/,/^(?:\\n)/,/^(?:\\r)/,/^(?:\\v)/,/^(?:\\t)/,/^(?:\\b)/,/^(?:\\f)/,/^(?:[\\](\r\n|\r|\n)\s*)/,/^(?:\\.)/,/^(?:(\r\n|\r|\n)+)/,/^(?:$)/,/^(?:["])/,/^(?:['])/,/^(?:[`])/,/^(?:.)/,/^(?:#[^\r\n]*)/,/^(?:\s+)/,/^(?:\r)/,/^(?:\n)/,/^(?:,)/,/^(?:;)/,/^(?:true\b)/,/^(?:false\b)/,/^(?:null\b)/,/^(?:first\b)/,/^(?:with\b)/,/^(?:each\b)/,/^(?:NaN\b)/,/^(?:if\b)/,/^(?:then\b)/,/^(?:else\b)/,/^(?:endif\b)/,/^(?:in\b)/,/^(?:done\b)/,/^(?:do\b)/,/^(?:and\b)/,/^(?:or\b)/,/^(?:not\b)/,/^(?:[A-Za-z_$][A-Za-z0-9_$]*\b)/,/^(?:[0-9]+(\.[0-9]+)?([eE][+-]?[0-9]+)?\b)/,/^(?:0x[0-9A-Fa-f]+\b)/,/^(?:0o[0-7]+\b)/,/^(?:0b[01]+\b)/,/^(?::)/,/^(?:\*\*)/,/^(?:\*)/,/^(?:\/)/,/^(?:%)/,/^(?:-)/,/^(?:\+)/,/^(?:<<)/,/^(?:>>)/,/^(?:<=)/,/^(?:>=)/,/^(?:<)/,/^(?:>)/,/^(?:===)/,/^(?:==)/,/^(?:!==)/,/^(?:!=)/,/^(?:<>)/,/^(?:\^)/,/^(?:&&)/,/^(?:\|\|)/,/^(?:!)/,/^(?:&)/,/^(?:\|)/,/^(?:~)/,/^(?:\?\?)/,/^(?:\?\.)/,/^(?:\?\[)/,/^(?:\?)/,/^(?:=)/,/^(?:\.)/,/^(?:\[)/,/^(?:\])/,/^(?:\()/,/^(?:\))/,/^(?:\{)/,/^(?:\})/,/^(?:$)/],
+conditions: {"STRB":{"rules":[3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,23,24],"inclusive":false},"STRS":{"rules":[3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,22,24],"inclusive":false},"STRD":{"rules":[3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,24],"inclusive":false},"INITIAL":{"rules":[0,1,2,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90],"inclusive":true}}
 });
 return lexer;
 })();
@@ -1036,17 +1038,18 @@ return new Parser;
             if ( !is_atom( e ) ) {
                 if ( Array.isArray( e ) ) {
                     /* Run each element within array */
+                    let res = [];
                     let n = e.length;
                     for ( let k=0; k<n; ++k ) {
-                        e[k] = _run( e[k] );
+                        res[k] = _run( e[k] );
                     }
-                    return e;
+                    return res;
                 } else if ( null !== e && "object" === typeof e ) {
-                    for ( let key in e ) {
-                        if ( e.hasOwnProperty( key ) ) {
-                            e[ key ] = _run( e[ key ] );
-                        }
-                    }
+                    let res = {};
+                    Object.keys( e ).forEach( key => {
+                        res[ key ] = _run( e[ key ] );
+                    });
+                    return res;
                 }
                 return e; /* return primitive as it is. */
             } else {
@@ -1211,10 +1214,11 @@ return new Parser;
                     }
                     // D("Iterate over",context,"using",e.ident,"apply",e.exec);
                     context.forEach( element => {
-                        // D("Assigning",element,"to",e.ident);
+                        D("Assigning",element,"to",e.ident);
                         ctx.__lvar[ e.ident ] = element;
+                        D("Running",e.exec);
                         let v = _run( e.exec );
-                        // D("result",v);
+                        D("result",v);
                         if ( v !== null ) {
                             res.push( v );
                         }

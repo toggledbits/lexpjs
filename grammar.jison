@@ -30,6 +30,7 @@
 <STRD,STRS,STRB>"\\b"                   { buffer += "\b"; }
 <STRD,STRS,STRB>"\\f"                   { buffer += "\f"; }
 <STRD,STRS,STRB>[\\](\r\n|\r|\n)\s*     { /* escape EOL: discard */ }
+<STRD,STRS,STRB>\\.                     { buffer += yytext.charAt( 1 ); /* bogus escape => literal char */ }
 <STRD,STRS,STRB>(\r\n|\r|\n)+           { buffer += yytext; }
 <STRD,STRS,STRB><<EOF>>                 { return 'EOF_IN_STRING'; }
 <STRD>["]                               { this.popState(); return 'QSTR'; }
