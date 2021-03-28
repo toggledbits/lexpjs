@@ -144,6 +144,8 @@ var test_expr = [
     , { expr: "true ? 123 : 456", expect: 123 }
     , { expr: "false ? 123 : 456", expect: 456 }
     , { expr: "[1,2,3]", expect: [1,2,3] }
+    , { expr: "[1,2,3] == [1,2,3]", expect: false }     /* because different objects in memory */
+    , { expr: "s=[1,2,3], t=s, s==t", expect: true }    /* because same object in memory */
     , { expr: "{ alpha: 1, beta: 2, gamma: 3 }", expect: { alpha: 1, beta: 2, gamma: 3 } }
     , { expr: "{ 'first': 'a', ['strange id']: 'b', 'Another Strange ID': 'voodoo' }", expect: { first: 'a', 'strange id': 'b', 'Another Strange ID': 'voodoo' } }
 
