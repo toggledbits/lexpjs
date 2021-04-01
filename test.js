@@ -258,6 +258,10 @@ var test_expr = [
     , { expr: "each n in [4,5,6]: [n,n+1,n+2]", expect: [ [4,5,6],[5,6,7],[6,7,8] ] }
     , { expr: 'testArr = [ ["dog",1,{a:"b"}] , [1,"five",[]] , ["1","one",[1]] ], each element in testArr: indexOf(element,1)', expect: [ 1, 0, -1 ] }
     , { expr: "(first item in entity.attributes with !isnull(item?.level)).level == 0.1", expect: true }
+    , { expr: "arr=[3,4],first m in arr with m", expect: 3 }
+    , { expr: "arr=[3,4],first m in arr with m<=4", expect: 3 }
+    , { expr: "arr=[3,4],first m in arr with m>=4", expect: 4 }
+    , { expr: "arr=[3,4],first m in arr with m>=6", expect: null }
 
     /* misc */
     , { expr: "1 ?? 0 & 4" }

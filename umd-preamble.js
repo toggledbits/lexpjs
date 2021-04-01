@@ -1,6 +1,24 @@
-/* Ref: https://github.com/umdjs/umd */
+/** lexpjs - Copyright (C) 2018,2021 Patrick H. Rigney, All Rights Reserved
+ *  See https://github.com/toggledbits/lexpjs
+ * 
+ *  This Software is open source offered under the MIT LICENSE. See https://opensource.org/licenses/MIT
+ *
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated 
+ *  documentation files (the "Software"), to deal in the Software without restriction, including without limitation 
+ *  the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and
+ *  to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+ * 
+ *  The above copyright notice and this permission notice shall be included in all copies or substantial portions of 
+ *  the Software.
+ *
+ *  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+ *  THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+ *  TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ *  SOFTWARE.
+ */
 
-const version = 21085;
+const version = 21091;
 
 const FEATURE_MONTH_BASE = 1;       /* 1 = months 1-12; set to 0 if you prefer JS semantics where 0=Jan,11=Dec */
 
@@ -104,7 +122,7 @@ const FEATURE_MONTH_BASE = 1;       /* 1 = months 1-12; set to 0 if you prefer J
 */
     };
 
-    var D = function() {}; /* console.log; /* */
+    var D = false ? console.log : function() {};
 
     var run = function( ce, ctx ) {
         ctx = ctx || {};
@@ -171,7 +189,7 @@ const FEATURE_MONTH_BASE = 1;       /* 1 = months 1-12; set to 0 if you prefer J
                     if ( e.op !== "&&" && e.op !== "||" && e.op !== '??' ) {
                         v2eval = _run( v2 );
                     }
-                    D("binop v1=",v1,", v1eval=",v1eval,", v2=",v2,", v2eval=",v2);
+                    // D("binop v1=",v1,", v1eval=",v1eval,", v2=",v2,", v2eval=",v2);
                     if (e.op == '+') {
                         // Special case for plus (+): if either operand is string, treat as concat
                         if ( "string" === typeof v1eval || "string" === typeof v2eval ) {
@@ -279,7 +297,7 @@ const FEATURE_MONTH_BASE = 1;       /* 1 = months 1-12; set to 0 if you prefer J
                     }
                     return N(ifresult);
                 } else if ( is_atom( e, 'fref' ) ) {
-                    D('function ref ' + e.name + ' with ' + e.args.length + ' args');
+                    // D('function ref ' + e.name + ' with ' + e.args.length + ' args');
                     var name = e.name;
                     var impl = undefined;
                     if ( nativeFuncs[name] ) {
@@ -292,7 +310,7 @@ const FEATURE_MONTH_BASE = 1;       /* 1 = months 1-12; set to 0 if you prefer J
                         throw new ReferenceError('Undefined function: ' + name);
                     }
 
-                    // Build argument list.
+                    // Build argument list.z
                     var a = [];
                     e.args.forEach( function( se ) {
                         a.push( _run( se ) );
@@ -313,11 +331,11 @@ const FEATURE_MONTH_BASE = 1;       /* 1 = months 1-12; set to 0 if you prefer J
                     }
                     // D("Iterate over",context,"using",e.ident,"apply",e.exec);
                     context.forEach( element => {
-                        D("Assigning",element,"to",e.ident);
+                        // D("Assigning",element,"to",e.ident);
                         ctx.__lvar[ e.ident ] = element;
-                        D("Running",e.exec);
+                        // D("Running",e.exec);
                         let v = _run( e.exec );
-                        D("result",v);
+                        // D("result",v);
                         if ( v !== null ) {
                             res.push( v );
                         }
@@ -335,8 +353,6 @@ const FEATURE_MONTH_BASE = 1;       /* 1 = months 1-12; set to 0 if you prefer J
                         } else {
                             context = Object.values( context );
                         }
-                    } else {
-                        context = { ...context };
                     }
                     while ( context.length > 0 ) {
                         let element = context.shift();
