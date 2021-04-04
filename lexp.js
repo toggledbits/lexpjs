@@ -1,4 +1,4 @@
-/* Version 21094.1553 */
+/* Version 21094.1613 */
 /** lexpjs - Copyright (C) 2018,2021 Patrick H. Rigney, All Rights Reserved
  *  See https://github.com/toggledbits/lexpjs
  *
@@ -981,9 +981,11 @@ return new Parser;
         , split     : { nargs: 2, impl: (s,p,n) => String(s).split( p, n ) }
         , "int"     : { nargs: 1, impl: parseInt }
         , "float"   : { nargs: 1, impl: parseFloat }
-        , "bool"    : { nargs: 1, impl: function( s ) { return ! ( 0 === s || false === s || null === s || "" === s || null !== String(s).match( /^\s*(0|no|off|false)\s*$/i ) ); } }
+        , "bool"    : { nargs: 1, impl: function( s ) { return !!s && null === String(s).match( /^\s*(0|no|off|false)\s*$/i ); } }
         , str       : { nargs: 1, impl: (s) => String(s) }
-        , time      : { nargs: 0, impl: function(...args) { if ( args.length > 1 && "number" === typeof( args[1] ) ) { args[1] -= FEATURE_MONTH_BASE; } return new Date(...args).getTime() } }
+        , time      : { nargs: 0, impl: function(...args) { 
+            if ( args.length > 1 && "number" === typeof( args[1] ) ) { args[1] -= FEATURE_MONTH_BASE; } 
+            return new Date(...args).getTime() } }
         , dateparts : { nargs: 0, impl: function( t ) { var d = new Date(t); return { year: d.getFullYear(), month: d.getMonth()+FEATURE_MONTH_BASE, day: d.getDate(),
             hour: d.getHours(), minute: d.getMinutes(), second: d.getSeconds(), weekday: d.getDay() }; } }
         , "isNaN"   : { nargs: 1, impl: (n) => Number.isNaN(n) || isNaN(n) }

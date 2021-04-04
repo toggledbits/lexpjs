@@ -221,6 +221,8 @@ var test_expr = [
     , { expr: "bool('off')", expect: false }        /* and "off" is false-y */
     , { expr: "bool('false')", expect: false }      /* and of course, "false" is false-y */
     , { expr: "bool('1')", expect: true }           /* string "1" is explicitly truthy */
+    , { expr: "bool(Infinity)", expect: true }
+    , { expr: "bool(NaN)", expect: false }
     , { expr: "isNaN('123')", expect: false }
     , { expr: "isNaN('abc')", expect: true }
     , { expr: "isNaN(NaN)", expect: true }
