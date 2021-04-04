@@ -1,14 +1,14 @@
 /** lexpjs - Copyright (C) 2018,2021 Patrick H. Rigney, All Rights Reserved
  *  See https://github.com/toggledbits/lexpjs
- * 
+ *
  *  This Software is open source offered under the MIT LICENSE. See https://opensource.org/licenses/MIT
  *
- *  Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated 
- *  documentation files (the "Software"), to deal in the Software without restriction, including without limitation 
+s *  Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+ *  documentation files (the "Software"), to deal in the Software without restriction, including without limitation
  *  the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and
  *  to permit persons to whom the Software is furnished to do so, subject to the following conditions:
- * 
- *  The above copyright notice and this permission notice shall be included in all copies or substantial portions of 
+ *
+ *  The above copyright notice and this permission notice shall be included in all copies or substantial portions of
  *  the Software.
  *
  *  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
@@ -18,7 +18,7 @@
  *  SOFTWARE.
  */
 
-const version = 21091;
+const version = 21094;
 
 const FEATURE_MONTH_BASE = 1;       /* 1 = months 1-12; set to 0 if you prefer JS semantics where 0=Jan,11=Dec */
 
@@ -73,13 +73,14 @@ const FEATURE_MONTH_BASE = 1;       /* 1 = months 1-12; set to 0 if you prefer J
         , split     : { nargs: 2, impl: (s,p,n) => String(s).split( p, n ) }
         , "int"     : { nargs: 1, impl: parseInt }
         , "float"   : { nargs: 1, impl: parseFloat }
-        , "bool"    : { nargs: 1, impl: function( s ) { return ! ( s === 0 || s === false || s === "" || null !== String(s).match( /^\s*(0|no|off|false)\s*$/i ) ); } }
+        , "bool"    : { nargs: 1, impl: function( s ) { return ! ( 0 === s || false === s || null === s || "" === s || null !== String(s).match( /^\s*(0|no|off|false)\s*$/i ) ); } }
         , str       : { nargs: 1, impl: (s) => String(s) }
         , time      : { nargs: 0, impl: function(...args) { if ( args.length > 1 && "number" === typeof( args[1] ) ) { args[1] -= FEATURE_MONTH_BASE; } return new Date(...args).getTime() } }
         , dateparts : { nargs: 0, impl: function( t ) { var d = new Date(t); return { year: d.getFullYear(), month: d.getMonth()+FEATURE_MONTH_BASE, day: d.getDate(),
             hour: d.getHours(), minute: d.getMinutes(), second: d.getSeconds(), weekday: d.getDay() }; } }
         , "isNaN"   : { nargs: 1, impl: (n) => Number.isNaN(n) || isNaN(n) }
         , isnull    : { nargs: 1, impl: (s) => "undefined" === typeof s || null === s }
+        , isInfinity: { nargs: 1, impl: (s) => !isFinite(s) }
         , keys      : { nargs: 1, impl: Object.keys }
         , values    : { nargs: 1, impl: Object.values }
         , join      : { nargs: 2, impl: (a,s) => a.join(s) }
@@ -234,6 +235,8 @@ const FEATURE_MONTH_BASE = 1;       /* 1 = months 1-12; set to 0 if you prefer J
                         v1eval = v1eval << v2eval;
                     else if (e.op == '>>' )
                         v1eval = v1eval >> v2eval;
+                    else if (e.op == '>>>' )
+                        v1eval = v1eval >>> v2eval;
                     else if (e.op == '&&') {
                         /* short-cut evaluation */
                         v1eval = v1eval && _run( v2 );

@@ -67,6 +67,7 @@
 "with"                  { return 'WITH'; }
 "each"                  { return 'EACH'; }
 "NaN"                   { return 'NAN'; }
+"Infinity"				{ return 'INF'; }
 "if"                    { return 'IF'; }
 "then"                  { return 'THEN'; }
 "else"                  { return 'ELSE'; }
@@ -89,6 +90,7 @@
 "%"                     { return 'MOD'; }
 "-"                     { return '-'; }
 "+"                     { return '+'; }
+">>>"					{ return '>>>' }
 "<<"                    { return '<<'; }
 ">>"                    { return '>>'; }
 "<="                    { return '<='; }
@@ -283,6 +285,8 @@ e
         { $$ = atom( 'binop', { op: $2, v1: $1, v2: $3, locs: [@1,@3] } ); }
     | e '>>' e
         { $$ = atom( 'binop', { op: $2, v1: $1, v2: $3, locs: [@1,@3] } ); }
+    | e '>>>' e
+        { $$ = atom( 'binop', { op: $2, v1: $1, v2: $3, locs: [@1,@3] } ); }
     | e BAND e
         { $$ = atom( 'binop', { op: $2, v1: $1, v2: $3, locs: [@1,@3] } ); }
     | e BOR e
@@ -341,6 +345,8 @@ e
         { $$ = null; }
     | NAN
         { $$ = NaN; }
+	| INF
+	    { $$ = Infinity; }
     | ref_expr
         { $$ = $1; }
     | IDENTIFIER ASSIGN e

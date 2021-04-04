@@ -73,6 +73,9 @@ var test_expr = [
     , { expr: "2+2", expect: 4 }
     , { expr: "-4+10", expect: 6 }
     , { expr: "4>>2", expect: 1 }
+    , { expr: "(-4)>>2", expect: -1 }
+    , { expr: "16>>>3", expect: 2 }
+    , { expr: "(-16)>>>3", expect: 536870910 }      /* Assuming unsigned 32-bit integer */
     , { expr: "2<<6", expect: 128 }
     , { expr: "-1 < 0", expect: true }
     , { expr: "-1 < 34", expect: true }
@@ -174,7 +177,13 @@ var test_expr = [
     , { expr: "4 * 8 + 2", expect: 34 }
     , { expr: "4 - 8 * 2", expect: -12 }
 
-    /* Null-conditional operators */
+    /* Null arithmetic */
+    , { expr: "1 + null", expect: 1 }
+    , { expr: "4 * null", expect: 0 }
+    , { expr: "4 / null", expect: Infinity }
+    , { expr: "null / 4", expect: 0 }
+    
+    /* Null-conditional/coalescing operators */
     , { expr: "entity?.id", expect: "house>123" }
     , { expr: "entity?.attributes" }
     , { expr: "entity?.attributes?.size?.octopus", expect: null }
@@ -183,6 +192,8 @@ var test_expr = [
     , { expr: "arr?[1]?.name", expect: "Lucy" }
     , { expr: "arg?[1]?.name", expect: null }
     , { expr: "arr[5]?.name", expect: null }
+    , { expr: "1 ?? 0 & 4" }
+    , { expr: "(1 ?? 0) & 4" }
 
     /* Function tests */
     , { expr: "max(5,4,6*9)", expect: 54 }
@@ -199,8 +210,25 @@ var test_expr = [
     , { expr: "round(-1.3)", expect: -1 }
     , { expr: "t=int('123'), isNaN(t)", expect: false }
     , { expr: "t=int('abc'), isNaN(t)", expect: true }
+    , { expr: "bool(0)", expect: false }
+    , { expr: "bool(1)", expect: true }
+    , { expr: "bool(null)", expect: false }         /* null is false-y */
+    , { expr: "bool(``)", expect: false }           /* empty string is false-y */
+    , { expr: "bool('hello')", expect: true }       /* non-empty string is truthy */
+    , { expr: "bool('yes')", expect: true }         /* the word "YES" is explicitly truthy */
+    , { expr: "bool('true')", expect: true }        /* as is the word "TRUE" */
+    , { expr: "bool('no')", expect: false }         /* but string "no" is false-y */
+    , { expr: "bool('off')", expect: false }        /* and "off" is false-y */
+    , { expr: "bool('false')", expect: false }      /* and of course, "false" is false-y */
+    , { expr: "bool('1')", expect: true }           /* string "1" is explicitly truthy */
     , { expr: "isNaN('123')", expect: false }
     , { expr: "isNaN('abc')", expect: true }
+    , { expr: "isNaN(NaN)", expect: true }
+    , { expr: "isInfinity(123)", expect: false }
+    , { expr: "isInfinity(1/0)", expect: true }
+    , { expr: "isInfinity(null)", expect: false }
+    , { expr: "isInfinity(Infinity)", expect: true }
+    , { expr: "isInfinity(-Infinity)", expect: true }
     , { expr: "time(2021,1,17)", expect: new Date(2021,0,17).getTime() }    /* Assumes FEATURE_MONTH_BASE == 1 (default) */
     , { expr: "dateparts(time(2021,1,17,3,4,5)).year", expect: 2021 }
     , { expr: "dateparts(time(2021,1,17,3,4,5)).month", expect: 1 }
@@ -264,8 +292,6 @@ var test_expr = [
     , { expr: "arr=[3,4],first m in arr with m>=6", expect: null }
 
     /* misc */
-    , { expr: "1 ?? 0 & 4" }
-    , { expr: "(1 ?? 0) & 4" }
     , { expr: "do 5, 6, 7, 8, 9 done", expect: 9 }
     , { expr: "'nice' # this is a comment", expect: "nice" }
     , { expr: "# this is a comment\n'hello'", expect: "hello" }

@@ -191,7 +191,7 @@ The expression language includes a set of *operators*. Multiplication is perform
 
 String concatenation is performed using the `+` operator; if either operand is a string, the result will be a concatenated string in which the non-string operand was converted to its string representation (i.e. `"123" + 456` results in the string `"123456"`). The *null* value is coerced to an empty string (so `null + "abc"` results in `"abc"`).
 
-In addition to the mathematical operators, there are *relational operators*: `==`, `!=`, `>`, `>=`, `<` and `<=` all return *true* if their operands are equal, not equal, etc. In addition, the two special relational operators `===` and `!==` check equality/inequality not just of value, but of data type, such that `"3" == 3` is *true*, but `"3" === 3` is *false* (because the left operand is string type, and the right a number). 
+In addition to the mathematical operators, there are *relational operators*: `==`, `!=`, `>`, `>=`, `<` and `<=` all return *true* if their operands are equal, not equal, etc. In addition, the two special relational operators `===` and `!==` check equality/inequality not just of value, but of data type, such that `"3" == 3` is *true*, but `"3" === 3` is *false* (because the left operand is string type, and the right a number).
 
 > Note that equality/inequality comparison of arrays or objects (non-primitive types), such as `array1 == array2` does *not* perform a "deep inspection" of the array/object and is effectively not a valid comparison for most practical purposes. Rather, it determines if the two operands are *the same object in memory* (as JavaScript does), and thus is most likely *false* and not truly a relevant comparison. Specifically, the following expressions are expected to be false: `[1,2,3] == [1,2,3]`, `{ abc:1, def:2 } == { abc:1, def:2 }` because although they are equivalent in terms of their contents, they are not, in fact, the same object in memory. The more complex `s=[1,2,3], t=s, s == t` is *true*, however, because `s` and `t` do refer to the same object in memory.
 
@@ -236,7 +236,11 @@ The following is the list of operators supported in order from lowest precedence
 
 ## Data Types
 
-The data types known to lexpjs are boolean, number, string, array, object, and `null`. The special value `NaN` may also be returned by some operations, but has no matching keyword. The `isNaN()` function can be used to test for `NaN`.
+The data types known to lexpjs are boolean, number, string, array, object, and the following special type/values (both a type and a value):
+
+* `null`, which basically is used to mean "no value";
+* `NaN`, which stands for "Not a Number", which results when a conversion to number fails (e.g. `5 * "hello"` or `int( 'what is this?' )`;
+* `Infinity`, which results from division by zero and other similar math failures.
 
 Arrays and objects can be constructed and used on the fly: `[ 5, 99, 23, 17 ]` constructs a four-element array, while `{ name: 'spot', type: 'dog', weight: 33 }` constructs an object.
 
@@ -268,6 +272,7 @@ I keep adding things as I need them or people ask, so [let me know](https://gith
 * `random()` &mdash; returns a random number greater than or equal to 0 and less than 1;
 * `min/max( ... )` &mdash; returns the smallest/largest value of its arguments;
 * `isNaN( various )` &mdash; returns true if the argument is `NaN`, or if it would be if conversion was attempted (e.g. `isNaN( 'not a number' )` is *true*, but `isNaN( '123' )` is *false*).
+* `isInfinity( value )` &mash; returns true if the argument is `Infinity`, as would result in, for example, division by zero.
 
 ### String Handling Functions
 
@@ -322,4 +327,4 @@ Important notes with respect to date handling (currently; this will evolve):
 
 As a result of the syntax, the following words are reserved and may not be used as identifiers or function names: `true, false, null, each, in, first, with, if, then, else, endif, do, done, and, or, not, NaN`. Note that keywords and identifiers are case-sensitive, so while `each` is not an acceptable identifier, `Each` or `EACH` would be.
 
-<small>Updated 2021-03-25</small>
+<small>Updated 2021-04-04</small>
