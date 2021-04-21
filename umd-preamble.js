@@ -18,7 +18,7 @@ s *  Permission is hereby granted, free of charge, to any person obtaining a cop
  *  SOFTWARE.
  */
 
-const version = 21094;
+const version = 21111;
 
 const FEATURE_MONTH_BASE = 1;       /* 1 = months 1-12; set to 0 if you prefer JS semantics where 0=Jan,11=Dec */
 
@@ -75,8 +75,8 @@ const FEATURE_MONTH_BASE = 1;       /* 1 = months 1-12; set to 0 if you prefer J
         , "float"   : { nargs: 1, impl: parseFloat }
         , "bool"    : { nargs: 1, impl: function( s ) { return !!s && null === String(s).match( /^\s*(0|no|off|false)\s*$/i ); } }
         , str       : { nargs: 1, impl: (s) => String(s) }
-        , time      : { nargs: 0, impl: function(...args) { 
-            if ( args.length > 1 && "number" === typeof( args[1] ) ) { args[1] -= FEATURE_MONTH_BASE; } 
+        , time      : { nargs: 0, impl: function(...args) {
+            if ( args.length > 1 && "number" === typeof( args[1] ) ) { args[1] -= FEATURE_MONTH_BASE; }
             return new Date(...args).getTime() } }
         , dateparts : { nargs: 0, impl: function( t ) { var d = new Date(t); return { year: d.getFullYear(), month: d.getMonth()+FEATURE_MONTH_BASE, day: d.getDate(),
             hour: d.getHours(), minute: d.getMinutes(), second: d.getSeconds(), weekday: d.getDay() }; } }
@@ -85,6 +85,7 @@ const FEATURE_MONTH_BASE = 1;       /* 1 = months 1-12; set to 0 if you prefer J
         , isInfinity: { nargs: 1, impl: (s) => !isFinite(s) }
         , keys      : { nargs: 1, impl: Object.keys }
         , values    : { nargs: 1, impl: Object.values }
+        , clone     : { nargs: 1, impl: (a) => JSON.parse( JSON.stringify( a ) ) }
         , join      : { nargs: 2, impl: (a,s) => a.join(s) }
         , list      : { nargs: 0, impl: function( ...args ) { return args; } }
         , indexOf   : { nargs: 2, impl: (a,el) => a.indexOf( el ) }
@@ -94,9 +95,9 @@ const FEATURE_MONTH_BASE = 1;       /* 1 = months 1-12; set to 0 if you prefer J
         , slice     : { nargs: 2, impl: (a,s,e) => (a||[]).slice( s, e ) }
         , insert    : { nargs: 2, impl: (a,p,...el) => { a.splice( p, 0, ...el ); return a; } }
         , remove    : { nargs: 2, impl: (a,s,n) => { a.splice( s, "undefined" === typeof n ? 1 : n ); return a; } }
-        , push      : { nargs: 2, impl: (a,v,n) => { a.push(v); if ( n && a.length > n ) a.splice( 0, a.length-n ); return a } }
+        , push      : { nargs: 2, impl: (a,v,n) => { a = a || []; a.push(v); if ( n && a.length > n ) a.splice( 0, a.length-n ); return a; } }
         , pop       : { nargs: 1, impl: (a) => a.pop() }
-        , unshift   : { nargs: 2, impl: (a,v,n) => { a.unshift(v); if ( n && a.length > n ) a.splice( n, a.length-n ); return a } }
+        , unshift   : { nargs: 2, impl: (a,v,n) => { a = a || []; a.unshift(v); if ( n && a.length > n ) a.splice( n, a.length-n ); return a; } }
         , shift   : { nargs: 1, impl: (a) => a.shift() }
         , isArray   : { nargs: 1, impl: Array.isArray }
         , isObject  : { nargs: 1, impl: (p) => "object" === typeof p && null !== p }
@@ -324,49 +325,50 @@ const FEATURE_MONTH_BASE = 1;       /* 1 = months 1-12; set to 0 if you prefer J
                     return N(r);
                 } else if ( is_atom( e, 'iter' ) ) {
                     ctx.__lvar = ctx.__lvar || {};
-                    var context = _run( e.context );
-                    var res = [];
-                    // D(e);
-                    if ( ! Array.isArray( context ) ) {
+                    let context = N( _run( e.context ) );
+                    let res = [];
+                    if ( null !== context ) {
+                        // D(e);
                         if ( "object" !== typeof context ) {
                             context = [ context ];
-                        } else {
-                            context = Object.values( context );
+                        }
+                        // D("Iterate over",context,"using",e.value,"apply",e.exec);
+                        for ( [key,value] of Object.entries( context ) ) {
+                            // D("Assigning",value,"to",e.value);
+                            ctx.__lvar[ e.value ] = value;
+                            if ( e.key ) {
+                                ctx.__lvar[ e.key ] = key;
+                            }
+                            // D("Running",e.exec);
+                            let v = _run( e.exec );
+                            // D("result",v);
+                            if ( v !== null ) {
+                                res.push( v );
+                            }
                         }
                     }
-                    // D("Iterate over",context,"using",e.ident,"apply",e.exec);
-                    context.forEach( element => {
-                        // D("Assigning",element,"to",e.ident);
-                        ctx.__lvar[ e.ident ] = element;
-                        // D("Running",e.exec);
-                        let v = _run( e.exec );
-                        // D("result",v);
-                        if ( v !== null ) {
-                            res.push( v );
-                        }
-                    });
                     return res;
                 } else if ( is_atom( e, 'search' ) ) {
-                    ctx.__lvar = ctx.__lvar || {};
-                    var context = _run( e.context );
-                    var res = null
-                    // D(e);
-                    // D("Search",context,"using",e.ident,"for",e.exec);
-                    if ( ! Array.isArray( context ) ) {
+                    let context = N( _run( e.context ) );
+                    let res = null;
+                    if ( null !== context ) {
+                        ctx.__lvar = ctx.__lvar || {};
+                        // D(e);
+                        // D("Search",context,"using",e.value,"for",e.exec);
                         if ( "object" !== typeof context ) {
                             context = [ context ];
-                        } else {
-                            context = Object.values( context );
                         }
-                    }
-                    while ( context.length > 0 ) {
-                        let element = context.shift();
-                        // D("Assigning",element,"to",e.ident);
-                        ctx.__lvar[ e.ident ] = element;
-                        let v = _run( e.exec );
-                        if ( !!v ) {
-                            res = element;
-                            break;
+                        for ( const [key, value] of Object.entries( context ) ) {
+                            // D("Assigning",value,"to",e.value);
+                            ctx.__lvar[ e.value ] = value;
+                            if ( e.key ) {
+                                ctx.__lvar[ e.key ] = key;
+                            }
+                            let v = _run( e.exec );
+                            if ( !!v ) {
+                                res = value;
+                                break;
+                            }
                         }
                     }
                     return res;

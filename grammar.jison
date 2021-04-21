@@ -1,14 +1,14 @@
-/** Grammar for lexpjs. Copyright (C) 2020 Patrick H. Rigney
+/** Grammar for lexpjs. Copyright (C) 2020,2021 Patrick H. Rigney
  *  See https://github.com/toggledbits/lexpjs
- * 
+ *
  *  This Software is offered under the MIT LICENSE open source license. See https://opensource.org/licenses/MIT
  *
- *  Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated 
- *  documentation files (the "Software"), to deal in the Software without restriction, including without limitation 
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+ *  documentation files (the "Software"), to deal in the Software without restriction, including without limitation
  *  the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and
  *  to permit persons to whom the Software is furnished to do so, subject to the following conditions:
- * 
- *  The above copyright notice and this permission notice shall be included in all copies or substantial portions of 
+ *
+ *  The above copyright notice and this permission notice shall be included in all copies or substantial portions of
  *  the Software.
  *
  *  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
@@ -67,7 +67,7 @@
 "with"                  { return 'WITH'; }
 "each"                  { return 'EACH'; }
 "NaN"                   { return 'NAN'; }
-"Infinity"				{ return 'INF'; }
+"Infinity"              { return 'INF'; }
 "if"                    { return 'IF'; }
 "then"                  { return 'THEN'; }
 "else"                  { return 'ELSE'; }
@@ -90,7 +90,7 @@
 "%"                     { return 'MOD'; }
 "-"                     { return '-'; }
 "+"                     { return '+'; }
-">>>"					{ return '>>>' }
+">>>"                   { return '>>>' }
 "<<"                    { return '<<'; }
 ">>"                    { return '>>'; }
 "<="                    { return '<='; }
@@ -345,16 +345,20 @@ e
         { $$ = null; }
     | NAN
         { $$ = NaN; }
-	| INF
-	    { $$ = Infinity; }
+    | INF
+        { $$ = Infinity; }
     | ref_expr
         { $$ = $1; }
     | IDENTIFIER ASSIGN e
         { $$ = atom( 'binop', { 'op': $2, v1: atom( 'vref', { name: $1 } ), v2: $3, locs: [@1, @3] } ); }
     | EACH IDENTIFIER IN e COLON e
-        { $$ = atom( 'iter', { ident: $2, context: $4, exec: $6 } ); }
+        { $$ = atom( 'iter', { value: $2, context: $4, exec: $6 } ); }
+    | EACH IDENTIFIER COMMA IDENTIFIER IN e COLON e
+        { $$ = atom( 'iter', { value: $2, key: $4, context: $6, exec: $8 } ); }
     | FIRST IDENTIFIER IN e WITH e
-        { $$ = atom( 'search', { ident: $2, context: $4, exec: $6 } ); }
+        { $$ = atom( 'search', { value: $2, context: $4, exec: $6 } ); }
+    | FIRST IDENTIFIER COMMA IDENTIFIER IN e WITH e
+        { $$ = atom( 'search', { value: $2, key: $4, context: $6, exec: $8 } ); }
     | DO expr_list DONE
         { $$ = $2; }
     ;

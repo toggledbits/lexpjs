@@ -1,3 +1,5 @@
+const version = 21111;
+
 var lexp = require("./lexp.js");
 console.log(lexp);
 
@@ -271,6 +273,9 @@ var test_expr = [
     , { expr: "t=[ 'dog', 'cat' ], shift( t ), t", expect: [ "cat" ] }     /* confirm modified in place */
     , { expr: "t=[1,2,3,4,5,6,7,8,9,10], push( t, 11, 4 )", expect: [ 8,9,10,11 ] }
     , { expr: "t=[1,2,3,4,5,6,7,8,9,10], unshift( t, 0, 5 )", expect: [ 0,1,2,3,4 ] }
+    , { expr: "t=[9,7,5],s=t,push(s, 3),t", expect: [9,7,5,3] }
+    , { expr: "t=[9,7,5],s=clone(t),push(s, 3),t", expect: [9,7,5] }
+    , { expr: "s", expect: [9,7,5,3] }
 
     /* Conditional */
     , { expr: "if entity.attributes.power_switch.state then 1 else 0 endif", expect: 1 }
@@ -280,7 +285,9 @@ var test_expr = [
 
     /* Iteration */
     , { expr: "each item in [1,2,3,4,5]: 2*item", expect: [ 2,4,6,8,10 ] }
-    , { expr: "each item in arr: item.name" }
+    , { expr: "each item,index in [1,2,3,4,5]: 3*index", expect: [ 0,3,6,9,12 ] }
+    , { expr: "each item in arr: item.name", expect: [ "Spot", "Lucy" ] }
+    , { expr: "each item,key in entity.attributes: key", expect: [ "power_switch", "position", "volume" ] }
     , { expr: "each item in keys(entity.attributes): item + '=' + entity.attributes[item]" }
     , { expr: "t=each item in 'hello': item + ' there', t?[0]", expect: "hello there" }
     , { expr: "t=0; each item in arr: do t=t+1; null done; t", expect: 2 }
@@ -288,10 +295,14 @@ var test_expr = [
     , { expr: "each n in [4,5,6]: [n,n+1,n+2]", expect: [ [4,5,6],[5,6,7],[6,7,8] ] }
     , { expr: 'testArr = [ ["dog",1,{a:"b"}] , [1,"five",[]] , ["1","one",[1]] ], each element in testArr: indexOf(element,1)', expect: [ 1, 0, -1 ] }
     , { expr: "(first item in entity.attributes with !isnull(item?.level)).level == 0.1", expect: true }
-    , { expr: "arr=[3,4],first m in arr with m", expect: 3 }
-    , { expr: "arr=[3,4],first m in arr with m<=4", expect: 3 }
-    , { expr: "arr=[3,4],first m in arr with m>=4", expect: 4 }
-    , { expr: "arr=[3,4],first m in arr with m>=6", expect: null }
+    , { expr: "t=[3,4],first m in t with m", expect: 3 }
+    , { expr: "t=[3,4],first m in t with m<=4", expect: 3 }
+    , { expr: "t=[3,4],first m in t with m>=4", expect: 4 }
+    , { expr: "t=[3,4],first m in t with m>=6", expect: null }
+    , { expr: "each v in null: true", expect: [] }
+    , { expr: "first v in null with true", expect: null }
+    , { expr: "each v in 123: v", expect: [ 123 ] }
+    , { expr: "first v in 123 with true", expect: 123 }
 
     /* misc */
     , { expr: "do 5, 6, 7, 8, 9 done", expect: 9 }

@@ -248,8 +248,8 @@ Arrays and objects can be constructed and used on the fly: `[ 5, 99, 23, 17 ]` c
 
 The expression language has a couple of "lightweight statements" that function as a hybrid of a statement and an expression. These are:
 
-* `each <element-identifier> of <array-or-object>: <expression>` &mdash; the `each` statement will iterate over the given array or object, placing a member in the named element identifier, and execute the expression. The result of the expression, if non-`null`, is pushed to an array that forms the expression result. For example, `each num of [ 4,7,33 ]: num * 2` will return an array `[ 8, 14, 66 ]`.
-* `first <element-identifier> of <array-or-object> with <expression>` &mdash; the `first` state will search through the elements of an array or object (top level, no traversal) and return the first member that for which `<expression>` is true (or [truthy](https://developer.mozilla.org/en-US/docs/Glossary/Truthy)).
+* `each <element-identifier> [, <element-identifier> ] of <array-or-object-expression>: <expression>` &mdash; the `each` statement will iterate over the given array or object (or expression resulting in an array or object), each time placing an array value or object element in the named variable (and the key or index in the second named variable, if given), and then execute the expression. The expression result, if non-`null`, is pushed to an array that forms the `each` expression result. For example, `each num of [ 4,7,33 ]: num * 2` will return an array `[ 8, 14, 66 ]`, while `each v,k of { "alpha": 1, "beta": 2 }: k` will return `["alpha", "beta"]`.
+* `first <element-identifier> [, <element-identifier> ] of <array-or-object> with <expression>` &mdash; the `first` state will search through the elements of an array or object (top level, no traversal) and return the first value that for which `<expression>` is true (or [truthy](https://developer.mozilla.org/en-US/docs/Glossary/Truthy)).
 * `do <statement-list> done` &mdash; since the limited syntax of `each` allows only a single statement to be executed, the `do...done` statement creates a statement block that appears to `each` as a single statement, thus allowing multiple statements to be executed within the loop. The standard multi-statement result rule applies: the result of the statement block is the result produced by the last expression in the block.
 * For users uncomfortable with the ternary operator syntax, an `if <conditional> then <true-expression> else <false-expression> endif` statement may be used. The true and false expressions may be a `do...done` block.
 
@@ -308,6 +308,7 @@ Important notes with respect to date handling (currently; this will evolve):
 * `len( array )` &mdash; returns the number of elements in the array;
 * `keys( object )` &mdash; returns, as an array, the keys in the given object;
 * `values( object )` &mdash; returns, as an array, the values in the given object;
+* `clone( varies )` &mdash; return a (deep) copy of its argument; this is particularly useful for arrays and objects;
 * `join( array, joinstring )` &mdash; returns a string with the elements of `array` converted to strings and joined by `joinstring` (e.g. `join([4,6,8], ":")` results in the string "4:6:8", while `join([9], ":")` would be simply "9");
 * `list( ... )` &mdash; returns an array of its argument; this is legacy syntax (i.e. `list(5,7,9)` is the same as writing `[5,7,9]`, so this function is now obsolete and may be removed later);
 * `indexOf( array, value )` &mdash; if *value* is present in *array*, the index (>=0) is returned; otherwise -1 is returned;
@@ -327,4 +328,4 @@ Important notes with respect to date handling (currently; this will evolve):
 
 As a result of the syntax, the following words are reserved and may not be used as identifiers or function names: `true, false, null, each, in, first, with, if, then, else, endif, do, done, and, or, not, NaN`. Note that keywords and identifiers are case-sensitive, so while `each` is not an acceptable identifier, `Each` or `EACH` would be.
 
-<small>Updated 2021-04-04</small>
+<small>Updated 2021-Apr-21</small>
