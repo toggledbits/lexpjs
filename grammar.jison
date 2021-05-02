@@ -83,6 +83,7 @@
 0x[0-9A-Fa-f]+\b        { return 'HEXNUM'; }
 0o[0-7]+\b              { return 'OCTNUM'; }
 0b[01]+\b               { return 'BINNUM'; }
+\.\.                    { return 'RANGE'; }
 ":"                     { return 'COLON'; }
 "**"                    { return 'POW'; }
 "*"                     { return '*'; }
@@ -140,6 +141,7 @@
 %nonassoc '==' '===' '!=' '!=='
 %nonassoc IN
 %nonassoc '<' '<=' '>' '>='
+%left RANGE
 %left '<<' '>>'
 %left '+' '-'
 %left '*' '/' MOD
@@ -270,6 +272,8 @@ e
     | BNOT e
         { $$ = atom( 'unop', { op: '~', val: $2 } ); }
     | e POW e
+        { $$ = atom( 'binop', { op: $2, v1: $1, v2: $3, locs: [@1,@3] } ); }
+    | e RANGE e
         { $$ = atom( 'binop', { op: $2, v1: $1, v2: $3, locs: [@1,@3] } ); }
     | e '*' e
         { $$ = atom( 'binop', { op: $2, v1: $1, v2: $3, locs: [@1,@3] } ); }

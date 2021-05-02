@@ -18,9 +18,10 @@ s *  Permission is hereby granted, free of charge, to any person obtaining a cop
  *  SOFTWARE.
  */
 
-const version = 21111;
+const version = 21122;
 
 const FEATURE_MONTH_BASE = 1;       /* 1 = months 1-12; set to 0 if you prefer JS semantics where 0=Jan,11=Dec */
+const MAX_RANGE = 1000;          /* Maximum number of elements in a result range op result array */
 
 (function (root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -250,6 +251,24 @@ const FEATURE_MONTH_BASE = 1;       /* 1 = months 1-12; set to 0 if you prefer J
                         v1eval = v1eval in v2eval;
                     } else if (e.op == '??' ) {
                         v1eval = ( null === N(v1eval) ) ? _run( v2 ) : v1eval;
+                    } else if ( ".." === e.op ) {
+                        /* Range op */
+                        let res = [];
+                        let n = v1eval;
+                        let l = Math.abs( v2eval - v1eval ) + 1;
+                        if ( l > MAX_RANGE ) {
+                            throw new Error("Range exceeds maximum differential of " + String(MAX_RANGE) );
+                        }
+                        if ( v2eval >= v1eval ) {
+                            while ( n <= v2eval ) {
+                                res.push( n++ );
+                            }
+                        } else {
+                            while ( n >= v2eval ) {
+                                res.push( n-- );
+                            }
+                        }
+                        v1eval = res;
                     } else if (e.op == '=' ) {
                         /* Assignment */
                         if ( ! is_atom( v1, 'vref' ) ) {

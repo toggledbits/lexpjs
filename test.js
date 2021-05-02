@@ -1,4 +1,4 @@
-const version = 21111;
+const version = 21122;
 
 var lexp = require("./lexp.js");
 console.log(lexp);
@@ -139,6 +139,8 @@ var test_expr = [
     , { expr: "~0x10", expect: ~0x10 }
     , { expr: "!0", expect: true }
     , { expr: "!1", expect: false }
+    , { expr: "3..6", expect: [3,4,5,6] }
+    , { expr: "6..3", expect: [6,5,4,3] }
     , { expr: "123 ?? 456", expect: 123 }
     , { expr: "123 ?? null", expect: 123 }
     , { expr: "null ?? 456", expect: 456 }
@@ -291,8 +293,8 @@ var test_expr = [
     , { expr: "each item in keys(entity.attributes): item + '=' + entity.attributes[item]" }
     , { expr: "t=each item in 'hello': item + ' there', t?[0]", expect: "hello there" }
     , { expr: "t=0; each item in arr: do t=t+1; null done; t", expect: 2 }
-    , { expr: "each n in [1,2,3]: [4,5,6]", expect: [ [4,5,6],[4,5,6],[4,5,6] ] }
-    , { expr: "each n in [4,5,6]: [n,n+1,n+2]", expect: [ [4,5,6],[5,6,7],[6,7,8] ] }
+    , { expr: "each n in 1..3: [4,5,6]", expect: [ [4,5,6],[4,5,6],[4,5,6] ] }
+    , { expr: "each n in 4..6: [n,n+1,n+2]", expect: [ [4,5,6],[5,6,7],[6,7,8] ] }
     , { expr: 'testArr = [ ["dog",1,{a:"b"}] , [1,"five",[]] , ["1","one",[1]] ], each element in testArr: indexOf(element,1)', expect: [ 1, 0, -1 ] }
     , { expr: "(first item in entity.attributes with !isnull(item?.level)).level == 0.1", expect: true }
     , { expr: "t=[3,4],first m in t with m", expect: 3 }
