@@ -254,12 +254,16 @@ const MAX_RANGE = 1000;          /* Maximum number of elements in a result range
                     } else if ( ".." === e.op ) {
                         /* Range op */
                         let res = [];
-                        let n = v1eval;
-                        let l = Math.abs( v2eval - v1eval ) + 1;
+                        if ( "number" !== typeof v1eval || "number" !== typeof v2eval ) {
+                            throw new TypeError( "Non-numeric operand to range operator" );
+                        }
+                        let n = Math.floor( v1eval );
+                        v2eval = Math.floor( v2eval );
+                        let l = Math.abs( v2eval - n ) + 1;
                         if ( l > MAX_RANGE ) {
                             throw new Error("Range exceeds maximum differential of " + String(MAX_RANGE) );
                         }
-                        if ( v2eval >= v1eval ) {
+                        if ( v2eval >= n ) {
                             while ( n <= v2eval ) {
                                 res.push( n++ );
                             }

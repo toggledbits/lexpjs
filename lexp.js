@@ -1,4 +1,4 @@
-/* Version 21122.1103 */
+/* Version 21123.1732 */
 /** lexpjs - Copyright (C) 2018,2021 Patrick H. Rigney, All Rights Reserved
  *  See https://github.com/toggledbits/lexpjs
  *
@@ -1170,12 +1170,16 @@ return new Parser;
                     } else if ( ".." === e.op ) {
                         /* Range op */
                         let res = [];
-                        let n = v1eval;
-                        let l = Math.abs( v2eval - v1eval ) + 1;
+                        if ( "number" !== typeof v1eval || "number" !== typeof v2eval ) {
+                            throw new TypeError( "Non-numeric operand to range operator" );
+                        }
+                        let n = Math.floor( v1eval );
+                        v2eval = Math.floor( v2eval );
+                        let l = Math.abs( v2eval - n ) + 1;
                         if ( l > MAX_RANGE ) {
                             throw new Error("Range exceeds maximum differential of " + String(MAX_RANGE) );
                         }
-                        if ( v2eval >= v1eval ) {
+                        if ( v2eval >= n ) {
                             while ( n <= v2eval ) {
                                 res.push( n++ );
                             }

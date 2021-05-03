@@ -209,6 +209,8 @@ The *coalesce operators*, borrowed from C#, are `??`, `?.` and `?[`. Coalesce op
 
 The `in` operator is used to establish if an object contains a specified key (e.g. `key in obj`) or an array contains an element at the given index (e.g. `15 in arr`). It is important to note that this operator works on *keys* only, not values, and in particular, cannot be used to search an array for a value (i.e. `4 in [ 4, 5, 6 ]` is *false*). To find an array element, use the `indexOf()` function. The `first` statement can be used to find a value in an object.
 
+The `..` range operator produces an array containing all integers from the left operand to the right, so `3..6` results in `[3,4,5,6]`. A `for`-style counting loop can be implemented using `each` with the range operator as its operand: `each i in 0..9: <statement>` would execute `<statement>` 10 times.
+
 Multiple expressions can be chained together by separating them with a comma. The result of a chained expression is the last expression evaluated.
 
 The following is the list of operators supported in order from lowest precedence to highest. Operators on the same line have equal precedence and are evaluated
@@ -329,4 +331,4 @@ Important notes with respect to date handling (currently; this will evolve):
 
 As a result of the syntax, the following words are reserved and may not be used as identifiers or function names: `true, false, null, each, in, first, with, if, then, else, endif, do, done, and, or, not, NaN, Infinity`. Note that keywords and identifiers are case-sensitive, so while `each` is not an acceptable identifier, `Each` or `EACH` would be.
 
-<small>Updated 2021-Apr-21</small>
+<small>Updated 2021-May-02</small>

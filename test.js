@@ -1,4 +1,4 @@
-const version = 21122;
+const version = 21124;
 
 var lexp = require("./lexp.js");
 console.log(lexp);
@@ -141,6 +141,7 @@ var test_expr = [
     , { expr: "!1", expect: false }
     , { expr: "3..6", expect: [3,4,5,6] }
     , { expr: "6..3", expect: [6,5,4,3] }
+    , { expr: "0.5..2.6", expect: [0,1,2] }
     , { expr: "123 ?? 456", expect: 123 }
     , { expr: "123 ?? null", expect: 123 }
     , { expr: "null ?? 456", expect: 456 }
