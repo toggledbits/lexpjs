@@ -152,6 +152,7 @@ var test_expr = [
     , { expr: "true ? 123 : 456", expect: 123 }
     , { expr: "false ? 123 : 456", expect: 456 }
     , { expr: "[1,2,3]", expect: [1,2,3] }
+    , { expr: "([9,8,7,6])[2]", expect: 7 }
     , { expr: "[1,2,3] == [1,2,3]", expect: false }     /* because different objects in memory */
     , { expr: "s=[1,2,3], t=s, s==t", expect: true }    /* because same object in memory */
     , { expr: "{ alpha: 1, beta: 2, gamma: 3 }", expect: { alpha: 1, beta: 2, gamma: 3 } }
@@ -306,6 +307,7 @@ var test_expr = [
     , { expr: "first v in null with true", expect: null }
     , { expr: "each v in 123: v", expect: [ 123 ] }
     , { expr: "first v in 123 with true", expect: 123 }
+    , { expr: "each v,k in { 'alpha': 1, 'beta': 2 }: k", expect: [ "alpha", "beta" ] }
 
     /* misc */
     , { expr: "do 5, 6, 7, 8, 9 done", expect: 9 }
