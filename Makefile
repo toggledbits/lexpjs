@@ -10,3 +10,5 @@ lexp.js: .parser umd-preamble.js Makefile
 test: lexp.js
 	node test.js
 
+clean:
+	rm -f .parser .wrapper lexp.js
