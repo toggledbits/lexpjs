@@ -79,7 +79,7 @@
 "or"                    { return 'LOR'; }
 "not"                   { return 'LNOT'; }
 [A-Za-z_$][A-Za-z0-9_$]*\b  { return 'IDENTIFIER'; }
-[0-9]+("."[0-9]+)?([eE][+-]?[0-9]+)?\b  {return 'NUMBER'; }
+[0-9]+("."[0-9]+)?([eE][+-]?[0-9]+)?\b  { return 'NUMBER'; }
 0x[0-9A-Fa-f]+\b        { return 'HEXNUM'; }
 0o[0-7]+\b              { return 'OCTNUM'; }
 0b[01]+\b               { return 'BINNUM'; }
@@ -91,7 +91,7 @@
 "%"                     { return 'MOD'; }
 "-"                     { return '-'; }
 "+"                     { return '+'; }
-">>>"                   { return '>>>' }
+">>>"                   { return '>>>'; }
 "<<"                    { return '<<'; }
 ">>"                    { return '>>'; }
 "<="                    { return '<='; }
@@ -142,7 +142,7 @@
 %nonassoc IN
 %nonassoc '<' '<=' '>' '>='
 %left RANGE
-%left '<<' '>>'
+%left '<<' '>>' '>>>'
 %left '+' '-'
 %left '*' '/' MOD
 %right POW
