@@ -18,7 +18,7 @@ s *  Permission is hereby granted, free of charge, to any person obtaining a cop
  *  SOFTWARE.
  */
 
-const version = 21122;
+const version = 21147;
 
 const FEATURE_MONTH_BASE = 1;       /* 1 = months 1-12; set to 0 if you prefer JS semantics where 0=Jan,11=Dec */
 const MAX_RANGE = 1000;          /* Maximum number of elements in a result range op result array */
@@ -44,6 +44,44 @@ const MAX_RANGE = 1000;          /* Maximum number of elements in a result range
 
 /* --------------------------------- lexp executive ------------------------------- */
 
+    const f_min = function( ...args ) {
+        let res = null;
+        let n = args.length;
+        for ( let i=0; i<n; i++ ) {
+            let v = args[ i ];
+            if ( Array.isArray( v ) ) {
+                v = f_min.apply( null, v );
+                if ( null !== v && ( null === res || v < res ) ) {
+                    res = v;
+                }
+            } else if ( "number" === typeof v ) {
+                if ( null === res || v < res ) {
+                    res = v;
+                }
+            }
+        }
+        return res;
+    }
+
+    const f_max = function( ...args ) {
+        let res = null;
+        let n = args.length;
+        for ( let i=0; i<n; i++ ) {
+            let v = args[ i ];
+            if ( Array.isArray( v ) ) {
+                v = f_max.apply( null, v );
+                if ( null !== v && ( null === res || v > res ) ) {
+                    res = v;
+                }
+            } else if ( "number" === typeof v ) {
+                if ( null === res || v > res ) {
+                    res = v;
+                }
+            }
+        }
+        return res;
+    }
+
     const nativeFuncs = {
           abs       : { nargs: 1, impl: (v) => v >= 0 ? v : -v }
         , sign      : { nargs: 1, impl: Math.sign }
@@ -59,14 +97,14 @@ const MAX_RANGE = 1000;          /* Maximum number of elements in a result range
         , pow       : { nargs: 2, impl: Math.pow }
         , sqrt      : { nargs: 1, impl: Math.sqrt }
         , random    : { nargs: 0, impl: Math.random }
-        , min       : { nargs: 2, impl: Math.min } /* ??? should take arrays, too */
-        , max       : { nargs: 2, impl: Math.max } /* ??? should take arrays, too */
+        , min       : { nargs: 1, impl: function( ...args ) { return f_min( null, ...args ); } }
+        , max       : { nargs: 1, impl: function( ...args ) { return f_max( null, ...args ); } }
         , len       : { nargs: 1, impl: (s) => s.length }
         , substr    : { nargs: 2, impl: function( s, p, l ) { s = String(s); if (l==undefined) l=s.length; return s.substr(p,l); } }
         , upper     : { nargs: 1, impl: (s) => String(s).toUpperCase() }
         , lower     : { nargs: 1, impl: (s) => String(s).toLowerCase() }
-        , match     : { nargs: 2, impl: function( s, p, n, f ) { var r = String(s).match( new RegExp( p, f ) ); return ( r === null ) ? null : r[n || 0]; } }
-        , find      : { nargs: 2, impl: function( s, p, f ) { var r = String(s).match( new RegExp( p, f ) ); return ( r === null ) ? -1 : r.index; } }
+        , match     : { nargs: 2, impl: function( s, p, n, f ) { let r = String(s).match( new RegExp( p, f ) ); return ( r === null ) ? null : r[n || 0]; } }
+        , find      : { nargs: 2, impl: function( s, p, f ) { let r = String(s).match( new RegExp( p, f ) ); return ( r === null ) ? -1 : r.index; } }
         , replace   : { nargs: 3, impl: function( s, p, r, f ) { return String(s).replace( new RegExp( p, f ), r ); } }
         , rtrim     : { nargs: 1, impl: (s) => String(s).replace( /\s+$/, "" ) }
         , ltrim     : { nargs: 1, impl: (s) => String(s).replace( /^\s+/, "" ) }
@@ -79,7 +117,7 @@ const MAX_RANGE = 1000;          /* Maximum number of elements in a result range
         , time      : { nargs: 0, impl: function(...args) {
             if ( args.length > 1 && "number" === typeof( args[1] ) ) { args[1] -= FEATURE_MONTH_BASE; }
             return new Date(...args).getTime() } }
-        , dateparts : { nargs: 0, impl: function( t ) { var d = new Date(t); return { year: d.getFullYear(), month: d.getMonth()+FEATURE_MONTH_BASE, day: d.getDate(),
+        , dateparts : { nargs: 0, impl: function( t ) { let d = new Date(t); return { year: d.getFullYear(), month: d.getMonth()+FEATURE_MONTH_BASE, day: d.getDate(),
             hour: d.getHours(), minute: d.getMinutes(), second: d.getSeconds(), weekday: d.getDay() }; } }
         , "isNaN"   : { nargs: 1, impl: (n) => Number.isNaN(n) || isNaN(n) }
         , isnull    : { nargs: 1, impl: (s) => "undefined" === typeof s || null === s }
@@ -101,26 +139,12 @@ const MAX_RANGE = 1000;          /* Maximum number of elements in a result range
         , unshift   : { nargs: 2, impl: (a,v,n) => { a = a || []; a.unshift(v); if ( n && a.length > n ) a.splice( n, a.length-n ); return a; } }
         , shift   : { nargs: 1, impl: (a) => a.shift() }
         , isArray   : { nargs: 1, impl: Array.isArray }
-        , isObject  : { nargs: 1, impl: (p) => "object" === typeof p && null !== p }
+        , isObject  : { nargs: 1, impl: (p) => null !== p && "object" === typeof p }
         , toJSON    : { nargs: 1, impl: JSON.stringify }
         , parseJSON : { nargs: 1, impl: JSON.parse }
 /* FUTURE:
-        , select: (see find below)
-        , format:
-        , map:
-        , reduce:
-        , every:
-        , some:
-        , pop:
-        , push:
-        , shift:
-        , unshift:
-        , sort:
-        , concat:
-        , filter:
-        , find:
-        , slice:
-        , splice:
+        , format
+        , sort
         , dateadd
         , hsltorgb
         , rgbtohsl
@@ -356,11 +380,11 @@ const MAX_RANGE = 1000;          /* Maximum number of elements in a result range
                             context = [ context ];
                         }
                         // D("Iterate over",context,"using",e.value,"apply",e.exec);
-                        for ( [key,value] of Object.entries( context ) ) {
+                        for ( [ key, value ] of Object.entries( context ) ) {
                             // D("Assigning",value,"to",e.value);
                             ctx.__lvar[ e.value ] = value;
                             if ( e.key ) {
-                                ctx.__lvar[ e.key ] = key;
+                                ctx.__lvar[ e.key ] = Array.isArray( context ) ? parseInt( key ) : key;
                             }
                             // D("Running",e.exec);
                             let v = _run( e.exec );

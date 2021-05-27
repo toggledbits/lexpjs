@@ -1,7 +1,9 @@
-const version = 21124;
+const version = 21146;
+
+const verbose = false;  // If true, all tests and results printed; otherwise just errors.
 
 var lexp = require("./lexp.js");
-console.log(lexp);
+// console.log(lexp);
 
 var ctx = {
     __lvar: {},
@@ -202,7 +204,12 @@ var test_expr = [
     , { expr: "(1 ?? 0) & 4" }
 
     /* Function tests */
+    , { expr: "min(5,4,6*9)", expect: 4 }
     , { expr: "max(5,4,6*9)", expect: 54 }
+    , { expr: "min( 7..-33 )", expect: -33 }
+    , { expr: "max( 7..-33 )", expect: 7 }
+    , { expr: "min( 1, 5, 6, [ 3, 0, 4, [ 9, -1 ] ] )", expect: -1 }
+    , { expr: "max( 1, 5, 6, [ 3, 0, 4, [ 9, -1 ] ] )", expect: 9 }
     , { expr: "upper('hello')", expect: "HELLO" }
     , { expr: "lower('BYEBYE')", expect: "byebye" }
     , { expr: "ltrim('    abcde')", expect: "abcde" }
@@ -290,6 +297,10 @@ var test_expr = [
     /* Iteration */
     , { expr: "each item in [1,2,3,4,5]: 2*item", expect: [ 2,4,6,8,10 ] }
     , { expr: "each item,index in [1,2,3,4,5]: 3*index", expect: [ 0,3,6,9,12 ] }
+    , { expr: "each v in null: true", expect: [] }
+    , { expr: "each v in 123: v", expect: [ 123 ] }
+    , { expr: "each v,k in { 'alpha': 1, 'beta': 2 }: k", expect: [ "alpha", "beta" ] }
+    , { expr: "each v,k in [9,8,7,6]: k", expect: [ 0, 1, 2, 3 ] }
     , { expr: "each item in arr: item.name", expect: [ "Spot", "Lucy" ] }
     , { expr: "each item,key in entity.attributes: key", expect: [ "power_switch", "position", "volume" ] }
     , { expr: "each item in keys(entity.attributes): item + '=' + entity.attributes[item]" }
@@ -298,27 +309,24 @@ var test_expr = [
     , { expr: "each n in 1..3: [4,5,6]", expect: [ [4,5,6],[4,5,6],[4,5,6] ] }
     , { expr: "each n in 4..6: [n,n+1,n+2]", expect: [ [4,5,6],[5,6,7],[6,7,8] ] }
     , { expr: 'testArr = [ ["dog",1,{a:"b"}] , [1,"five",[]] , ["1","one",[1]] ], each element in testArr: indexOf(element,1)', expect: [ 1, 0, -1 ] }
-    , { expr: "(first item in entity.attributes with !isnull(item?.level)).level == 0.1", expect: true }
     , { expr: "t=[3,4],first m in t with m", expect: 3 }
     , { expr: "t=[3,4],first m in t with m<=4", expect: 3 }
     , { expr: "t=[3,4],first m in t with m>=4", expect: 4 }
     , { expr: "t=[3,4],first m in t with m>=6", expect: null }
-    , { expr: "each v in null: true", expect: [] }
     , { expr: "first v in null with true", expect: null }
-    , { expr: "each v in 123: v", expect: [ 123 ] }
     , { expr: "first v in 123 with true", expect: 123 }
-    , { expr: "each v,k in { 'alpha': 1, 'beta': 2 }: k", expect: [ "alpha", "beta" ] }
+    , { expr: "(first item in entity.attributes with !isnull(item?.level)).level == 0.1", expect: true }
+    , { expr: "first item in entity.attributes with (item?.level ?? 0) > 0.2", expect: { level: 0.25 } }
+    , { expr: "modes={home:{hm:1,ac:'home'},away:{hm:2,ac:'away'},sleep:{hm:3,ac:'sleep'},smart1:{hm:4,ac:'smart1'}}, \
+               (first item in modes with item.hm == 2).ac", expect: 'away' }
 
     /* misc */
     , { expr: "do 5, 6, 7, 8, 9 done", expect: 9 }
     , { expr: "'nice' # this is a comment", expect: "nice" }
     , { expr: "# this is a comment\n'hello'", expect: "hello" }
     , { expr: "([1,2,3])[1]", expect: 2 }
-    , { expr: "min( 1, entity.attributes.volume.level - ( parameters.amount ?? 0.05 ) )" }
+    , { expr: "min( 1, entity.attributes.volume.level - ( parameters.amount ?? 0.05 ) )", expect: 0.12 }
     , { expr: "t='off',({off:'OFF',on:'ON'})[t]", expect: "OFF" }
-    , { expr: "first item in entity.attributes with (item?.level ?? 0) > 0.2" }
-    , { expr: "modes={home:{hm:1,ac:'home'},away:{hm:2,ac:'away'},sleep:{hm:3,ac:'sleep'},smart1:{hm:4,ac:'smart1'}}, \
-               (first item in modes with item.hm == 2).ac", expect: 'away' }
 
 ];
 
@@ -379,13 +387,14 @@ function compareObjects( a, b ) {
 
 var num_errors = 0;
 test_expr.forEach( function( e ) {
-    console.log("Test expression: ", e.expr);
+    if ( verbose ) {
+        console.log("Test expression: ", e.expr);
+    }
     var ce, res;
     try {
         ce = lexp.compile( e.expr );
         try {
             res = lexp.run( ce, ctx );
-            console.log( "     Result:", res );
             if ( "undefined" !== typeof e.expect ) {
                 let failed = true;
                 if ( Array.isArray( e.expect ) ) {
@@ -401,22 +410,35 @@ test_expr.forEach( function( e ) {
                 } else if ( res === e.expect ) {
                     failed = false;
                 }
+                if ( verbose ) {
+                    console.log( "     Result:", res );
+                }
                 if ( failed ) {
+                    if ( !verbose ) {
+                        console.error( "\nTest expression: ", e.expr );
+                        console.error( "     Result:", res );
+                    }
                     console.error("**** Unexpected result; got", typeof res, res, ", expected", typeof e.expect, e.expect);
                     ++num_errors;
                 }
             }
         } catch ( err ) {
-            console.log("**** Eval error:", err );
-            console.log("ce", JSON.stringify(ce) );
+            if ( !verbose ) {
+                console.error( "\nTest expression: ", e.expr );
+            }
+            console.error("**** Eval error:", err );
+            console.error("ce", JSON.stringify(ce) );
             ++num_errors;
         }
     } catch ( err ) {
+        if ( !verbose ) {
+            console.error( "\nTest expression: ", e.expr );
+        }
         console.error( "**** Compile error:", err );
         ++num_errors;
     }
 });
-console.log("Errors:", num_errors);
+( num_errors == 0 ? console.log : console.error )( "Test run complete.", test_expr.length, "tests,", num_errors, "errors." );
 if ( 0 !== num_errors ) {
     process.exit( 1 );
 }

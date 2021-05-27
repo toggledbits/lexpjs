@@ -273,7 +273,7 @@ I keep adding things as I need them or people ask, so [let me know](https://gith
 * `pow( base, power )` &mdash; raises `base` to the `power`th power (e.g. `pow(10,3)` is 1000);
 * `sqrt( number )` &mdash; square root (of `number` > 0);
 * `random()` &mdash; returns a random number greater than or equal to 0 and less than 1;
-* `min/max( ... )` &mdash; returns the smallest/largest value of its arguments;
+* `min/max( ... )` &mdash; returns the smallest/largest value of its arguments; if an argument is an array, the array is scanned; non-numeric values are ignored, so these functions return *null* unless at least one number (type) value is found;
 * `isNaN( various )` &mdash; returns true if the argument is `NaN`, or if it would be if conversion was attempted (e.g. `isNaN( 'not a number' )` is *true*, but `isNaN( '123' )` is *false*).
 * `isInfinity( value )` &mash; returns true if the argument is `Infinity`, as would result in, for example, division by zero.
 
