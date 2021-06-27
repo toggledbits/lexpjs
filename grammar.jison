@@ -111,6 +111,7 @@
 "|"                     { return 'BOR'; }
 "~"                     { return 'BNOT'; }
 "??"                    { return 'COALESCE'; }
+"?#"                    { return 'COALESCENAN' }
 "?."                    { return 'QDOT'; }
 "?["                    { return 'QBRACKET'; }
 "?"                     { return '?'; }
@@ -132,7 +133,7 @@
 %right FIRST EACH WITH
 %left '?'
 %left COLON
-%left COALESCE
+%left COALESCE COALESCENAN
 %left LOR
 %left LAND
 %left BOR
@@ -320,6 +321,8 @@ e
     | e '>=' e
         { $$ = atom( 'binop', { op: $2, v1: $1, v2: $3, locs: [@1,@3] } ); }
     | e COALESCE e
+        { $$ = atom( 'binop', { op: $2, v1: $1, v2: $3, locs: [@1,@3] } ); }
+    | e COALESCENAN e
         { $$ = atom( 'binop', { op: $2, v1: $1, v2: $3, locs: [@1,@3] } ); }
     | e '?' e COLON e
         { $$ = atom( 'if', { test: $1, tc: $3, fc: $5, locs: [@1, @3, @5] } ); }

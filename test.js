@@ -1,4 +1,4 @@
-const version = 21146;
+const version = 21177;
 
 const verbose = false;  // If true, all tests and results printed; otherwise just errors.
 
@@ -151,6 +151,9 @@ var test_expr = [
     , { expr: "t=0, 123 ?? (t=456), t", expect: 0 }     /* test shortcut eval */
     , { expr: "t=0, null ?? (t=456)", expect: 456 }     /* test shortcut eval */
     , { expr: "t=0, null ?? (t=456), t", expect: 456 }  /* test shortcut eval */
+    , { expr: "123 ?# null", expect: 123 }
+    , { expr: "'123' ?# null", expect: 123 }
+    , { expr: "'fox' ?# 'hound'", expect: 'hound' }
     , { expr: "true ? 123 : 456", expect: 123 }
     , { expr: "false ? 123 : 456", expect: 456 }
     , { expr: "[1,2,3]", expect: [1,2,3] }

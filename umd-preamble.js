@@ -18,7 +18,7 @@ s *  Permission is hereby granted, free of charge, to any person obtaining a cop
  *  SOFTWARE.
  */
 
-const version = 21147;
+const version = 21177;
 
 const FEATURE_MONTH_BASE = 1;       /* 1 = months 1-12; set to 0 if you prefer JS semantics where 0=Jan,11=Dec */
 const MAX_RANGE = 1000;          /* Maximum number of elements in a result range op result array */
@@ -215,7 +215,7 @@ const MAX_RANGE = 1000;          /* Maximum number of elements in a result range
                     if ( "=" !== e.op ) {
                         v1eval = _run( v1 );
                     }
-                    if ( e.op !== "&&" && e.op !== "||" && e.op !== '??' ) {
+                    if ( e.op !== "&&" && e.op !== "||" && e.op !== '??' && e.op !== '?#' ) {
                         v2eval = _run( v2 );
                     }
                     // D("binop v1=",v1,", v1eval=",v1eval,", v2=",v2,", v2eval=",v2);
@@ -275,6 +275,8 @@ const MAX_RANGE = 1000;          /* Maximum number of elements in a result range
                         v1eval = v1eval in v2eval;
                     } else if (e.op == '??' ) {
                         v1eval = ( null === N(v1eval) ) ? _run( v2 ) : v1eval;
+                    } else if (e.op == '?#' ) {
+                        v1eval = ( null === N(v1eval) || Number.isNaN(v1eval) || isNaN(v1eval) ) ? _run( v2 ) : parseFloat( v1eval );
                     } else if ( ".." === e.op ) {
                         /* Range op */
                         let res = [];
