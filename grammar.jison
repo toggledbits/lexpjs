@@ -54,7 +54,6 @@
 <STRB>[`]                               { this.popState(); return 'QSTR'; }
 <STRD,STRS,STRB>.                       { buffer += yytext; }
 
-\#[^\r\n]*              { /* skip comment */ }
 \s+                     { /* skip whitespace */ }
 \r                      { /* skip */ }
 \n                      { /* skip */ }
@@ -123,6 +122,7 @@
 ")"                     { return ')'; }
 "{"                     { return 'LCURLY'; }
 "}"                     { return 'RCURLY'; }
+\#[^\r\n]*              { /* skip comment */ }
 <<EOF>>                 { return 'EOF'; }
 
 /lex
