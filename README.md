@@ -219,7 +219,7 @@ The following is the list of operators supported in order from lowest precedence
 * `=` (assignment, right associative)
 * `?` (ternary operator first)
 * `:` (ternary operator second)
-* `??` (coalesce)
+* `??` (coalesce) and `?#` (coalesceNaN)
 * `||` (logical OR)
 * `&&` (logical AND)
 * `|` (bitwise OR)
@@ -325,7 +325,11 @@ Important notes with respect to date handling (currently; this will evolve):
 * `pop( array )` &mdash; removes the last element of *array* and returns it; returns `null` if *array* is empty; the array is modified in place;
 * `shift( array )` &mdash; removes the first element of *array* and returns it; returns `null` if *array* is empty; the array is modified in place;
 * `isArray( various )` &mdash; returns *true* if the argument is an array (of any length);
-* `isObject( various )` &mdash; returns *true* if the argument is an object.
+* `isObject( various )` &mdash; returns *true* if the argument is an object;
+* `toJSON( various )` &mdash; returns the argument as a JSON-formatted object (string);
+* `parseJSON( json )` &mdash; returns the data represented the (parsed) JSON string argument;
+* `btoa( str )` &mdash; returns the Base64-encoded representation of the string argument;
+* `atob( str )` &mdash; returns a string containing the decoded Base64 argument (string).
 
 ### Reserved Words
 

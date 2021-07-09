@@ -1,4 +1,4 @@
-const version = 21177;
+const version = 21189;
 
 const verbose = false;  // If true, all tests and results printed; otherwise just errors.
 
@@ -290,6 +290,10 @@ var test_expr = [
     , { expr: "t=[9,7,5],s=t,push(s, 3),t", expect: [9,7,5,3] }
     , { expr: "t=[9,7,5],s=clone(t),push(s, 3),t", expect: [9,7,5] }
     , { expr: "s", expect: [9,7,5,3] }
+    , { expr: `t=btoa( "The rain in Spain stays mainly in the plain." )`, expect: "VGhlIHJhaW4gaW4gU3BhaW4gc3RheXMgbWFpbmx5IGluIHRoZSBwbGFpbi4=" }
+    , { expr: `atob( t )`, expect: "The rain in Spain stays mainly in the plain." }
+    , { expr: `t=atob( "SmVmZnJleSBFcHN0ZWluIGRpZG4ndCBraWxsIGhpbXNlbGYsIGFuZCBuZWl0aGVyIGRpZCBKb2huIE1jQWZlZS4=" )`, expect: "Jeffrey Epstein didn't kill himself, and neither did John McAfee." }
+    , { expr: `btoa( t )`, expect: "SmVmZnJleSBFcHN0ZWluIGRpZG4ndCBraWxsIGhpbXNlbGYsIGFuZCBuZWl0aGVyIGRpZCBKb2huIE1jQWZlZS4=" }
 
     /* Conditional */
     , { expr: "if entity.attributes.power_switch.state then 1 else 0 endif", expect: 1 }
