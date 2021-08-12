@@ -1,4 +1,4 @@
-/* Version 21189.2056 */
+/* Version 21224.1752 */
 /** lexpjs - Copyright (C) 2018,2021 Patrick H. Rigney, All Rights Reserved
  *  See https://github.com/toggledbits/lexpjs
  *
@@ -19,7 +19,7 @@ s *  Permission is hereby granted, free of charge, to any person obtaining a cop
  *  SOFTWARE.
  */
 
-const version = 21189;
+const version = 21224;
 
 const FEATURE_MONTH_BASE = 1;       /* 1 = months 1-12; set to 0 if you prefer JS semantics where 0=Jan,11=Dec */
 const MAX_RANGE = 1000;          /* Maximum number of elements in a result range op result array */
@@ -1032,6 +1032,7 @@ return new Parser;
         , "float"   : { nargs: 1, impl: parseFloat }
         , "bool"    : { nargs: 1, impl: function( s ) { return !!s && null === String(s).match( /^\s*(0|no|off|false)\s*$/i ); } }
         , str       : { nargs: 1, impl: (s) => String(s) }
+        , hex       : { nargs: 1, impl: (n) => Number( n ).toString( 16 ) }
         , time      : { nargs: 0, impl: function(...args) {
             if ( args.length > 1 && "number" === typeof( args[1] ) ) { args[1] -= FEATURE_MONTH_BASE; }
             return new Date(...args).getTime() } }
@@ -1055,13 +1056,15 @@ return new Parser;
         , push      : { nargs: 2, impl: (a,v,n) => { a = a || []; a.push(v); if ( n && a.length > n ) a.splice( 0, a.length-n ); return a; } }
         , pop       : { nargs: 1, impl: (a) => a.pop() }
         , unshift   : { nargs: 2, impl: (a,v,n) => { a = a || []; a.unshift(v); if ( n && a.length > n ) a.splice( n, a.length-n ); return a; } }
-        , shift   : { nargs: 1, impl: (a) => a.shift() }
+        , shift     : { nargs: 1, impl: (a) => a.shift() }
         , isArray   : { nargs: 1, impl: Array.isArray }
         , isObject  : { nargs: 1, impl: (p) => null !== p && "object" === typeof p }
         , toJSON    : { nargs: 1, impl: JSON.stringify }
         , parseJSON : { nargs: 1, impl: JSON.parse }
         , btoa      : { nargs: 1, impl: (b) => Buffer.from( b, "utf-8" ).toString( "base64" ) }
         , atob      : { nargs: 1, impl: (a) => Buffer.from( a, "base64" ).toString( "utf-8" ) }
+        , urlencode : { nargs: 1, impl: encodeURIComponent }
+        , urldecode : { nargs: 1, impl: decodeURIComponent }
 /* FUTURE:
         , format
         , sort

@@ -296,7 +296,7 @@ I keep adding things as I need them or people ask, so [let me know](https://gith
 * `str( various )` &mdash; converts the argument to a string;
 * `isnull( various )` &mdash; more a test than a conversion, returns *true* if the argument is `null`.
 
-### Time Handling Functions
+### Date/Time Handling Functions
 
 * `time( [ year [, month [, day [, hour [, minute [, second ]]]]]] )` &mdash; returns the current time if no arguments are given; otherwise a date/time is constructed using as many arguments as are provided; the result is a Unix Epoch time in milliseconds;
 * `dateparts( [time] )` &mdash; returns an object with keys `year`, `month`, `day`, `hour`, `minute`, `second`, and `weekday` (0-6, 0=Sunday) for the given `time`, or the current time if not given.
@@ -326,13 +326,19 @@ Important notes with respect to date handling (currently; this will evolve):
 * `shift( array )` &mdash; removes the first element of *array* and returns it; returns `null` if *array* is empty; the array is modified in place;
 * `isArray( various )` &mdash; returns *true* if the argument is an array (of any length);
 * `isObject( various )` &mdash; returns *true* if the argument is an object;
+
+### Conversion Functions
+
+* `hex( num )` &mdash; returns the hexadecimal (string) representation of the numeric argument (or "NaN" if non-numeric);
 * `toJSON( various )` &mdash; returns the argument as a JSON-formatted object (string);
 * `parseJSON( json )` &mdash; returns the data represented the (parsed) JSON string argument;
 * `btoa( str )` &mdash; returns the Base64-encoded representation of the string argument;
 * `atob( str )` &mdash; returns a string containing the decoded Base64 argument (string).
+* `urlencode( string )` &mdash; URL-encodes the given string.
+* `urldecode( string )` &mdash; URL-decodes the given string.
 
 ### Reserved Words
 
 As a result of the syntax, the following words are reserved and may not be used as identifiers or function names: `true, false, null, each, in, first, of, with, if, then, else, endif, do, done, and, or, not, NaN, Infinity`. Note that keywords and identifiers are case-sensitive, so while `each` is not an acceptable identifier, `Each` or `EACH` would be.
 
-<small>Updated 2021-May-25</small>
+<small>Updated 2021-Aug-12</small>

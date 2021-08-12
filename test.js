@@ -294,6 +294,10 @@ var test_expr = [
     , { expr: `atob( t )`, expect: "The rain in Spain stays mainly in the plain." }
     , { expr: `t=atob( "SmVmZnJleSBFcHN0ZWluIGRpZG4ndCBraWxsIGhpbXNlbGYsIGFuZCBuZWl0aGVyIGRpZCBKb2huIE1jQWZlZS4=" )`, expect: "Jeffrey Epstein didn't kill himself, and neither did John McAfee." }
     , { expr: `btoa( t )`, expect: "SmVmZnJleSBFcHN0ZWluIGRpZG4ndCBraWxsIGhpbXNlbGYsIGFuZCBuZWl0aGVyIGRpZCBKb2huIE1jQWZlZS4=" }
+    , { expr: `urlencode( 'This is a string %&*@(!.{}:/?' )`, expect: "This%20is%20a%20string%20%25%26*%40(!.%7B%7D%3A%2F%3F" }
+    , { expr: `urldecode( 'This%20is%20a%20string%20%25%26*%40(!.%7B%7D%3A%2F%3F' )`, expect: "This is a string %&*@(!.{}:/?" }
+    , { expr: `hex( 255 )`, expect: "ff" }
+    , { expr: `hex( 65536 )`, expect: "10000" }
 
     /* Conditional */
     , { expr: "if entity.attributes.power_switch.state then 1 else 0 endif", expect: 1 }
