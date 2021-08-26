@@ -174,6 +174,7 @@ var test_expr = [
     /* Assignment test, two steps */
     , { expr: "t = 'soul stone'", expect: "soul stone" }
     , { expr: "t", expect: "soul stone" }
+    , { expr: "gem\u00b5se='gut',t=null,gem\u00b5se", expect: "gut" }
 
     /* "PEMDAS" tests */
     , { expr: "( 4 + 5 ) + 6", expect: 15 }

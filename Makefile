@@ -1,6 +1,7 @@
 all: test
 
 .parser: grammar.jison
+	#./node_modules/jison-lex/cli.js -o .parser -m js grammar.jison
 	jison -o .parser -m js grammar.jison
 
 lexp.js: .parser umd-preamble.js Makefile

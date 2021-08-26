@@ -77,7 +77,8 @@
 "and"                   { return 'LAND'; }
 "or"                    { return 'LOR'; }
 "not"                   { return 'LNOT'; }
-[A-Za-z_$][A-Za-z0-9_$]*\b  { return 'IDENTIFIER'; }
+/* [A-Za-z_$][A-Za-z0-9_$]*\b  { return 'IDENTIFIER'; } */
+[\p{Alphabetic}_$][\p{Alphabetic}0-9_$]*\b  { return 'IDENTIFIER'; }
 [0-9]+("."[0-9]+)?([eE][+-]?[0-9]+)?\b  { return 'NUMBER'; }
 0x[0-9A-Fa-f]+\b        { return 'HEXNUM'; }
 0o[0-7]+\b              { return 'OCTNUM'; }
