@@ -59,6 +59,9 @@
 \n                      { /* skip */ }
 ","                     { return 'COMMA'; }
 ";"                     { return 'EXPRSEP'; }
+"local"                 { return 'LOCAL'; }
+"global"                { return 'GLOBAL'; }
+"define"                { return 'DEF'; }
 "true"                  { return 'TRUE'; }
 "false"                 { return 'FALSE'; }
 "null"                  { return 'NULL'; }
@@ -130,7 +133,7 @@
 
 /* Operator associativity and precedence */
 
-%right ASSIGN
+%right ASSIGN DEF LOCAL GLOBAL
 %right FIRST EACH WITH
 %left '?'
 %left COLON
@@ -266,6 +269,15 @@ array_list
         { $$ = []; }
     ;
 
+assignment
+    : GLOBAL IDENTIFIER ASSIGN e
+        { $$ = atom( 'binop', { 'op': $3, v1: atom( 'vref', { name: $2 } ), v2: $4, global: true, locs: [@2, @4] } ); }
+    | LOCAL IDENTIFIER ASSIGN e
+        { $$ = atom( 'binop', { 'op': $3, v1: atom( 'vref', { name: $2 } ), v2: $4, local: true, locs: [@2, @4] } ); }
+    | IDENTIFIER ASSIGN e
+        { $$ = atom( 'binop', { 'op': $2, v1: atom( 'vref', { name: $1 } ), v2: $3, locs: [@1, @3] } ); }
+    ;
+
 e
     : '-' e %prec UMINUS
         { $$ = atom( 'unop', { op: '-', val: $2 } ); }
@@ -357,8 +369,8 @@ e
         { $$ = Infinity; }
     | ref_expr
         { $$ = $1; }
-    | IDENTIFIER ASSIGN e
-        { $$ = atom( 'binop', { 'op': $2, v1: atom( 'vref', { name: $1 } ), v2: $3, locs: [@1, @3] } ); }
+    | assignment
+	    { $$ = $1; }
     | EACH IDENTIFIER IN e COLON e
         { $$ = atom( 'iter', { value: $2, context: $4, exec: $6 } ); }
     | EACH IDENTIFIER COMMA IDENTIFIER IN e COLON e
@@ -368,5 +380,7 @@ e
     | FIRST IDENTIFIER COMMA IDENTIFIER IN e WITH e
         { $$ = atom( 'search', { value: $2, key: $4, context: $6, exec: $8 } ); }
     | DO expr_list DONE
-        { $$ = $2; }
+        { $$ = atom( 'block', { block: $2 } ); }
+    | DEF IDENTIFIER '(' arg_list ')' e
+        { $$ = atom( 'fdef', { name: $2, args: $4, list: $6 } ); }
     ;

@@ -47,7 +47,7 @@ try {
 ### `run( parsedResult [, executionContext ] )`
 
 The `run()` function executes the parsed expression. It takes an optional `executionContext` argument, which
-is an object containing pre-defined symbol names and definable functions.
+is an object containing pre-defined symbol (variable) names and definable functions. See `get_context()` below.
 
 `run()` returns the result of the expression evaluation as an array, one value for each subexpression in the parsed string (see "Syntax" above).
 If evaluation fails, an exception is thrown.
@@ -57,13 +57,12 @@ Example (browser):
 ```
 import * as lexpjs from './lexp.js';
 
-var context = { median: 50 };
-var pp = lexpjs.compile("8 * range");
-var rr = lexpjs.run(pp);
-// In runtime, this example throws ReferenceError because "range" is not defined in "context"
-```
+var pp = lexpjs.compile("8*8");
+console.log(lexpjs.run(pp));  // prints 64
 
-As of this version, *lexpjs* does not allow you to modify variables or create new ones during evaluation.
+pp = lexpjs.compile("8 * range");
+var rr = lexpjs.run(pp); // throws ReferenceError because "range" is not defined
+```
 
 ### `evaluate( expressionString [, executionContext ] )`
 
@@ -71,107 +70,68 @@ The `evaluate()` function performs the work of `compile()` and `run()` in one st
 is the same as that for `run()` above (and in fact `evaluate()` is implemented simply as `return run( compile( expressionString ), executionContext )`).
 
 ```
-var context = { minval: 25, maxval: 77 };
-var rr = lexpjs.evaluate("minval+(maxval-minval)/2", context);
-// rr would be 51
+var rr = lexpjs.evaluate("floor(3.1415*100)"); // rr would be 314
 ```
 
-## Pre-defined Symbols ##
+### `get_context( [variables] )`
 
-The context passed to `evaluate()` and `run()` is used to define named symbols (variables) and custom functions
-that can be used in expressions. We've seen in the above examples for these functions how that works.
-For variables, it's simple a matter of defining an element with the value to be used:
+Creates a context to house and preserve local variables, defined functions, etc. If several expressions need to be
+evaluated, and the results from each shared with the next, creating a context first and passing it to each `evaluate()`
+or `run()` call will facilitate this sharing.
 
-```
-var context = {
-    "pi": Math.PI,  // get the value from the JS Math object
-    "minrange": 0,
-    "maxrange": 100
-};
-```
+The optional parameter `variables` is an object containing key/value pairs of predefined variables and their values.
 
-Variables can also use dotted notation to traverse a tree of values in the context. Let's expand our previous
-context like this:
+Consider the following:
 
 ```
-context.device = {
-    "class": "motor",
-    "info": {
-        "location": "MR1-15-C02",
-        "specs": {
-            "manufacturer": "Danfoss",
-            "model": "EM5-18-184T",
-            "frame": "T",
-            "voltage": "460",
-            "hp": "5"
-        }
-    }
-};
-```
+var cc = lexpjs.get_context( { pi: 3.14159265, name: "alpha" } )
+console.log( lexpjs.evaluate( "area=pi * 4 * 4", cc );
+console.log( lexpjs.evaluate( "'Half the area is ' + area / 2" );
 
-In expressions, the `device.class` would result in the string "motor". The voltage of the motor is accessed with the expression `device.info.specs.voltage`.
-
-## Custom Functions ##
-
-You can define custom functions for your expressions by defining them in the context passed to `run()` or
-`evaluate()`.
-
-It's pretty straightforward to do. Your custom function must be implemented by a JavaScript function. The function is passed
-as many arguments as are parsed in the expression. Your function is responsible for checking the validity of the number and
-types of arguments passed.
-
-Let's say we want to create a function to convert degrees to radians. The math for that is pretty easy.
-It's the value in degrees times "pi" and divided by 180. As a function, it might look like this:
+This will print two lines:
 
 ```
-function toRadians( degrees ) {
-    return degrees * Math.PI / 180;
+50.2654824
+Half the area is 25.1327412
+```
+
+Notice in the above example that the context has carried the computed area from the first `evaluate()` call into the second.
+
+### `define_var( context, name, value )`
+
+Variables can be created in a context by passing them in to `get_context()`, or they can be created or modified after by calling `define_var()`. The arguments should be obvious: `context` is the context in which to make the assignment (previously created by get_context()), and the `name` and `value` are the name and value of the variable, respectively.
+
+### `define_func_impl( context, name, func )`
+
+Special/custom functions needed by your expressions can be defined on a context by calling `define_func_impl()`. The `func` parameter is simply a reference to a function that takes the arguments your expression function needs; the implementation must return a value.
+
+```
+// Custom functions defined using four common JavaScript syntaxes.
+var cc = lexpjs.get_context();
+
+/* By passing a reference to a function */
+function r2d( radians ) {
+    return radians * 180.0 / Math.PI;
 }
+lexpjs.define_func_impl( cc, 'rad_to_deg', r2d );
+
+/* By passing a closure */
+lexpjs.define_func_impl( cc, 'deg_to_rad', function( deg ) {
+    return deg * Math.PI / 180.0;
+});
+
+/* By passing arrow function (full syntax) */
+lexpjs.define_func_impl( cc, 'double', (value) => { return 2*value; } );
+
+/* Using single-argument arrow function shortcut syntax */
+lexpjs.define_func_impl( cc, 'square', value => value * value );
 ```
 
-To make that a function that your expressions could use, you need to put it into the context that's passed
-to `run()`, which is done like this:
+Your function may return any primitive type, `null`, `Infinity`, `NaN`, or an array or object containing any of these. If the return value is `undefined`, `null` will be substituted. Your function may **not** return any other type, including function, user-defined class or instance, `RegExp`, `Promise`, `Map` or `Set` (or descendents), etc. Basically, if it can't be represented natively in JSON, it's not valid to return from your function.
 
-```
-/* First, set up an empty context, and the container _func for custom functions */
-var context = {};
-context._func = {};
+Your function must check its own arguments for validity, if necessary. Any exception thrown by your function will be passed through unmodified.
 
-/* Now define a custom function */
-context._func.toradians = function( degrees ) {
-    return degrees * Math.PI / 180;
-};
-```
-
-Now, when you run an expression that makes reference to your `toradians` function, it is called by *lexpjs* and the
-result value is used in the remainder of the expression. For example, `cos(toradians(45))` would return `0.707106...`
-
-Although we have used an anonymous function in this example, there is no reason you could not separately
-define a named function, and simply use a reference to the function name in the context assignment, like
-this:
-
-```
-var context = { _func: {}, ... } // ... means other declarations for context elements
-
-// Now define and add our function to the context
-function toRadians(degrees) {
-    return degrees * Math.PI / 180;
-end
-context._func.toradians = toRadians;
-context._func.degToRad = toRadians;
-```
-
-The premise here is simple, if it's not already clear enough. The evaluator will simply look in your passed
-context for any name that it doesn't recognize as one of its predefined functions.
-If it finds an element with a key equal to the name, the value is assumed to be a function it can call.
-
-Note in the above example that we declared our function with an uppercase letter "R" in the name,
-but when we made the context assignment to "toradians", the context element key is all lower case. This means that
-any expression would also need to use all lower case. The name used in evaluation is the name of the *key* in `__func`,
-not the actual name of the actual function (if it has one).
-As a further example, `degToRad` is also defined
-as an expression function that is implemented by `toRadians()`, showing that there's no required parity between
-the name used in the expression context and the name of the function implementing it.
+> NOTE: Functions can also be defined using expression syntax as further documented below (see the `define` statement in *Statements*).
 
 ## Expressions Syntax
 
@@ -201,7 +161,7 @@ The *bitwise operators*, following "C" (and Java, and JavaScript, and others) ar
 
 The *array element accessor* is square brackets `[]` and should contain the array index. Arrays in expressions are zero-based, so the first element of an array is `[0]`. If the index given is less than 0, a runtime error occurs. If the index is positive or zero but off the end of the array, *null* is returned.
 
-The *member access operator* "dot" (`.`) is used to traverse objects. For example, referring to the power state of an entity may be `entity.attributes.power_switch.state`, which starts with an entity object, drops to the list of attributes within it, and the "power_switch" capability within the attributes, and finally to the "state" value. The right-side operand of the dot operator must be an identifier, so it may not contain special characters. If a member name contains any non-identifier characters, the array access syntax can be used: `entity.attributes['forbidden-name'].value`.
+The *member access operator* "dot" (`.`) is used to traverse objects. For example, referring to the power state of an entity contain in an object may be `entity.attributes.power_switch.state`, which starts with the entity object, drops to the list of attributes within it, and then the "power_switch" capability within the attributes, and finally to the "state" value. The right-side operand of the dot operator must be an identifier, so it may not contain special characters. If a member name contains any non-identifier characters, the array access syntax can be used with a string: `entity.attributes['forbidden-name'].value`.
 
 The *ternary operator* pair `? :` common to C, C++ and Java (and others) is available: `<boolean> ? <true-expression> : <false-expression>`. If the boolean expression given is *true*, the true expression is evaluated; otherwise, the false expression is evaluated.
 
@@ -255,8 +215,51 @@ The expression language has a couple of "lightweight statements" that function a
 * `first <element-identifier> [, <element-identifier> ] of <array-or-object> with <test-expression>` &mdash; the `first` state will search through the elements of an array or object (top level, no traversal) and return the first value that for which `<test-expression>` is true (or [truthy](https://developer.mozilla.org/en-US/docs/Glossary/Truthy)).
 * `do <statement-list> done` &mdash; since the limited syntax of `each` allows only a single statement to be executed, the `do...done` statement creates a statement block that appears to `each` as a single statement, thus allowing multiple statements to be executed within the loop. The standard multi-statement result rule applies: the result of the statement block is the result produced by the last expression in the block.
 * For users uncomfortable with the ternary operator syntax, an `if <conditional> then <true-expression> else <false-expression> endif` statement may be used. The true and false expressions may be a `do...done` block.
+* `define <functionName>( <args...> ) <expression>` &mdash; defines a function named `<functionName>` that returns the evaluated `<expression>`. Arguments passed to the function will be received as `<args...>`, which must be a comma-separated list of identifiers. Example: `define square(a) a*a` defines a function that returns the square of a single value passed to it received in the variable `a`; the function result is the result of the expression (no `return` statement is required or exists in this syntax). If multiple expressions are required for the implementation of the function, enclose them in a `do ... done` block.
 
-## Functions
+### Scope of Statements
+
+The expression language has some rudimentary scoping like most programming languages. Variables defined in the interior expressions of the above statements will be local to the statement and not available outside the statement.
+
+For example, given this expression (an iterator):
+
+        each v in [1,2,3,4,5,6]: a=v
+
+One might assume at first glance that this iterator assigns each value of the array to `a`, and when the statement ends `a` will be available to the next expression with the value 6. The former is true, but not the latter: `a` is not available outside of the `each` expression. When making assignments to variables, the language will see if the target identifier is defined in any accessible scope, and if it is not defined in any scope, it is created in the current (lowest) scope. So, if you wish to preserve a value computed in the interior of such an expression, define the variable outside the statement first, like this:
+
+        a=0, each v in [1,2,3,4,5,6]: a=v
+
+Now `a` will have a value of 6, because it was defined outside the statement, so assignments made within the statement target the exterior variable.
+
+This behavior can be explicitly controlled through the use of the `global` and `local` keywords used as a prefix to an assignment. The `global` keyword will assure that the named identifier is assigned in global scope, and the `local` keyword assures that the name identifier is assigned in the current scope (which could be the global scope or a descendent).
+
+```
+a = 1   # this is the global scope, so a is created as a global
+b = 0   # this creates b in global scope
+do
+    # This "DO" block has its own scope (child of the global scope)
+    local a = 2  # this sets a local variable a to 2; the global a is still 1
+    global a = a * 4  # this sets global a to local a * 4 (so 8)
+    a = a * 2  # since local a exists, local a is now 16
+    b = a  # this sets global b to local a's value of 16
+done
+# global a is now 8
+# local a is now 16
+```
+
+Note that the `global` and `local` keywords can only be used as a modifier to the left-side of an assignment. One cannot, for example, say `global a = local a * 2` to set global `a` to twice local `a`'s value. That's invalid syntax.
+
+One more thing to think about... the topmost/outermost scope, the global scope, is local to itself, so in the global scope, the following statements all have the same effect of creating `a` in global scope:
+
+```
+a = 0        # When in global scope and a is undefined, the default scope is the global scope
+local a = 0  # When in global scope, the local scope is the global scope
+global a = 0 # Specifying global scope is redundant when in global scope
+```
+
+> NOTE: The use of the `global` keyword in particular will allow you to do things that are considered "bad style." For example, you can define a function or have a deeply nested statement that "communicates" with other expressions by setting variables in global scope. This is regarded as bad style because it can be difficult to figure out why global variables are changing (the changes are buried deep in other statements) and it may reduce the reusability of functions and expressions. There are many treatises on global variables in programming languages available on the web.
+
+## Pre-defined Functions
 
 I keep adding things as I need them or people ask, so [let me know](https://github.com/toggledbits/lexpjs/issues) if I'm missing what you need.
 
@@ -339,6 +342,6 @@ Important notes with respect to date handling (currently; this will evolve):
 
 ### Reserved Words
 
-As a result of the syntax, the following words are reserved and may not be used as identifiers or function names: `true, false, null, each, in, first, of, with, if, then, else, endif, do, done, and, or, not, NaN, Infinity`. Note that keywords and identifiers are case-sensitive, so while `each` is not an acceptable identifier, `Each` or `EACH` would be.
+As a result of the syntax, the following words are reserved and may not be used as identifiers or function names: `true, false, null, each, in, first, of, with, if, then, else, endif, do, done, define, and, or, not, NaN, Infinity`. Note that keywords and identifiers are case-sensitive, so while `each` is not an acceptable identifier, `Each` or `EACH` would be.
 
-<small>Updated 2021-Aug-12</small>
+<small>Updated 2021-Sep-18</small>

@@ -3,7 +3,7 @@
  *
  *  This Software is open source offered under the MIT LICENSE. See https://opensource.org/licenses/MIT
  *
-s *  Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
  *  documentation files (the "Software"), to deal in the Software without restriction, including without limitation
  *  the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and
  *  to permit persons to whom the Software is furnished to do so, subject to the following conditions:
@@ -18,10 +18,10 @@ s *  Permission is hereby granted, free of charge, to any person obtaining a cop
  *  SOFTWARE.
  */
 
-const version = 21224;
+const version = 21261;
 
-const FEATURE_MONTH_BASE = 1;       /* 1 = months 1-12; set to 0 if you prefer JS semantics where 0=Jan,11=Dec */
-const MAX_RANGE = 1000;          /* Maximum number of elements in a result range op result array */
+const FEATURE_MONTH_BASE = 1;   /* 1 = months 1-12; set to 0 if you prefer JS semantics where 0=Jan,11=Dec */
+const MAX_RANGE = 1000;         /* Maximum number of elements in a result range op result array */
 
 (function (root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -158,9 +158,38 @@ const MAX_RANGE = 1000;          /* Maximum number of elements in a result range
 
     var D = false ? console.log : function() {};
 
-    var run = function( ce, ctx ) {
-        ctx = ctx || {};
+    var get_context = function( vars ) {
+        var c = { __lvar: vars || {}, __depth: 0, _func: {} };
+        c.__global = c;
+        c.__parent = c;
+        return c
+    };
 
+    var push_context = function( ctx ) {
+        return { __global: ctx.__global || ctx, __parent: ctx, __depth: (ctx.__depth||0)+1, __lvar: {} };
+    }
+    
+    var pop_context = function( ctx ) {
+        return ctx.__parent || ctx;
+    }
+
+    var run = function( ce, g_ctx ) {
+        g_ctx = g_ctx || get_context();
+
+        function locate_context( key, ctx, subkey ) {
+            while ( ctx ) {
+                let w = subkey ? ctx[ subkey ] : ctx;
+                if ( w && key in w ) {
+                    return ctx;
+                }
+                if ( ctx.__parent === ctx ) {
+                    break;
+                }
+                ctx = ctx.__parent;
+            }
+            return false;
+        }
+        
         function is_atom( v, typ ) {
             return null !== v && "object" === typeof( v ) &&
                 "undefined" !== typeof v.__atom &&
@@ -172,33 +201,35 @@ const MAX_RANGE = 1000;          /* Maximum number of elements in a result range
         }
 
         /* Resolve a VREF atom */
-        function _resolve( a ) {
+        function _resolve( a, ctx ) {
             /* Scope priority: local, context, external resolver */
             var res;
-            if ( "undefined" !== typeof (ctx.__lvar || {})[a.name] ) {
-                res = ctx.__lvar[a.name];
-            } else if ( "undefined" !== typeof ctx[a.name] ) {
-                res = ctx[a.name];
-            } else if ( "function" === typeof (ctx._func || {})._resolve ) {
-                res = ctx._func._resolve( a.name, ctx );
+            let c = locate_context( a.name, ctx, '__lvar' );
+            if ( c ) {
+                res = c.__lvar[ a.name ];
+            } else {
+                c = locate_context( '_resolve', ctx, '_func' );
+                if ( c ) {
+                    res = c._func._resolve( a.name, ctx );
+                }
             }
             return N(res);
         }
 
-        function _run( e ) {
+        function _run( e, ctx ) {
             if ( !is_atom( e ) ) {
                 if ( Array.isArray( e ) ) {
                     /* Run each element within array */
                     let res = [];
                     let n = e.length;
                     for ( let k=0; k<n; ++k ) {
-                        res[k] = _run( e[k] );
+                        res[k] = _run( e[k], ctx );
                     }
                     return res;
                 } else if ( null !== e && "object" === typeof e ) {
                     let res = {};
                     Object.keys( e ).forEach( key => {
-                        res[ key ] = _run( e[ key ] );
+                        res[ key ] = _run( e[ key ], ctx );
                     });
                     return res;
                 }
@@ -208,20 +239,20 @@ const MAX_RANGE = 1000;          /* Maximum number of elements in a result range
                 if ( is_atom( e, 'list' ) ) {
                     let v = null;
                     e.expr.forEach( function( se ) {
-                        v = _run( se );
+                        v = _run( se, ctx );
                     });
                     return N(v);
                 } else if ( is_atom( e, 'vref' ) ) {
-                    return N( _resolve( e ) );
+                    return N( _resolve( e, ctx ) );
                 } else if ( is_atom( e, 'binop' ) ) {
                     var v2 = e.v2;
                     var v1 = e.v1;
                     var v1eval, v2eval;
                     if ( "=" !== e.op ) {
-                        v1eval = _run( v1 );
+                        v1eval = _run( v1, ctx );
                     }
                     if ( e.op !== "&&" && e.op !== "||" && e.op !== '??' && e.op !== '?#' ) {
-                        v2eval = _run( v2 );
+                        v2eval = _run( v2, ctx );
                     }
                     // D("binop v1=",v1,", v1eval=",v1eval,", v2=",v2,", v2eval=",v2);
                     if (e.op == '+') {
@@ -272,16 +303,16 @@ const MAX_RANGE = 1000;          /* Maximum number of elements in a result range
                         v1eval = v1eval >>> v2eval;
                     else if (e.op == '&&') {
                         /* short-cut evaluation */
-                        v1eval = v1eval && _run( v2 );
+                        v1eval = v1eval && _run( v2, ctx );
                     } else if (e.op == '||') {
                         /* short-cut evaluation */
-                        v1eval = v1eval || _run( v2 );
+                        v1eval = v1eval || _run( v2, ctx );
                     } else if (e.op == 'in' ) {
                         v1eval = v1eval in v2eval;
                     } else if (e.op == '??' ) {
-                        v1eval = ( null === N(v1eval) ) ? _run( v2 ) : v1eval;
+                        v1eval = ( null === N(v1eval) ) ? _run( v2, ctx ) : v1eval;
                     } else if (e.op == '?#' ) {
-                        v1eval = ( null === N(v1eval) || Number.isNaN(v1eval) || isNaN(v1eval) ) ? _run( v2 ) : parseFloat( v1eval );
+                        v1eval = ( null === N(v1eval) || Number.isNaN(v1eval) || isNaN(v1eval) ) ? _run( v2, ctx ) : parseFloat( v1eval );
                     } else if ( ".." === e.op ) {
                         /* Range op */
                         let res = [];
@@ -292,7 +323,7 @@ const MAX_RANGE = 1000;          /* Maximum number of elements in a result range
                         v2eval = Math.floor( v2eval );
                         let l = Math.abs( v2eval - n ) + 1;
                         if ( l > MAX_RANGE ) {
-                            throw new Error("Range exceeds maximum differential of " + String(MAX_RANGE) );
+                            throw new RangeError( `Range exceeds maximum differential of ${MAX_RANGE}` );
                         }
                         if ( v2eval >= n ) {
                             while ( n <= v2eval ) {
@@ -304,24 +335,40 @@ const MAX_RANGE = 1000;          /* Maximum number of elements in a result range
                             }
                         }
                         v1eval = res;
-                    } else if (e.op == '=' ) {
+                    } else if ( e.op == '=' ) {
                         /* Assignment */
-                        if ( ! is_atom( v1, 'vref' ) ) {
-                            throw new SyntaxError("Invalid assignment target");
-                        }
-                        if ( ! ( ctx.__lvar && "object" === typeof ctx.__lvar ) ) {
-                            throw new Error("Assignments not permitted here; or did you mean to use \"==\" ?");
+                        if ( ! is_atom( v1, 'vref' ) || v1.name.startsWith( '__' ) || '_func' === v1.name ) {
+                            throw new SyntaxError( `Invalid assignment target (${v1.name})` );
                         }
 // D("run() assign",v2eval,"to",v1.name);
-                        ctx.__lvar[v1.name] = v2eval;
-                        return v2eval;
+                        let c, res;
+                        if ( e.global ) {
+                            c = ctx.__global;
+                        } else if ( e.local ) {
+                            c = ctx;
+                        } else {
+                            c = locate_context( v1.name, ctx, '__lvar' ) || ctx;
+                        }
+                        let fc = locate_context( '_assign', ctx, '_func' );
+                        if ( fc && "function" === typeof fc._func._assign ) {
+                            /* If _assign returns undefined, the normal assignment will be performed. Otherwise, it is
+                             * assumed that _assign has done it. 
+                             */
+                            res = fc._func._assign( v1.name, v2eval, c, e );
+                        }
+                        if ( "undefined" === typeof res ) {
+                            c.__lvar = c.__lvar || {};
+                            c.__lvar[ v1.name ] = v2eval;
+                            return v2eval;
+                        }
+                        return res;
                     } else {
                         D( e );
-                        throw new Error('BUG: unsupported op in compiled expression: ' + e.op);
+                        throw new Error( `BUG: unsupported op in compiled expression: ${String(e.op)}` );
                     }
                     return v1eval;
                 } else if ( is_atom( e, 'unop' ) ) {
-                    var veval = _run( e.val );
+                    var veval = _run( e.val, ctx );
                     if (e.op == '-')
                         veval = -veval;
                     else if (e.op == '!')
@@ -329,29 +376,29 @@ const MAX_RANGE = 1000;          /* Maximum number of elements in a result range
                     else if (e.op == '~')
                         veval = ~veval;
                     else
-                        throw new Error('BUG: unsupported unop in compiled expression: ' + e.op);
+                        throw new Error( `BUG: unsupported unop in compiled expression: ${String(e.op)}` );
                     return veval;
                 } else if ( is_atom( e, 'deref' ) ) {
-                    var scope = _run( e.context );
+                    var scope = _run( e.context, ctx );
                     /* Watch for null-conditional operators */
                     if ( ( e.op === '?.' || e.op == '?[' ) && scope === null ) {
                         return null;
                     }
                     if ( "object" !== typeof scope || null === scope ) {
-                        throw new ReferenceError("Invalid reference to member "+String(e.member)+" of "+String(scope));
+                        throw new ReferenceError( `Invalid reference to member ${String(e.member)} of {String(scope)}` );
                     }
-                    var member = _run( e.member );
+                    var member = _run( e.member, ctx );
                     /* ??? member must be primitive? */
-                    var res = _run( scope[ member ] );
+                    var res = _run( scope[ member ], ctx );
                     return N(res);
                 } else if ( is_atom( e, 'if' ) ) {
                     /* Special short-cut function */
-                    var cond = _run( e.test );
+                    var cond = _run( e.test, ctx );
                     var ifresult;
                     if ( cond ) {
-                        ifresult = _run( e.tc );
+                        ifresult = _run( e.tc, ctx );
                     } else if ( "undefined" !== typeof e.fc ) {
-                        ifresult = _run( e.fc );
+                        ifresult = _run( e.fc, ctx );
                     } else {
                         ifresult = null;
                     }
@@ -367,19 +414,19 @@ const MAX_RANGE = 1000;          /* Maximum number of elements in a result range
                         // Attached to context
                         impl = ctx._func[name];
                     } else {
-                        throw new ReferenceError('Undefined function: ' + name);
+                        throw new ReferenceError( `Undefined function (${name})` );
                     }
 
                     // Build argument list.z
                     var a = [];
                     e.args.forEach( function( se ) {
-                        a.push( _run( se ) );
+                        a.push( _run( se, ctx ) );
                     });
                     var r = impl.apply( null, a );
                     return N(r);
                 } else if ( is_atom( e, 'iter' ) ) {
                     ctx.__lvar = ctx.__lvar || {};
-                    let context = N( _run( e.context ) );
+                    let context = N( _run( e.context, ctx ) );
                     let res = [];
                     if ( null !== context ) {
                         // D(e);
@@ -387,23 +434,28 @@ const MAX_RANGE = 1000;          /* Maximum number of elements in a result range
                             context = [ context ];
                         }
                         // D("Iterate over",context,"using",e.value,"apply",e.exec);
-                        for ( [ key, value ] of Object.entries( context ) ) {
-                            // D("Assigning",value,"to",e.value);
-                            ctx.__lvar[ e.value ] = value;
-                            if ( e.key ) {
-                                ctx.__lvar[ e.key ] = Array.isArray( context ) ? parseInt( key ) : key;
+                        let local_ctx = push_context( ctx );
+                        try {
+                            for ( [ key, value ] of Object.entries( context ) ) {
+                                // D("Assigning",value,"to",e.value);
+                                local_ctx.__lvar[ e.value ] = value;
+                                if ( e.key ) {
+                                    local_ctx.__lvar[ e.key ] = Array.isArray( context ) ? parseInt( key ) : key;
+                                }
+                                // D("Running",e.exec);
+                                let v = _run( e.exec, local_ctx );
+                                // D("result",v);
+                                if ( v !== null ) {
+                                    res.push( v );
+                                }
                             }
-                            // D("Running",e.exec);
-                            let v = _run( e.exec );
-                            // D("result",v);
-                            if ( v !== null ) {
-                                res.push( v );
-                            }
+                        } finally {
+                            ctx = pop_context( local_ctx );
                         }
                     }
                     return res;
                 } else if ( is_atom( e, 'search' ) ) {
-                    let context = N( _run( e.context ) );
+                    let context = N( _run( e.context, ctx ) );
                     let res = null;
                     if ( null !== context ) {
                         ctx.__lvar = ctx.__lvar || {};
@@ -412,41 +464,102 @@ const MAX_RANGE = 1000;          /* Maximum number of elements in a result range
                         if ( "object" !== typeof context ) {
                             context = [ context ];
                         }
-                        for ( const [key, value] of Object.entries( context ) ) {
-                            // D("Assigning",value,"to",e.value);
-                            ctx.__lvar[ e.value ] = value;
-                            if ( e.key ) {
-                                ctx.__lvar[ e.key ] = key;
+                        local_ctx = push_context( ctx );
+                        try {
+                            for ( const [key, value] of Object.entries( context ) ) {
+                                // D("Assigning",value,"to",e.value);
+                                local_ctx.__lvar[ e.value ] = value;
+                                if ( e.key ) {
+                                    local_ctx.__lvar[ e.key ] = key;
+                                }
+                                let v = _run( e.exec, local_ctx );
+                                if ( !!v ) {
+                                    res = value;
+                                    break;
+                                }
                             }
-                            let v = _run( e.exec );
-                            if ( !!v ) {
-                                res = value;
-                                break;
-                            }
+                        } finally {
+                            ctx = pop_context( local_ctx );
                         }
                     }
                     return res;
+                } else if ( is_atom( e, 'block' ) ) {
+                    let res = null;
+                    try {
+                        ctx = push_context( ctx );
+                        res = _run( e.block, ctx );
+                    } finally {
+                        ctx = pop_context( ctx );
+                    }
+                    return res;
+                } else if ( is_atom( e, 'fdef' ) ) {
+                    let seen = {};
+                    /* e.args is list atom */
+                    e.args.expr.forEach( (a,ix) => {
+                        /* a is vref atom */
+                        if ( ! is_atom( a, 'vref' ) ) {
+                            throw new SyntaxError( `Invalid argument ${ix}/${e.args.length}, must be identifier` );
+                        }
+                        if ( seen[ a.name ] ) {
+                            throw new SyntaxError( `Argument name conflict (${a.name})` );
+                        }
+                        seen[ a.name ] = true;
+                    });
+                    /* Define function; closure loads arguments values passed in to local variables in
+                     * new sub-scope, then runs expression list.
+                     */
+                    ctx._func[ e.name ] = (...args) => {
+                        let res = null;
+                        if ( args.length !== e.args.expr.length ) {
+                            throw new ReferenceError( `Defined function "${e.name}" requires ${e.args.expr.length} arguments` );
+                        }
+                        ctx = push_context( ctx );
+                        try {
+                            /* Get each argument into its corresponding locally-scoped variable */
+                            args.forEach( (arg,ix) => {
+                                D( "set arg",ix,e.args.expr[ix].name,'=',arg );
+                                ctx.__lvar[ e.args.expr[ ix ].name ] = _run( arg, ctx );
+                            });
+                            res = _run( e.list, ctx );
+                        } finally {
+                            ctx = pop_context( ctx );
+                        }
+                        return res;
+                    };
+                    return null;
                 } else {
                     D("BUG: unsupported atom:", e);
-                    throw new Error('BUG: unsupported atom ' + String(e.__atom));
+                    throw new Error( `BUG: unsupported atom (${String(e.__atom)})` );
                 }
             }
         } /* function _run() */
 
-        D("lexp.run()", ce, ctx);
-        var result = _run( ce );
+        D("lexp.run()", ce, g_ctx);
+        var result = _run( ce, g_ctx );
         D("lexp.run() finished with", result);
         return result;
     };
 
     return {
         version: version,
+        get_context: get_context,
+        define_func_impl: function( ctx, name, impl ) {
+            __global = ctx.__global || ctx;
+            __global._func = __global._func || {}
+            __global._func[ name ] = impl;
+        },
+        define_var: function( ctx, name, val ) {
+            ctx.__lvar = ctx.__lvar || {};
+            ctx.__lvar[ name ] = N(val);
+        },
+        push_context: push_context,
+        pop_context: pop_context,
+        evaluate: function( expr, context ) {
+            return run( parser.parse( expr ), context );
+        },
         compile: function( expr ) {
             return parser.parse( expr );
         },
-        run: run,
-        evaluate: function( expr, context ) {
-            return run( parser.parse( expr ), context );
-        }
+        run: run
     };
 }));

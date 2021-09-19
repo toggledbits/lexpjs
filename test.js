@@ -1,12 +1,11 @@
-const version = 21189;
+const version = 21261;
 
-const verbose = false;  // If true, all tests and results printed; otherwise just errors.
+const verbose = true;  // If true, all tests and results printed; otherwise just errors.
 
 var lexp = require("./lexp.js");
 // console.log(lexp);
 
-var ctx = {
-    __lvar: {},
+var ctx = lexp.get_context( {
     entity: {
         id: "house>123",
         name: "Some Switch",
@@ -30,7 +29,7 @@ var ctx = {
         { name: "Lucy", type: "shepherd" }
     ],
     pi: 3.14159265
-};
+});
 
 var test_expr = [
       { expr: '"Hello"', expect: "Hello" }
@@ -331,15 +330,28 @@ var test_expr = [
     , { expr: "first item in entity.attributes with (item?.level ?? 0) > 0.2", expect: { level: 0.25 } }
     , { expr: "modes={home:{hm:1,ac:'home'},away:{hm:2,ac:'away'},sleep:{hm:3,ac:'sleep'},smart1:{hm:4,ac:'smart1'}}, \
                (first item in modes with item.hm == 2).ac", expect: 'away' }
+    , { expr: "each n in 1..3: yyy=n, yyy", expect: null } /* scope of yyy is interior to each */
 
     /* misc */
     , { expr: "do 5, 6, 7, 8, 9 done", expect: 9 }
+    , { expr: "do yyy=444 done, yyy", expect: null }
     , { expr: "'nice' # this is a comment", expect: "nice" }
     , { expr: "# this is a comment\n'hello'", expect: "hello" }
     , { expr: "([1,2,3])[1]", expect: 2 }
     , { expr: "min( 1, entity.attributes.volume.level - ( parameters.amount ?? 0.05 ) )", expect: 0.12 }
     , { expr: "t='off',({off:'OFF',on:'ON'})[t]", expect: "OFF" }
 
+    /* definable functions */
+    , { expr: "define square(a) a*a, [ square(5), square(0), square(-5) ]", expect: [ 25, 0, 25 ] }
+    , { expr: `define botch(q) '"'+str(q)+'"', botch('hello','there')`, error: new ReferenceError() }
+    
+    /* scope tests */
+    , { expr: "xyzzy='', do global xyzzy='global' done, xyzzy", expect: "global" }
+    , { expr: 'outer="outer", do local xyzzy="inner", outer=xyzzy done, xyzzy', expect: "global" }
+    , { expr: 'outer', expect: 'inner' }
+    
+    , { expr: 'area=3.14159265*4*4' }
+    , { expr: "'half the area is ' + area / 2" }
 ];
 
 
@@ -433,14 +445,25 @@ test_expr.forEach( function( e ) {
                     console.error("**** Unexpected result; got", typeof res, res, ", expected", typeof e.expect, e.expect);
                     ++num_errors;
                 }
+            } else {
+                if ( verbose ) {
+                    console.log( "     Result:", res );
+                }
             }
         } catch ( err ) {
-            if ( !verbose ) {
-                console.error( "\nTest expression: ", e.expr );
+            if ( true === e.error || ( e.error instanceof Error && err instanceof e.error.constructor ) ) {
+                /* Expecting error, got error. */
+                if ( verbose ) {
+                    console.log( "     Result: (expected error) ", String( err ) );
+                }
+            } else {
+                if ( !verbose ) {
+                    console.error( "\nTest expression: ", e.expr );
+                }
+                console.error("**** Eval error:", err );
+                console.error("ce", JSON.stringify(ce) );
+                ++num_errors;
             }
-            console.error("**** Eval error:", err );
-            console.error("ce", JSON.stringify(ce) );
-            ++num_errors;
         }
     } catch ( err ) {
         if ( !verbose ) {
