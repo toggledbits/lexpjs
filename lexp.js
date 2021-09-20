@@ -1,4 +1,4 @@
-/* Version 21263.1357 */
+/* Version 21263.1544 */
 /** lexpjs - Copyright (C) 2018,2021 Patrick H. Rigney, All Rights Reserved
  *  See https://github.com/toggledbits/lexpjs
  *
@@ -19,7 +19,7 @@
  *  SOFTWARE.
  */
 
-const version = 21261;
+const version = 21263;
 
 const FEATURE_MONTH_BASE = 1;   /* 1 = months 1-12; set to 0 if you prefer JS semantics where 0=Jan,11=Dec */
 const MAX_RANGE = 1000;         /* Maximum number of elements in a result range op result array */
@@ -1104,7 +1104,7 @@ return new Parser;
     var push_context = function( ctx ) {
         return { __global: ctx.__global || ctx, __parent: ctx, __depth: (ctx.__depth||0)+1, __lvar: {} };
     }
-    
+
     var pop_context = function( ctx ) {
         return ctx.__parent || ctx;
     }
@@ -1122,7 +1122,7 @@ return new Parser;
         }
         return false;
     }
-    
+
     function is_atom( v, typ ) {
         return null !== v && "object" === typeof( v ) &&
             "undefined" !== typeof v.__atom &&
@@ -1288,7 +1288,7 @@ return new Parser;
                         let fc = locate_context( '_assign', ctx, '_func' );
                         if ( fc && "function" === typeof fc._func._assign ) {
                             /* If _assign returns undefined, the normal assignment will be performed. Otherwise, it is
-                             * assumed that _assign has done it. 
+                             * assumed that _assign has done it.
                              */
                             res = fc._func._assign( v1.name, v2eval, c, e );
                         }
