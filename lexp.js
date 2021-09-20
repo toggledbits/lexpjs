@@ -1,4 +1,4 @@
-/* Version 21263.1544 */
+/* Version 21263.1550 */
 /** lexpjs - Copyright (C) 2018,2021 Patrick H. Rigney, All Rights Reserved
  *  See https://github.com/toggledbits/lexpjs
  *
@@ -1342,18 +1342,22 @@ return new Parser;
                 } else if ( is_atom( e, 'fref' ) ) {
                     // D('function ref ' + e.name + ' with ' + e.args.length + ' args');
                     var name = e.name;
-                    var impl = undefined;
+                    var impl = false;
                     if ( nativeFuncs[name] ) {
                         // Native function implementation
                         impl = nativeFuncs[name].impl;
                     } else if ( ctx._func && "function" === typeof ctx._func[name] ) {
                         // Attached to context
-                        impl = ctx._func[name];
-                    } else {
+                        let c = locate_context( name, ctx, '_func' );
+                        if ( c ) {
+                            impl = c._func[ name ];
+                        }
+                    }
+                    if ( ! impl ) {
                         throw new ReferenceError( `Undefined function (${name})` );
                     }
 
-                    // Build argument list.z
+                    // Build argument list and go.
                     var a = [];
                     e.args.forEach( function( se ) {
                         a.push( _run( se, ctx ) );
