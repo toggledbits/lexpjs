@@ -168,37 +168,37 @@ const MAX_RANGE = 1000;         /* Maximum number of elements in a result range 
     var push_context = function( ctx ) {
         return { __global: ctx.__global || ctx, __parent: ctx, __depth: (ctx.__depth||0)+1, __lvar: {} };
     }
-    
+
     var pop_context = function( ctx ) {
         return ctx.__parent || ctx;
     }
 
+    function locate_context( key, ctx, subkey ) {
+        while ( ctx ) {
+            let w = subkey ? ctx[ subkey ] : ctx;
+            if ( w && key in w ) {
+                return ctx;
+            }
+            if ( ctx.__parent === ctx ) {
+                break;
+            }
+            ctx = ctx.__parent;
+        }
+        return false;
+    }
+
+    function is_atom( v, typ ) {
+        return null !== v && "object" === typeof( v ) &&
+            "undefined" !== typeof v.__atom &&
+            ( !typ || v.__atom === typ );
+    }
+
+    function N( v ) {
+        return "undefined" === typeof v ? null : v;
+    }
+
     var run = function( ce, g_ctx ) {
         g_ctx = g_ctx || get_context();
-
-        function locate_context( key, ctx, subkey ) {
-            while ( ctx ) {
-                let w = subkey ? ctx[ subkey ] : ctx;
-                if ( w && key in w ) {
-                    return ctx;
-                }
-                if ( ctx.__parent === ctx ) {
-                    break;
-                }
-                ctx = ctx.__parent;
-            }
-            return false;
-        }
-        
-        function is_atom( v, typ ) {
-            return null !== v && "object" === typeof( v ) &&
-                "undefined" !== typeof v.__atom &&
-                ( !typ || v.__atom === typ );
-        }
-
-        function N( v ) {
-            return "undefined" === typeof v ? null : v;
-        }
 
         /* Resolve a VREF atom */
         function _resolve( a, ctx ) {
@@ -352,7 +352,7 @@ const MAX_RANGE = 1000;         /* Maximum number of elements in a result range 
                         let fc = locate_context( '_assign', ctx, '_func' );
                         if ( fc && "function" === typeof fc._func._assign ) {
                             /* If _assign returns undefined, the normal assignment will be performed. Otherwise, it is
-                             * assumed that _assign has done it. 
+                             * assumed that _assign has done it.
                              */
                             res = fc._func._assign( v1.name, v2eval, c, e );
                         }
@@ -385,7 +385,7 @@ const MAX_RANGE = 1000;         /* Maximum number of elements in a result range 
                         return null;
                     }
                     if ( "object" !== typeof scope || null === scope ) {
-                        throw new ReferenceError( `Invalid reference to member ${String(e.member)} of {String(scope)}` );
+                        throw new ReferenceError( `Invalid reference to member ${String(e.member)} of ${String(scope)}` );
                     }
                     var member = _run( e.member, ctx );
                     /* ??? member must be primitive? */
@@ -551,6 +551,21 @@ const MAX_RANGE = 1000;         /* Maximum number of elements in a result range 
         define_var: function( ctx, name, val ) {
             ctx.__lvar = ctx.__lvar || {};
             ctx.__lvar[ name ] = N(val);
+            return ctx.__lvar[ name ];
+        },
+        set_var: function( ctx, name, val ) {
+            let c = locate_context( name, ctx, '__lvar' );
+            if ( ! c ) {
+                return define_var( ctx, name, val );
+            }
+            c.__lvar[ name ] = val;
+        },
+        get_var: function( ctx, name ) {
+            let c = locate_context( name, ctx, '__lvar' );
+            if ( c ) {
+                return c.__lvar[ name ];
+            }
+            return undefined;
         },
         push_context: push_context,
         pop_context: pop_context,

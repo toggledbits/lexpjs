@@ -1,4 +1,4 @@
-/* Version 21261.2131 */
+/* Version 21263.1357 */
 /** lexpjs - Copyright (C) 2018,2021 Patrick H. Rigney, All Rights Reserved
  *  See https://github.com/toggledbits/lexpjs
  *
@@ -1109,32 +1109,32 @@ return new Parser;
         return ctx.__parent || ctx;
     }
 
+    function locate_context( key, ctx, subkey ) {
+        while ( ctx ) {
+            let w = subkey ? ctx[ subkey ] : ctx;
+            if ( w && key in w ) {
+                return ctx;
+            }
+            if ( ctx.__parent === ctx ) {
+                break;
+            }
+            ctx = ctx.__parent;
+        }
+        return false;
+    }
+    
+    function is_atom( v, typ ) {
+        return null !== v && "object" === typeof( v ) &&
+            "undefined" !== typeof v.__atom &&
+            ( !typ || v.__atom === typ );
+    }
+
+    function N( v ) {
+        return "undefined" === typeof v ? null : v;
+    }
+
     var run = function( ce, g_ctx ) {
         g_ctx = g_ctx || get_context();
-
-        function locate_context( key, ctx, subkey ) {
-            while ( ctx ) {
-                let w = subkey ? ctx[ subkey ] : ctx;
-                if ( w && key in w ) {
-                    return ctx;
-                }
-                if ( ctx.__parent === ctx ) {
-                    break;
-                }
-                ctx = ctx.__parent;
-            }
-            return false;
-        }
-        
-        function is_atom( v, typ ) {
-            return null !== v && "object" === typeof( v ) &&
-                "undefined" !== typeof v.__atom &&
-                ( !typ || v.__atom === typ );
-        }
-
-        function N( v ) {
-            return "undefined" === typeof v ? null : v;
-        }
 
         /* Resolve a VREF atom */
         function _resolve( a, ctx ) {
@@ -1321,7 +1321,7 @@ return new Parser;
                         return null;
                     }
                     if ( "object" !== typeof scope || null === scope ) {
-                        throw new ReferenceError( `Invalid reference to member ${String(e.member)} of {String(scope)}` );
+                        throw new ReferenceError( `Invalid reference to member ${String(e.member)} of ${String(scope)}` );
                     }
                     var member = _run( e.member, ctx );
                     /* ??? member must be primitive? */
@@ -1487,6 +1487,21 @@ return new Parser;
         define_var: function( ctx, name, val ) {
             ctx.__lvar = ctx.__lvar || {};
             ctx.__lvar[ name ] = N(val);
+            return ctx.__lvar[ name ];
+        },
+        set_var: function( ctx, name, val ) {
+            let c = locate_context( name, ctx, '__lvar' );
+            if ( ! c ) {
+                return define_var( ctx, name, val );
+            }
+            c.__lvar[ name ] = val;
+        },
+        get_var: function( ctx, name ) {
+            let c = locate_context( name, ctx, '__lvar' );
+            if ( c ) {
+                return c.__lvar[ name ];
+            }
+            return undefined;
         },
         push_context: push_context,
         pop_context: pop_context,
