@@ -103,29 +103,28 @@ Variables can be created in a context by passing them in to `get_context()`, or 
 
 ### `define_func_impl( context, name, func )`
 
-Special/custom functions needed by your expressions can be defined on a context by calling `define_func_impl()`. The `func` parameter is simply a reference to a function that takes the arguments your expression function needs; the implementation must return a value.
+Special/custom functions needed by your expressions can be defined on a context by calling `define_func_impl()`. The `func` parameter is simply a reference to a function that takes the context in which the call is being made followed by the arguments your expression function needs; the implementation must return a value.
 
 ```
 // Custom functions defined using four common JavaScript syntaxes.
 var cc = lexpjs.get_context();
 
 /* By passing a reference to a function */
-function r2d( radians ) {
+function r2d( ctx, radians ) {
     return radians * 180.0 / Math.PI;
 }
 lexpjs.define_func_impl( cc, 'rad_to_deg', r2d );
 
 /* By passing a closure */
-lexpjs.define_func_impl( cc, 'deg_to_rad', function( deg ) {
+lexpjs.define_func_impl( cc, 'deg_to_rad', function( ctx, deg ) {
     return deg * Math.PI / 180.0;
 });
 
-/* By passing arrow function (full syntax) */
-lexpjs.define_func_impl( cc, 'double', (value) => { return 2*value; } );
-
-/* Using single-argument arrow function shortcut syntax */
-lexpjs.define_func_impl( cc, 'square', value => value * value );
+/* By passing arrow function */
+lexpjs.define_func_impl( cc, 'square', ( ctx, value ) => { return value * value; } );
 ```
+
+The context in which the call is made will be the context in which the function is referenced and the call is *made*, not necessarily that at which the function was *defined*. A function defined in global scope but called from a descendent scope will have the descendent scope passed as its argument here. The context is passed for reentrancy in your application, as a handle, and is not intended to be used to access local variables or variables in other scopes; this latter possibility should be avoided (i.e. your function should be passed all values it needs to function).
 
 Your function may return any primitive type, `null`, `Infinity`, `NaN`, or an array or object containing any of these. If the return value is `undefined`, `null` will be substituted. Your function may **not** return any other type, including function, user-defined class or instance, `RegExp`, `Promise`, `Map` or `Set` (or descendents), etc. Basically, if it can't be represented natively in JSON, it's not valid to return from your function.
 
@@ -219,7 +218,7 @@ The expression language has a couple of "lightweight statements" that function a
 
 ### Scope of Statements
 
-The expression language has some rudimentary scoping like most programming languages. Variables defined in the interior expressions of the above statements will be local to the statement and not available outside the statement.
+The expression language has some rudimentary scoping like most programming languages. Variables defined in the *interior expressions* of the above statements will be local to the statement and not available outside the statement.
 
 For example, given this expression (an iterator):
 
@@ -329,6 +328,7 @@ Important notes with respect to date handling (currently; this will evolve):
 * `shift( array )` &mdash; removes the first element of *array* and returns it; returns `null` if *array* is empty; the array is modified in place;
 * `isArray( various )` &mdash; returns *true* if the argument is an array (of any length);
 * `isObject( various )` &mdash; returns *true* if the argument is an object;
+* `typeof( various )` &mdash; returns the data type of the argument. While JavaScript reports arrays and `null` as *object*s, *lexpjs* reports them more specifically as *array* and *null* respectively.
 
 ### Conversion Functions
 

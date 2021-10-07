@@ -1,4 +1,4 @@
-/* Version 21263.1550 */
+/* Version 21280.1507 */
 /** lexpjs - Copyright (C) 2018,2021 Patrick H. Rigney, All Rights Reserved
  *  See https://github.com/toggledbits/lexpjs
  *
@@ -19,7 +19,7 @@
  *  SOFTWARE.
  */
 
-const version = 21263;
+const version = 21280;
 
 const FEATURE_MONTH_BASE = 1;   /* 1 = months 1-12; set to 0 if you prefer JS semantics where 0=Jan,11=Dec */
 const MAX_RANGE = 1000;         /* Maximum number of elements in a result range op result array */
@@ -1083,6 +1083,7 @@ return new Parser;
         , atob      : { nargs: 1, impl: (a) => Buffer.from( a, "base64" ).toString( "utf-8" ) }
         , urlencode : { nargs: 1, impl: encodeURIComponent }
         , urldecode : { nargs: 1, impl: decodeURIComponent }
+        , "typeof"  : { nargs: 1, impl: (a) => null === a ? 'null' : ( Array.isArray(a) ? 'array' : typeof a ) }
 /* FUTURE:
         , format
         , sort
@@ -1095,14 +1096,19 @@ return new Parser;
     var D = false ? console.log : function() {};
 
     var get_context = function( vars ) {
-        var c = { __lvar: vars || {}, __depth: 0, _func: {} };
+        var c = { __lvar: vars || {}, __depth: 0, __tag: 'global', _func: {} };
         c.__global = c;
-        c.__parent = c;
         return c
     };
 
-    var push_context = function( ctx ) {
-        return { __global: ctx.__global || ctx, __parent: ctx, __depth: (ctx.__depth||0)+1, __lvar: {} };
+    var push_context = function( ctx, tag ) {
+        return {
+            __global: ctx.__global || ctx,
+            __parent: ctx,
+            __depth: (ctx.__depth||0)+1,
+            __lvar: {},
+            __tag: tag
+        };
     }
 
     var pop_context = function( ctx ) {
@@ -1115,10 +1121,24 @@ return new Parser;
             if ( w && key in w ) {
                 return ctx;
             }
-            if ( ctx.__parent === ctx ) {
+            if ( ! ctx.__parent ) {
                 break;
             }
             ctx = ctx.__parent;
+        }
+        return false;
+    }
+
+    /**
+     * Scan up from the given context for a context with the given tag. If no tag is given,
+     * the first tagged context encountered is returned.
+     */
+    function find_context_tag( ctx, tag ) {
+        if ( ctx.__tag && ( ! tag || ctx.__tag === tag ) ) {
+            return ctx;
+        }
+        if ( ctx.__parent ) {
+            return find_context_tag( ctx.__parent, tag );
         }
         return false;
     }
@@ -1343,22 +1363,20 @@ return new Parser;
                     // D('function ref ' + e.name + ' with ' + e.args.length + ' args');
                     var name = e.name;
                     var impl = false;
-                    if ( nativeFuncs[name] ) {
-                        // Native function implementation
-                        impl = nativeFuncs[name].impl;
-                    } else if ( ctx._func && "function" === typeof ctx._func[name] ) {
-                        // Attached to context
-                        let c = locate_context( name, ctx, '_func' );
-                        if ( c ) {
-                            impl = c._func[ name ];
-                        }
+                    // Attached to context? Scan from current up.
+                    let c = locate_context( name, ctx, '_func' );
+                    if ( c ) {
+                        impl = c._func[ name ];
+                    }
+                    if ( ! impl && nativeFuncs[ name ] ) {
+                        impl = ( fctx, ...args ) => nativeFuncs[ name ].impl( ...args );
                     }
                     if ( ! impl ) {
                         throw new ReferenceError( `Undefined function (${name})` );
                     }
 
-                    // Build argument list and go.
-                    var a = [];
+                    // Build argument list and go. Context is always first argument.
+                    var a = [ ctx ];
                     e.args.forEach( function( se ) {
                         a.push( _run( se, ctx ) );
                     });
@@ -1448,7 +1466,7 @@ return new Parser;
                     /* Define function; closure loads arguments values passed in to local variables in
                      * new sub-scope, then runs expression list.
                      */
-                    ctx._func[ e.name ] = (...args) => {
+                    ctx._func[ e.name ] = (ctx, ...args) => {
                         let res = null;
                         if ( args.length !== e.args.expr.length ) {
                             throw new ReferenceError( `Defined function "${e.name}" requires ${e.args.expr.length} arguments` );
@@ -1484,7 +1502,7 @@ return new Parser;
         version: version,
         get_context: get_context,
         define_func_impl: function( ctx, name, impl ) {
-            __global = ctx.__global || ctx;
+            let __global = ctx.__global || ctx;
             __global._func = __global._func || {}
             __global._func[ name ] = impl;
         },
@@ -1509,6 +1527,7 @@ return new Parser;
         },
         push_context: push_context,
         pop_context: pop_context,
+        find_context_tag: find_context_tag,
         evaluate: function( expr, context ) {
             return run( parser.parse( expr ), context );
         },

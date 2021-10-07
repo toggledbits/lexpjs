@@ -1,6 +1,6 @@
-const version = 21261;
+const version = 21280;
 
-const verbose = true;  // If true, all tests and results printed; otherwise just errors.
+const verbose = false;  // If true, all tests and results printed; otherwise just errors.
 
 var lexp = require("./lexp.js");
 // console.log(lexp);
@@ -193,7 +193,7 @@ var test_expr = [
     , { expr: "4 * null", expect: 0 }
     , { expr: "4 / null", expect: Infinity }
     , { expr: "null / 4", expect: 0 }
-    
+
     /* Null-conditional/coalescing operators */
     , { expr: "entity?.id", expect: "house>123" }
     , { expr: "entity?.attributes" }
@@ -298,6 +298,20 @@ var test_expr = [
     , { expr: `urldecode( 'This%20is%20a%20string%20%25%26*%40(!.%7B%7D%3A%2F%3F' )`, expect: "This is a string %&*@(!.{}:/?" }
     , { expr: `hex( 255 )`, expect: "ff" }
     , { expr: `hex( 65536 )`, expect: "10000" }
+    , { expr: `typeof(true)`, expect: "boolean" }
+    , { expr: `typeof(false)`, expect: "boolean" }
+    , { expr: `typeof(null)`, expect: "null" }
+    , { expr: `typeof(NaN)`, expect: "number" }
+    , { expr: `typeof(Infinity)`, expect: "number" }
+    , { expr: `typeof(0)`, expect: "number" }
+    , { expr: `typeof(-123)`, expect: "number" }
+    , { expr: `typeof(456)`, expect: "number" }
+    , { expr: `typeof(3.14159265)`, expect: "number" }
+    , { expr: `typeof(1e20)`, expect: "number" }
+    , { expr: `typeof("dog and cat")`, expect: "string" }
+    , { expr: `typeof([])`, expect: "array" }
+    , { expr: `typeof({})`, expect: "object" }
+    , { expr: `typeof(entity.attributes)`, expect: "object" }
 
     /* Conditional */
     , { expr: "if entity.attributes.power_switch.state then 1 else 0 endif", expect: 1 }
@@ -344,12 +358,12 @@ var test_expr = [
     /* definable functions */
     , { expr: "define square(a) a*a, [ square(5), square(0), square(-5) ]", expect: [ 25, 0, 25 ] }
     , { expr: `define botch(q) '"'+str(q)+'"', botch('hello','there')`, error: new ReferenceError() }
-    
+
     /* scope tests */
     , { expr: "xyzzy='', do global xyzzy='global' done, xyzzy", expect: "global" }
     , { expr: 'outer="outer", do local xyzzy="inner", outer=xyzzy done, xyzzy', expect: "global" }
     , { expr: 'outer', expect: 'inner' }
-    
+
     , { expr: 'area=3.14159265*4*4' }
     , { expr: "'half the area is ' + area / 2" }
 ];
