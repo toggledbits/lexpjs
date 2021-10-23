@@ -1,4 +1,4 @@
-const version = 21280;
+const version = 21296;
 
 const verbose = true;  // If true, all tests and results printed; otherwise just errors.
 
@@ -367,7 +367,7 @@ var test_expr = [
 
     , { expr: 'area=3.14159265*4*4' }
     , { expr: "'half the area is ' + area / 2" }
-    
+
     /* Sorting with user-defined control expression or function */
     , { expr: 'sort( [ "e", "d", "b", "a", "c" ] )', expect: [ "a", "b", "c", "d", "e" ] }
     , { expr: 'define ff(a,b) a < b ? 1 : ( a == b ? 0 : -1 ), sort( [ "e", "d", "b", "a", "c" ], ff )', expect: [ "e", "d", "c", "b", "a" ] }

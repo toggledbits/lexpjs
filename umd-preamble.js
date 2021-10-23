@@ -141,7 +141,7 @@ const MAX_RANGE = 1000;         /* Maximum number of elements in a result range 
         , shift     : { nargs: 1, impl: (a) => a.shift() }
         , isArray   : { nargs: 1, impl: Array.isArray }
         , isObject  : { nargs: 1, impl: (p) => null !== p && "object" === typeof p }
-        , sort      : { nargs: 1, impl: ( a, f ) => Array.isArray( a ) ? _arraysort( a, f ) : null }
+        , sort      : { nargs: 1, impl: true } /* custom eval, see implementation of fref atom */
         , toJSON    : { nargs: 1, impl: JSON.stringify }
         , parseJSON : { nargs: 1, impl: JSON.parse }
         , btoa      : { nargs: 1, impl: (b) => Buffer.from( b, "utf-8" ).toString( "base64" ) }
@@ -437,7 +437,7 @@ const MAX_RANGE = 1000;         /* Maximum number of elements in a result range 
                         ctx = push_context( ctx );
                         /* See if a custom sort is supplied. */
                         if ( e.args.length > 1 ) {
-                            /* Can pass reference to defined function */
+                            /* Can pass reference to defined function... */
                             if ( is_atom( e.args[1], 'vref' ) ) {
                                 let c = locate_context( e.args[1].name, ctx, '_func' );
                                 if ( c ) {
