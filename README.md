@@ -297,6 +297,7 @@ I keep adding things as I need them or people ask, so [let me know](https://gith
 * `bool( various )` &mdash; attempts conversion to `boolean`; in this expression language, the strings "0", "no", "off" and "false", the empty string, the number 0, and boolean *false* all result in *false*; otherwise, the result is *true*;
 * `str( various )` &mdash; converts the argument to a string;
 * `isnull( various )` &mdash; more a test than a conversion, returns *true* if the argument is `null`.
+* `typeof( various )` &mdash; returns the data type of the argument. While JavaScript reports arrays and `null` as *object*s, *lexpjs* reports them more specifically as *array* and *null* respectively.
 
 ### Date/Time Handling Functions
 
@@ -328,7 +329,7 @@ Important notes with respect to date handling (currently; this will evolve):
 * `shift( array )` &mdash; removes the first element of *array* and returns it; returns `null` if *array* is empty; the array is modified in place;
 * `isArray( various )` &mdash; returns *true* if the argument is an array (of any length);
 * `isObject( various )` &mdash; returns *true* if the argument is an object;
-* `typeof( various )` &mdash; returns the data type of the argument. While JavaScript reports arrays and `null` as *object*s, *lexpjs* reports them more specifically as *array* and *null* respectively.
+* `sort( array [, comparison] )` &mdash; sort the given array. The array may contain data of any type. The default sort is a case-sensitive ascending string sort (so the array is assumed to contain strings, and if it contains any other type the values are coerced to strings prior to comparison). To sort differently (e.g. descending, numeric, etc.), `comparison` can be given as the either the name of a defined function taking two arguments as the values to be compared, or an expression that compares the local variables `$1` and `$2` (defined by the `sort()` function as it runs). In either case, the result *must* be an integer: 0 if the two values are equal; less than 0 (e.g. -1) if the first value sorts before the second; or greater than zero (e.g. 1) if the first value sorts after the second. The comparison must be stable: given two values, it must return the same result every time it runs. Do not apply randomness or other heuristics to the comparison, as this can lead to long runtimes or even infinite loops in the attempt to sort.
 
 ### Conversion Functions
 
@@ -344,4 +345,4 @@ Important notes with respect to date handling (currently; this will evolve):
 
 As a result of the syntax, the following words are reserved and may not be used as identifiers or function names: `true, false, null, each, in, first, of, with, if, then, else, endif, do, done, define, and, or, not, NaN, Infinity`. Note that keywords and identifiers are case-sensitive, so while `each` is not an acceptable identifier, `Each` or `EACH` would be.
 
-<small>Updated 2021-Sep-18</small>
+<small>Updated 2021-Oct-23 (21296)</small>

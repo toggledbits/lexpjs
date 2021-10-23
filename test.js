@@ -1,6 +1,6 @@
 const version = 21280;
 
-const verbose = false;  // If true, all tests and results printed; otherwise just errors.
+const verbose = true;  // If true, all tests and results printed; otherwise just errors.
 
 var lexp = require("./lexp.js");
 // console.log(lexp);
@@ -357,7 +357,8 @@ var test_expr = [
 
     /* definable functions */
     , { expr: "define square(a) a*a, [ square(5), square(0), square(-5) ]", expect: [ 25, 0, 25 ] }
-    , { expr: `define botch(q) '"'+str(q)+'"', botch('hello','there')`, error: new ReferenceError() }
+    , { expr: `define botch(q) '"'+str(q)+'"', botch('hello','there')`, expect: '"hello"' }
+    , { expr: `define botch(q,p) '"'+str(q)+str(p)+'"', botch('hello')`, expect: '"hellonull"' }
 
     /* scope tests */
     , { expr: "xyzzy='', do global xyzzy='global' done, xyzzy", expect: "global" }
@@ -366,6 +367,12 @@ var test_expr = [
 
     , { expr: 'area=3.14159265*4*4' }
     , { expr: "'half the area is ' + area / 2" }
+    
+    /* Sorting with user-defined control expression or function */
+    , { expr: 'sort( [ "e", "d", "b", "a", "c" ] )', expect: [ "a", "b", "c", "d", "e" ] }
+    , { expr: 'define ff(a,b) a < b ? 1 : ( a == b ? 0 : -1 ), sort( [ "e", "d", "b", "a", "c" ], ff )', expect: [ "e", "d", "c", "b", "a" ] }
+    , { expr: 'sort( [ "e", "d", "b", "a", "c" ], $1 < $2 ? 1 : ( $1 == $2 ? 0 : -1 ) )', expect: [ "e", "d", "c", "b", "a" ] }
+    , { expr: 'sort( [ "e", "d", "b", "a", "c" ], 0 )', expect: [ "e", "d", "b", "a", "c" ] }
 ];
 
 

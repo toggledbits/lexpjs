@@ -1,4 +1,4 @@
-/* Version 21280.1507 */
+/* Version 21296.1140 */
 /** lexpjs - Copyright (C) 2018,2021 Patrick H. Rigney, All Rights Reserved
  *  See https://github.com/toggledbits/lexpjs
  *
@@ -19,7 +19,7 @@
  *  SOFTWARE.
  */
 
-const version = 21280;
+const version = 21296;
 
 const FEATURE_MONTH_BASE = 1;   /* 1 = months 1-12; set to 0 if you prefer JS semantics where 0=Jan,11=Dec */
 const MAX_RANGE = 1000;         /* Maximum number of elements in a result range op result array */
@@ -420,6 +420,8 @@ parse: function parse(input) {
     }
     return true;
 }};
+
+    /* Grammar 21296 */
 
     var buffer = "", qsep = "";
 
@@ -1077,6 +1079,7 @@ return new Parser;
         , shift     : { nargs: 1, impl: (a) => a.shift() }
         , isArray   : { nargs: 1, impl: Array.isArray }
         , isObject  : { nargs: 1, impl: (p) => null !== p && "object" === typeof p }
+        , sort      : { nargs: 1, impl: ( a, f ) => Array.isArray( a ) ? _arraysort( a, f ) : null }
         , toJSON    : { nargs: 1, impl: JSON.stringify }
         , parseJSON : { nargs: 1, impl: JSON.parse }
         , btoa      : { nargs: 1, impl: (b) => Buffer.from( b, "utf-8" ).toString( "base64" ) }
@@ -1362,6 +1365,46 @@ return new Parser;
                 } else if ( is_atom( e, 'fref' ) ) {
                     // D('function ref ' + e.name + ' with ' + e.args.length + ' args');
                     var name = e.name;
+                    var impl;
+                    if ( "sort" === name ) {
+                        /* Special implementation for sort() allows function reference or expr-
+                        *  ession as second arg for custom sort. This requires a "late eval-
+                        *  uation" (and multiple evaluations) of the sort function/expression.
+                        */
+                        let a = _run( e.args[0], ctx );
+                        ctx = push_context( ctx );
+                        /* See if a custom sort is supplied. */
+                        if ( e.args.length > 1 ) {
+                            /* Can pass reference to defined function */
+                            if ( is_atom( e.args[1], 'vref' ) ) {
+                                let c = locate_context( e.args[1].name, ctx, '_func' );
+                                if ( c ) {
+                                    impl = ( a, b ) => c._func[ e.args[1].name ]( ctx, a, b );
+                                }
+                            }
+                            if ( ! impl ) {
+                                /* Assumed to be expression; preset $1 and $2 to comparison operands */
+                                impl = function( a, b ) {
+                                    ctx.__lvar.$1 = a;
+                                    ctx.__lvar.$2 = b;
+                                    let r = _run( e.args[1], ctx );
+                                    return r;
+                                }
+                            }
+                        }
+                        if ( ! impl ) {
+                            /* Default sort. Caller can define a locale-aware compare function, or
+                            *  the default sort is used.
+                            */
+                            let c = locate_context( '_stringcompare', ctx, '_func' );
+                            if ( c ) {
+                                impl = ( a, b ) => c._func._compare( ctx, a, b );
+                            }
+                        }
+                        a = a.sort( impl );
+                        ctx = pop_context( ctx );
+                        return a;
+                    }
                     var impl = false;
                     // Attached to context? Scan from current up.
                     let c = locate_context( name, ctx, '_func' );
@@ -1468,16 +1511,15 @@ return new Parser;
                      */
                     ctx._func[ e.name ] = (ctx, ...args) => {
                         let res = null;
-                        if ( args.length !== e.args.expr.length ) {
-                            throw new ReferenceError( `Defined function "${e.name}" requires ${e.args.expr.length} arguments` );
-                        }
                         ctx = push_context( ctx );
                         try {
-                            /* Get each argument into its corresponding locally-scoped variable */
-                            args.forEach( (arg,ix) => {
-                                D( "set arg",ix,e.args.expr[ix].name,'=',arg );
-                                ctx.__lvar[ e.args.expr[ ix ].name ] = _run( arg, ctx );
-                            });
+                            /* Get each defined argument into its corresponding locally-scoped variable */
+                            const n = ( e.args.expr || [] ).length;
+                            for ( let ix = 0; ix < n; ++ix ) {
+                                let v = ix < args.length ? _run( args[ix], ctx ) : null;
+                                D( "set arg", ix, e.args.expr[ix].name, '=', v );
+                                ctx.__lvar[ e.args.expr[ ix ].name ] = v;
+                            }
                             res = _run( e.list, ctx );
                         } finally {
                             ctx = pop_context( ctx );

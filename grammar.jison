@@ -158,6 +158,8 @@
 %start expressions
 
 %{
+    /* Grammar 21296 */
+
     var buffer = "", qsep = "";
 
     function is_atom( v, typ ) {
@@ -370,7 +372,7 @@ e
     | ref_expr
         { $$ = $1; }
     | assignment
-	    { $$ = $1; }
+        { $$ = $1; }
     | EACH IDENTIFIER IN e COLON e
         { $$ = atom( 'iter', { value: $2, context: $4, exec: $6 } ); }
     | EACH IDENTIFIER COMMA IDENTIFIER IN e COLON e
