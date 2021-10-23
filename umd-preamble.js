@@ -458,7 +458,7 @@ const MAX_RANGE = 1000;         /* Maximum number of elements in a result range 
                             /* Default sort. Caller can define a locale-aware compare function, or
                             *  the default sort is used.
                             */
-                            let c = locate_context( '_stringcompare', ctx, '_func' );
+                            let c = locate_context( '_compare', ctx, '_func' );
                             if ( c ) {
                                 impl = ( a, b ) => c._func._compare( ctx, a, b );
                             }

@@ -1,4 +1,4 @@
-/* Version 21296.1202 */
+/* Version 21296.1250 */
 /** lexpjs - Copyright (C) 2018,2021 Patrick H. Rigney, All Rights Reserved
  *  See https://github.com/toggledbits/lexpjs
  *
@@ -1396,7 +1396,7 @@ return new Parser;
                             /* Default sort. Caller can define a locale-aware compare function, or
                             *  the default sort is used.
                             */
-                            let c = locate_context( '_stringcompare', ctx, '_func' );
+                            let c = locate_context( '_compare', ctx, '_func' );
                             if ( c ) {
                                 impl = ( a, b ) => c._func._compare( ctx, a, b );
                             }
