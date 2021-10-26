@@ -1,6 +1,6 @@
-const version = 21296;
+const version = 21298;
 
-const verbose = true;  // If true, all tests and results printed; otherwise just errors.
+const verbose = false;  // If true, all tests and results printed; otherwise just errors.
 
 var lexp = require("./lexp.js");
 // console.log(lexp);
@@ -215,17 +215,25 @@ var test_expr = [
     , { expr: "max( 1, 5, 6, [ 3, 0, 4, [ 9, -1 ] ] )", expect: 9 }
     , { expr: "upper('hello')", expect: "HELLO" }
     , { expr: "lower('BYEBYE')", expect: "byebye" }
-    , { expr: "ltrim('    abcde')", expect: "abcde" }
-    , { expr: "rtrim('work     ')", expect: "work" }
+    , { expr: "ltrim('    abcde  ')", expect: "abcde  " }
+    , { expr: "rtrim('   work     ')", expect: "   work" }
     , { expr: "trim('       tight   ')", expect: "tight" }
     , { expr: "t='attributes',str(entity[t]['power_switch']['state'])", expect: "true" }
+    , { expr: "floor(3.8)", expect: 3 }
+    , { expr: "floor(-3.8)", expect: -4 }
+    , { expr: "ceil(3.8)", expect: 4 }
+    , { expr: "ceil(-3.8)", expect: -3 }
+    , { expr: "trunc(3.8)", expect: 3 }
+    , { expr: "trunc(-3.8)", expect: -3 }
     , { expr: "round(3.14,0)", expect: 3 }
     , { expr: "round(3.98,0)", expect: 4 }
     , { expr: "round(3.14159265,3)", expect: 3.142 }
     , { expr: "round(-1.9)", expect: -2 }
     , { expr: "round(-1.3)", expect: -1 }
+    , { expr: "int('123')", expect: 123 }
     , { expr: "t=int('123'), isNaN(t)", expect: false }
     , { expr: "t=int('abc'), isNaN(t)", expect: true }
+    , { expr: "int('0x40')", expect: 64 }
     , { expr: "bool(0)", expect: false }
     , { expr: "bool(1)", expect: true }
     , { expr: "bool(null)", expect: false }         /* null is false-y */
@@ -290,14 +298,38 @@ var test_expr = [
     , { expr: "t=[9,7,5],s=t,push(s, 3),t", expect: [9,7,5,3] }
     , { expr: "t=[9,7,5],s=clone(t),push(s, 3),t", expect: [9,7,5] }
     , { expr: "s", expect: [9,7,5,3] }
+
+    , { expr: "t=['dog','cat','rat'],u=['whale','shark','rat'],arrayConcat( t, u )", expect: [ 'dog','cat','rat','whale','shark','rat' ] }
+
+    , { expr: "t=['dog','cat','rat'],u=['whale','shark','rat'],arrayIntersection( t, u )", expect: [ 'rat' ] }
+    , { expr: "t=['dog','cat','rat'],u=['whale','shark','bat'],arrayIntersection( t, u )", expect: [] }
+    , { expr: "t=['dog','cat','toad'],u=['toad','shark','whale'],arrayIntersection( t, u )", expect: [ 'toad' ] }
+
+    , { expr: "t=['dog','cat','rat'],u=['whale','shark','rat'],arrayDifference( t, u )", expect: [ 'dog', 'cat' ] }
+    , { expr: "t=['dog','cat','rat'],u=['cat','rat','dog'],arrayDifference( t, u )", expect: [] }
+    , { expr: "t=['dog','cat','rat'],u=['whale','shark','bat'],arrayDifference( t, u )", expect: [ 'dog', 'cat', 'rat' ] }
+    , { expr: "t=['dog','cat','toad'],u=['whale','shark','bat'],arrayDifference( t, u )", expect: [ 'dog', 'cat', 'toad' ] }
+
+    , { expr: "t=['dog','cat','rat'],u=['whale','shark','rat'],arrayExclusive( t, u )", expect: [ 'dog', 'cat', 'whale', 'shark' ] }
+    , { expr: "t=['dog','cat','rat'],u=['dog','cat','rat'],arrayExclusive( t, u )", expect: [] }
+    , { expr: "t=['dog','cat','rat'],u=['whale','shark','bat'],arrayExclusive( t, u )", expect: [ 'dog', 'cat', 'rat', 'whale', 'shark', 'bat' ] }
+    , { expr: "t=['dog','cat','toad'],u=['whale','shark','bat'],arrayExclusive( t, u )", expect: [ 'dog', 'cat', 'toad', 'whale', 'shark', 'bat' ] }
+
+    , { expr: "t=['dog','cat','rat'],u=['whale','shark','rat'],arrayUnion( t, u )", expect: [ 'dog', 'cat', 'rat', 'whale', 'shark' ] }
+    , { expr: "t=['dog','cat','rat'],u=['dog','cat','rat'],arrayUnion( t, u )", expect: [ 'dog', 'cat', 'rat' ] }
+    , { expr: "t=[],u=['whale','shark','bat'],arrayUnion( t, u )", expect: [ 'whale', 'shark', 'bat' ] }
+
     , { expr: `t=btoa( "The rain in Spain stays mainly in the plain." )`, expect: "VGhlIHJhaW4gaW4gU3BhaW4gc3RheXMgbWFpbmx5IGluIHRoZSBwbGFpbi4=" }
     , { expr: `atob( t )`, expect: "The rain in Spain stays mainly in the plain." }
     , { expr: `t=atob( "SmVmZnJleSBFcHN0ZWluIGRpZG4ndCBraWxsIGhpbXNlbGYsIGFuZCBuZWl0aGVyIGRpZCBKb2huIE1jQWZlZS4=" )`, expect: "Jeffrey Epstein didn't kill himself, and neither did John McAfee." }
     , { expr: `btoa( t )`, expect: "SmVmZnJleSBFcHN0ZWluIGRpZG4ndCBraWxsIGhpbXNlbGYsIGFuZCBuZWl0aGVyIGRpZCBKb2huIE1jQWZlZS4=" }
+
     , { expr: `urlencode( 'This is a string %&*@(!.{}:/?' )`, expect: "This%20is%20a%20string%20%25%26*%40(!.%7B%7D%3A%2F%3F" }
     , { expr: `urldecode( 'This%20is%20a%20string%20%25%26*%40(!.%7B%7D%3A%2F%3F' )`, expect: "This is a string %&*@(!.{}:/?" }
+
     , { expr: `hex( 255 )`, expect: "ff" }
     , { expr: `hex( 65536 )`, expect: "10000" }
+
     , { expr: `typeof(true)`, expect: "boolean" }
     , { expr: `typeof(false)`, expect: "boolean" }
     , { expr: `typeof(null)`, expect: "null" }
@@ -375,7 +407,6 @@ var test_expr = [
     , { expr: 'sort( [ "e", "d", "b", "a", "c" ], 0 )', expect: [ "e", "d", "b", "a", "c" ] }
 ];
 
-
 function compareArrays( a, b ) {
     let n = a.length;
     if ( n !== b.length ) {
@@ -386,9 +417,13 @@ function compareArrays( a, b ) {
             return false;
         }
         if ( Array.isArray( a[k] ) ) {
-            return compareArrays( a[k], b[k] );
+            if ( ! compareArrays( a[k], b[k] ) ) {
+                return false;
+            }
         } else if ( null !== a[k] && "object" === typeof a[k] ) {
-            return compareObjects( a[k], b[k] );
+            if ( ! compareObjects( a[k], b[k] ) ) {
+                return false;
+            }
         } else if ( a[k] !== b[k] ) {
             return false;
         }
