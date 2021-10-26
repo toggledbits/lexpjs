@@ -1,4 +1,4 @@
-/* Version 21296.1250 */
+/* Version 21298.2042 */
 /** lexpjs - Copyright (C) 2018,2021 Patrick H. Rigney, All Rights Reserved
  *  See https://github.com/toggledbits/lexpjs
  *
@@ -19,7 +19,7 @@
  *  SOFTWARE.
  */
 
-const version = 21296;
+const version = 21298;
 
 const FEATURE_MONTH_BASE = 1;   /* 1 = months 1-12; set to 0 if you prefer JS semantics where 0=Jan,11=Dec */
 const MAX_RANGE = 1000;         /* Maximum number of elements in a result range op result array */
@@ -1060,7 +1060,7 @@ return new Parser;
             hour: d.getHours(), minute: d.getMinutes(), second: d.getSeconds(), weekday: d.getDay() }; } }
         , "isNaN"   : { nargs: 1, impl: (n) => Number.isNaN(n) || isNaN(n) }
         , isnull    : { nargs: 1, impl: (s) => "undefined" === typeof s || null === s }
-        , isInfinity: { nargs: 1, impl: (s) => !isFinite(s) }
+        , isInfinity: { nargs: 1, impl: (s) => ! isFinite(s) }
         , keys      : { nargs: 1, impl: Object.keys }
         , values    : { nargs: 1, impl: Object.values }
         , clone     : { nargs: 1, impl: (a) => JSON.parse( JSON.stringify( a ) ) }
@@ -1080,6 +1080,11 @@ return new Parser;
         , isArray   : { nargs: 1, impl: Array.isArray }
         , isObject  : { nargs: 1, impl: (p) => null !== p && "object" === typeof p }
         , sort      : { nargs: 1, impl: true } /* custom eval, see implementation of fref atom */
+        , arrayConcat: { nargs: 2, impl: (a,b) => a.concat( b ) }
+        , arrayIntersection: { nargs: 2, impl: (a,b) => a.filter( el => b.includes( el ) ) }
+        , arrayDifference: { nargs: 2, impl: (a,b) => a.filter( el => ! b.includes( el ) ) }
+        , arrayExclusive: { nargs: 2, impl: (a,b) => a.filter( el => ! b.includes( el ) ).concat( b.filter( el => ! a.includes( el ) ) ) }
+        , arrayUnion: { nargs: 2, impl: (a,b) => a.concat( b.filter( el => ! a.includes( el ) ) ) }
         , toJSON    : { nargs: 1, impl: JSON.stringify }
         , parseJSON : { nargs: 1, impl: JSON.parse }
         , btoa      : { nargs: 1, impl: (b) => Buffer.from( b, "utf-8" ).toString( "base64" ) }
@@ -1089,7 +1094,6 @@ return new Parser;
         , "typeof"  : { nargs: 1, impl: (a) => null === a ? 'null' : ( Array.isArray(a) ? 'array' : typeof a ) }
 /* FUTURE:
         , format
-        , sort
         , dateadd
         , hsltorgb
         , rgbtohsl
