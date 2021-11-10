@@ -256,6 +256,7 @@ var test_expr = [
     , { expr: "isInfinity(Infinity)", expect: true }
     , { expr: "isInfinity(-Infinity)", expect: true }
     , { expr: "time(2021,1,17)", expect: new Date(2021,0,17).getTime() }    /* Assumes FEATURE_MONTH_BASE == 1 (default) */
+    , { expr: "typeof( dateparts().year ) ", expect: "number" }
     , { expr: "dateparts(time(2021,1,17,3,4,5)).year", expect: 2021 }
     , { expr: "dateparts(time(2021,1,17,3,4,5)).month", expect: 1 }
     , { expr: "dateparts(time(2021,1,17,3,4,5)).day", expect: 17 }

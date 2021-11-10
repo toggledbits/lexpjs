@@ -118,8 +118,12 @@ const MAX_RANGE = 1000;         /* Maximum number of elements in a result range 
         , time      : { nargs: 0, impl: function(...args) {
             if ( args.length > 1 && "number" === typeof( args[1] ) ) { args[1] -= FEATURE_MONTH_BASE; }
             return new Date(...args).getTime() } }
-        , dateparts : { nargs: 0, impl: function( t ) { let d = new Date(t); return { year: d.getFullYear(), month: d.getMonth()+FEATURE_MONTH_BASE, day: d.getDate(),
-            hour: d.getHours(), minute: d.getMinutes(), second: d.getSeconds(), weekday: d.getDay() }; } }
+        , dateparts : { nargs: 0, impl: (t) => {
+                let d = "undefined" === typeof t ? new Date() : new Date(t); 
+                return { year: d.getFullYear(), month: d.getMonth()+FEATURE_MONTH_BASE, day: d.getDate(),
+                         hour: d.getHours(), minute: d.getMinutes(), second: d.getSeconds(), weekday: d.getDay() }; 
+                 }
+             }
         , "isNaN"   : { nargs: 1, impl: (n) => Number.isNaN(n) || isNaN(n) }
         , isnull    : { nargs: 1, impl: (s) => "undefined" === typeof s || null === s }
         , isInfinity: { nargs: 1, impl: (s) => ! isFinite(s) }
