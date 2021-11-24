@@ -18,7 +18,7 @@
  *  SOFTWARE.
  */
 
-const version = 21314;
+const version = 21328;
 
 const FEATURE_MONTH_BASE = 1;   /* 1 = months 1-12; set to 0 if you prefer JS semantics where 0=Jan,11=Dec */
 const MAX_RANGE = 1000;         /* Maximum number of elements in a result range op result array */
@@ -119,9 +119,9 @@ const MAX_RANGE = 1000;         /* Maximum number of elements in a result range 
             if ( args.length > 1 && "number" === typeof( args[1] ) ) { args[1] -= FEATURE_MONTH_BASE; }
             return new Date(...args).getTime() } }
         , dateparts : { nargs: 0, impl: (t) => {
-                let d = "undefined" === typeof t ? new Date() : new Date(t); 
+                let d = "undefined" === typeof t ? new Date() : new Date(t);
                 return { year: d.getFullYear(), month: d.getMonth()+FEATURE_MONTH_BASE, day: d.getDate(),
-                         hour: d.getHours(), minute: d.getMinutes(), second: d.getSeconds(), weekday: d.getDay() }; 
+                         hour: d.getHours(), minute: d.getMinutes(), second: d.getSeconds(), weekday: d.getDay() };
                  }
              }
         , "isNaN"   : { nargs: 1, impl: (n) => Number.isNaN(n) || isNaN(n) }
@@ -134,7 +134,15 @@ const MAX_RANGE = 1000;         /* Maximum number of elements in a result range 
         , list      : { nargs: 0, impl: function( ...args ) { return args; } }
         , indexOf   : { nargs: 2, impl: (a,el) => a.indexOf( el ) }
         , count     : { nargs: 1, impl: function( a ) { let n=0; Array.isArray( a ) ? a.forEach( el => { ( "undefined" !== typeof el && null !== el ) ? ++n : n } ) : n; return n; } }
-        , sum       : { nargs: 1, impl: function( a ) { let n=0; Array.isArray( a ) ? a.forEach( el => { ( "number" === typeof el ) ? n += el : 0 } ) : 0; return n; } }
+        , sum       : { nargs: 1, impl: function( a ) { let n=0; Array.isArray( a ) ? a.forEach( el => { ( "number" === typeof el ) ? n += el : 0 } ) : 0; return n;  } }
+        , median    : { nargs: 1, impl: (a) => {
+                if ( Array.isArray( a ) && a.length > 0 ) {
+                    let t = a.sort();
+                    return ( 0 === ( t.length & 1 ) ) ? ( ( t[t.length/2-1] + t[t.length/2] ) / 2 ) : t[Math.floor( t.length / 2 )];
+                }
+                return null;
+            }
+        }
         , concat    : { nargs: 2, impl: (a,b) => (a||[]).concat(b||[]) }
         , slice     : { nargs: 2, impl: (a,s,e) => (a||[]).slice( s, e ) }
         , insert    : { nargs: 2, impl: (a,p,...el) => { a.splice( p, 0, ...el ); return a; } }

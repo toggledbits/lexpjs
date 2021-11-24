@@ -278,6 +278,11 @@ var test_expr = [
     , { expr: "count( [ 1, null, 9, false, 0 ] )", expect: 4 }
     , { expr: "sum( [ 1,5,9 ] )", expect: 15 }
     , { expr: "sum( 56 )", expect: 0 } /* only accepts array */
+    , { expr: "median( [9,2,5] )", expect: 5 }
+    , { expr: "median( [9,2,5,7] )", expect: 6 }
+    , { expr: "median( [ 4 ] )", expect: 4 }
+    , { expr: "median( [ 6,4 ] )", expect: 5 }
+    , { expr: "median( [] )", expect: null }
     , { expr: "concat( [1,2,3], [4,5,6] )", expect: [1,2,3,4,5,6] }
     , { expr: "slice( [10,20,30,40,50,60], 2, 3 )", expect: [ 30 ] }
     , { expr: "slice( [10,20,30,40,50,60], 3 )", expect: [ 40,50,60 ] }

@@ -320,6 +320,7 @@ Important notes with respect to date handling (currently; this will evolve):
 * `indexOf( array, value )` &mdash; if *value* is present in *array*, the index (>=0) is returned; otherwise -1 is returned;
 * `count( array )` &mdash; returns the number of non-null elements of *array*;
 * `sum( array )` &mdash; returns the sum of non-null elements of *array*; note that only a single argument, which must be an array, is accepted;
+* `median( array )` &mdash; returns the [statistical median](https://en.wikipedia.org/wiki/Median) of the elements of *array*;
 * `slice( array, start, end )` &mdash; returns a new array containing the elements of *array* from *start* (zero-based) to, but not including, *end*;
 * `insert( array, pos, newElement )` &mdash; inserts *newElement* into *array* before *pos* (zero-based); the array is modified in place and is also returned as the function value;
 * `remove( array, pos [ , numRemove ] )` &mdash; removes elements from *array* starting at *pos*; if *numRemove* is not given, only the one element at *pos* is removed, otherwise *numRemove* elements are removed from the array; the array is modified in place and also returned as the function value;
@@ -350,4 +351,4 @@ Important notes with respect to date handling (currently; this will evolve):
 
 As a result of the syntax, the following words are reserved and may not be used as identifiers or function names: `true, false, null, each, in, first, of, with, if, then, else, endif, do, done, define, and, or, not, NaN, Infinity`. Note that keywords and identifiers are case-sensitive, so while `each` is not an acceptable identifier, `Each` or `EACH` would be.
 
-<small>Updated 2021-Oct-25 (21298)</small>
+<small>Updated 2021-Nov-24 (21328)</small>
