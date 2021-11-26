@@ -372,6 +372,7 @@ var test_expr = [
     , { expr: "each n in 1..3: [4,5,6]", expect: [ [4,5,6],[4,5,6],[4,5,6] ] }
     , { expr: "each n in 4..6: [n,n+1,n+2]", expect: [ [4,5,6],[5,6,7],[6,7,8] ] }
     , { expr: 'testArr = [ ["dog",1,{a:"b"}] , [1,"five",[]] , ["1","one",[1]] ], each element in testArr: indexOf(element,1)', expect: [ 1, 0, -1 ] }
+    , { expr: "each n in 1..3: yyy=n, yyy", expect: null } /* scope of yyy is interior to each */
     , { expr: "t=[3,4],first m in t with m", expect: 3 }
     , { expr: "t=[3,4],first m in t with m<=4", expect: 3 }
     , { expr: "t=[3,4],first m in t with m>=4", expect: 4 }
@@ -382,7 +383,8 @@ var test_expr = [
     , { expr: "first item in entity.attributes with (item?.level ?? 0) > 0.2", expect: { level: 0.25 } }
     , { expr: "modes={home:{hm:1,ac:'home'},away:{hm:2,ac:'away'},sleep:{hm:3,ac:'sleep'},smart1:{hm:4,ac:'smart1'}}, \
                (first item in modes with item.hm == 2).ac", expect: 'away' }
-    , { expr: "each n in 1..3: yyy=n, yyy", expect: null } /* scope of yyy is interior to each */
+    , { expr: "t=[7,23,3,4],first m in t with m<=4: 2*m", expect: 6, verbose:true }
+    , { expr: "t=[1,0,3,4],first m in t with m>=4: 2*m", expect: 8, verbose:true }
 
     /* misc */
     , { expr: "do 5, 6, 7, 8, 9 done", expect: 9 }
@@ -473,7 +475,8 @@ function compareObjects( a, b ) {
 
 var num_errors = 0;
 test_expr.forEach( function( e ) {
-    if ( verbose ) {
+    let chatty = "undefined" === typeof e.verbose ? verbose : e.verbose;
+    if ( chatty ) {
         console.log("Test expression: ", e.expr);
     }
     var ce, res;
@@ -496,11 +499,11 @@ test_expr.forEach( function( e ) {
                 } else if ( res === e.expect ) {
                     failed = false;
                 }
-                if ( verbose ) {
+                if ( chatty ) {
                     console.log( "     Result:", res );
                 }
                 if ( failed ) {
-                    if ( !verbose ) {
+                    if ( !chatty ) {
                         console.error( "\nTest expression: ", e.expr );
                         console.error( "     Result:", res );
                     }
@@ -508,18 +511,18 @@ test_expr.forEach( function( e ) {
                     ++num_errors;
                 }
             } else {
-                if ( verbose ) {
+                if ( chatty ) {
                     console.log( "     Result:", res );
                 }
             }
         } catch ( err ) {
             if ( true === e.error || ( e.error instanceof Error && err instanceof e.error.constructor ) ) {
                 /* Expecting error, got error. */
-                if ( verbose ) {
+                if ( chatty ) {
                     console.log( "     Result: (expected error) ", String( err ) );
                 }
             } else {
-                if ( !verbose ) {
+                if ( !chatty ) {
                     console.error( "\nTest expression: ", e.expr );
                 }
                 console.error("**** Eval error:", err );
@@ -528,7 +531,7 @@ test_expr.forEach( function( e ) {
             }
         }
     } catch ( err ) {
-        if ( !verbose ) {
+        if ( !chatty ) {
             console.error( "\nTest expression: ", e.expr );
         }
         console.error( "**** Compile error:", err );

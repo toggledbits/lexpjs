@@ -18,7 +18,7 @@
  *  SOFTWARE.
  */
 
-const version = 21328;
+const version = 21330;
 
 const FEATURE_MONTH_BASE = 1;   /* 1 = months 1-12; set to 0 if you prefer JS semantics where 0=Jan,11=Dec */
 const MAX_RANGE = 1000;         /* Maximum number of elements in a result range op result array */
@@ -553,7 +553,11 @@ const MAX_RANGE = 1000;         /* Maximum number of elements in a result range 
                                 }
                                 let v = _run( e.exec, local_ctx );
                                 if ( !!v ) {
-                                    res = value;
+                                    if ( e.result ) {
+                                        res = _run( e.result, local_ctx );
+                                    } else {
+                                        res = value;
+                                    }
                                     break;
                                 }
                             }

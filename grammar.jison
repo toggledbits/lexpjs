@@ -158,7 +158,7 @@
 %start expressions
 
 %{
-    /* Grammar 21296 */
+    /* Grammar 21330 */
 
     var buffer = "", qsep = "";
 
@@ -373,14 +373,18 @@ e
         { $$ = $1; }
     | assignment
         { $$ = $1; }
-    | EACH IDENTIFIER IN e COLON e
-        { $$ = atom( 'iter', { value: $2, context: $4, exec: $6 } ); }
     | EACH IDENTIFIER COMMA IDENTIFIER IN e COLON e
         { $$ = atom( 'iter', { value: $2, key: $4, context: $6, exec: $8 } ); }
-    | FIRST IDENTIFIER IN e WITH e
-        { $$ = atom( 'search', { value: $2, context: $4, exec: $6 } ); }
+    | EACH IDENTIFIER IN e COLON e
+        { $$ = atom( 'iter', { value: $2, context: $4, exec: $6 } ); }
+    | FIRST IDENTIFIER COMMA IDENTIFIER IN e WITH e COLON e
+        { $$ = atom( 'search', { value: $2, key: $4, context: $6, exec: $8, result: $10 } ); }
+    | FIRST IDENTIFIER IN e WITH e COLON e
+        { $$ = atom( 'search', { value: $2, context: $4, exec: $6, result: $8 } ); }
     | FIRST IDENTIFIER COMMA IDENTIFIER IN e WITH e
         { $$ = atom( 'search', { value: $2, key: $4, context: $6, exec: $8 } ); }
+    | FIRST IDENTIFIER IN e WITH e
+        { $$ = atom( 'search', { value: $2, context: $4, exec: $6 } ); }
     | DO expr_list DONE
         { $$ = atom( 'block', { block: $2 } ); }
     | DEF IDENTIFIER '(' arg_list ')' e
