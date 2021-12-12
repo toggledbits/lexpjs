@@ -153,6 +153,9 @@ var test_expr = [
     , { expr: "123 ?# null", expect: 123 }
     , { expr: "'123' ?# null", expect: 123 }
     , { expr: "'fox' ?# 'hound'", expect: 'hound' }
+    , { expr: "null ?# 'deer'", expect: 'deer' }
+    , { expr: "true ?# 'elk'", expect: 'elk' }
+    , { expr: "(1/0) ?# 'rabbit'", expect: 'rabbit' }
     , { expr: "true ? 123 : 456", expect: 123 }
     , { expr: "false ? 123 : 456", expect: 456 }
     , { expr: "[1,2,3]", expect: [1,2,3] }

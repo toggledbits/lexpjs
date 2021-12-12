@@ -1,4 +1,4 @@
-/* Version 21330.1300 */
+/* Version 21346.1235 */
 /** lexpjs - Copyright (C) 2018,2021 Patrick H. Rigney, All Rights Reserved
  *  See https://github.com/toggledbits/lexpjs
  *
@@ -19,7 +19,7 @@
  *  SOFTWARE.
  */
 
-const version = 21330;
+const version = 21346;
 
 const FEATURE_MONTH_BASE = 1;   /* 1 = months 1-12; set to 0 if you prefer JS semantics where 0=Jan,11=Dec */
 const MAX_RANGE = 1000;         /* Maximum number of elements in a result range op result array */
@@ -1293,7 +1293,9 @@ return new Parser;
                     } else if (e.op == '??' ) {
                         v1eval = ( null === N(v1eval) ) ? _run( v2, ctx ) : v1eval;
                     } else if (e.op == '?#' ) {
-                        v1eval = ( null === N(v1eval) || Number.isNaN(v1eval) || isNaN(v1eval) ) ? _run( v2, ctx ) : parseFloat( v1eval );
+                        v1eval = parseFloat( v1eval );
+                        v1eval = ( Number.isNaN(v1eval) || isNaN(v1eval) || ! Number.isFinite( v1eval ) ) ?
+                            _run( v2, ctx ) : v1eval;
                     } else if ( ".." === e.op ) {
                         /* Range op */
                         let res = [];
