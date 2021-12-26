@@ -18,7 +18,7 @@
  *  SOFTWARE.
  */
 
-const version = 21346;
+const version = 21360;
 
 const FEATURE_MONTH_BASE = 1;   /* 1 = months 1-12; set to 0 if you prefer JS semantics where 0=Jan,11=Dec */
 const MAX_RANGE = 1000;         /* Maximum number of elements in a result range op result array */
@@ -115,15 +115,29 @@ const MAX_RANGE = 1000;         /* Maximum number of elements in a result range 
         , "bool"    : { nargs: 1, impl: function( s ) { return !!s && null === String(s).match( /^\s*(0|no|off|false)\s*$/i ); } }
         , str       : { nargs: 1, impl: (s) => String(s) }
         , hex       : { nargs: 1, impl: (n) => Number( n ).toString( 16 ) }
-        , time      : { nargs: 0, impl: function(...args) {
-            if ( args.length > 1 && "number" === typeof( args[1] ) ) { args[1] -= FEATURE_MONTH_BASE; }
-            return new Date(...args).getTime() } }
+        , time      : { nargs: 0, impl: function( ...args ) {
+                if ( 1 === args.length && "object" === typeof ( args[0] ) ) {
+                    /* Construct from dateparts() result */
+                    let obj = args[0];
+                    let now = new Date();
+                    let d = (v,f) => ( "undefined" === typeof v || null === v ) ? f : v;
+                    return new Date( d( obj.year, now.getFullYear() ),
+                        ( "undefined" === typeof obj.month || null === obj.month ) ? 0 : ( obj.month-FEATURE_MONTH_BASE ),
+                        d( obj.day, 1 ), d( obj.hour, 0 ), d( obj.minute, 0 ),
+                        d( obj.second, 0 ), d( obj.millis, 0 ) ).getTime();
+                } else if ( args.length > 1 && "number" === typeof( args[1] ) ) {
+                    args[1] -= FEATURE_MONTH_BASE;
+                }
+                return new Date( ...args ).getTime();
+            }
+        }
         , dateparts : { nargs: 0, impl: (t) => {
                 let d = "undefined" === typeof t ? new Date() : new Date(t);
                 return { year: d.getFullYear(), month: d.getMonth()+FEATURE_MONTH_BASE, day: d.getDate(),
-                         hour: d.getHours(), minute: d.getMinutes(), second: d.getSeconds(), weekday: d.getDay() };
-                 }
-             }
+                         hour: d.getHours(), minute: d.getMinutes(), second: d.getSeconds(),
+                         millis: d.getMilliseconds(), weekday: d.getDay() };
+            }
+        }
         , "isNaN"   : { nargs: 1, impl: (n) => Number.isNaN(n) || isNaN(n) }
         , isnull    : { nargs: 1, impl: (s) => "undefined" === typeof s || null === s }
         , isInfinity: { nargs: 1, impl: (s) => ! isFinite(s) }
@@ -133,8 +147,17 @@ const MAX_RANGE = 1000;         /* Maximum number of elements in a result range 
         , join      : { nargs: 2, impl: (a,s) => a.join(s) }
         , list      : { nargs: 0, impl: function( ...args ) { return args; } }
         , indexOf   : { nargs: 2, impl: (a,el) => a.indexOf( el ) }
-        , count     : { nargs: 1, impl: function( a ) { let n=0; Array.isArray( a ) ? a.forEach( el => { ( "undefined" !== typeof el && null !== el ) ? ++n : n } ) : n; return n; } }
-        , sum       : { nargs: 1, impl: function( a ) { let n=0; Array.isArray( a ) ? a.forEach( el => { ( "number" === typeof el ) ? n += el : 0 } ) : 0; return n;  } }
+        , count     : { nargs: 1, impl: function( a ) {
+                let n=0;
+                Array.isArray( a ) ? a.forEach( el => { ( "undefined" !== typeof el && null !== el ) ? ++n : n } ) : n;
+                return n;
+            }
+        }
+        , sum       : { nargs: 1, impl: function( a ) {
+                let n=0; Array.isArray( a ) ? a.forEach( el => { ( "number" === typeof el ) ? n += el : 0 } ) : 0;
+                return n;
+            }
+        }
         , median    : { nargs: 1, impl: (a) => {
                 if ( Array.isArray( a ) && a.length > 0 ) {
                     let t = a.sort();
@@ -376,29 +399,46 @@ const MAX_RANGE = 1000;         /* Maximum number of elements in a result range 
                         v1eval = res;
                     } else if ( e.op == '=' ) {
                         /* Assignment */
-                        if ( ! is_atom( v1, 'vref' ) || v1.name.startsWith( '__' ) || '_func' === v1.name ) {
+                        if ( ! ( is_atom( v1, 'vref' ) || is_atom( v1, 'deref' ) ) ||
+                                String( v1.name || "" ).startsWith( '__' ) || '_func' === v1.name ) {
                             throw new SyntaxError( `Invalid assignment target (${v1.name})` );
                         }
 // D("run() assign",v2eval,"to",v1.name);
                         let c, res;
-                        if ( e.global ) {
-                            c = ctx.__global;
-                        } else if ( e.local ) {
-                            c = ctx;
+                        if ( is_atom( v1, 'deref' ) ) {
+                            /* Assignment to member */
+// D('ASSIGN deref context', v1.context, 'v2', v2);                            
+                            var scope = _run( v1.context, ctx );
+                            if ( "object" !== typeof scope || null === scope ) {
+                                throw new ReferenceError( `Invalid reference to member ${String(v1.member)} of ${String(scope)}` );
+                            }
+                            var member = _run( v1.member, ctx );
+                            if ( "number" !== typeof member && ( "string" !== typeof member || "" === member ) ) {
+                                throw new ReferenceError( `Invalid reference to member ${String(v1.member)} of ${String(scope)}` );
+                            }
+// D("ASSIGN",scope,".",member,"=",v2eval);                            
+                            res = scope[ member ] = v2eval;
                         } else {
-                            c = locate_context( v1.name, ctx, '__lvar' ) || ctx;
-                        }
-                        let fc = locate_context( '_assign', ctx, '_func' );
-                        if ( fc && "function" === typeof fc._func._assign ) {
-                            /* If _assign returns undefined, the normal assignment will be performed. Otherwise, it is
-                             * assumed that _assign has done it.
-                             */
-                            res = fc._func._assign( v1.name, v2eval, c, e );
-                        }
-                        if ( "undefined" === typeof res ) {
-                            c.__lvar = c.__lvar || {};
-                            c.__lvar[ v1.name ] = v2eval;
-                            return v2eval;
+                            /* Simple assignment to identifier */
+                            if ( e.global ) {
+                                c = ctx.__global;
+                            } else if ( e.local ) {
+                                c = ctx;
+                            } else {
+                                c = locate_context( v1.name, ctx, '__lvar' ) || ctx;
+                            }
+                            let fc = locate_context( '_assign', ctx, '_func' );
+                            if ( fc && "function" === typeof fc._func._assign ) {
+                                /* If _assign returns undefined, the normal assignment will be performed. Otherwise, it is
+                                 * assumed that _assign has done it.
+                                 */
+                                res = fc._func._assign( v1.name, v2eval, c, e );
+                            }
+                            if ( "undefined" === typeof res ) {
+                                c.__lvar = c.__lvar || {};
+                                c.__lvar[ v1.name ] = v2eval;
+                                return v2eval;
+                            }
                         }
                         return res;
                     } else {
@@ -427,8 +467,11 @@ const MAX_RANGE = 1000;         /* Maximum number of elements in a result range 
                         throw new ReferenceError( `Invalid reference to member ${String(e.member)} of ${String(scope)}` );
                     }
                     var member = _run( e.member, ctx );
-                    /* ??? member must be primitive? */
+                    if ( "number" !== typeof member && ( "string" !== typeof member || "" === member ) ) {
+                        throw new ReferenceError( `Invalid reference to member ${String(e.member)} of ${String(scope)}` );
+                    }
                     var res = _run( scope[ member ], ctx );
+                    //D("DEREF",scope,".",member,"=",res);
                     return N(res);
                 } else if ( is_atom( e, 'if' ) ) {
                     /* Special short-cut function */

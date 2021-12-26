@@ -133,10 +133,11 @@
 
 /* Operator associativity and precedence */
 
-%right ASSIGN DEF LOCAL GLOBAL
+%right ASSIGN
+%right DEF LOCAL GLOBAL
 %right FIRST EACH WITH
-%left '?'
-%left COLON
+%right '?'
+%right COLON
 %left COALESCE COALESCENAN
 %left LOR
 %left LAND
@@ -158,7 +159,7 @@
 %start expressions
 
 %{
-    /* Grammar 21330 */
+    /* Grammar 21360 */
 
     var buffer = "", qsep = "";
 
@@ -276,8 +277,8 @@ assignment
         { $$ = atom( 'binop', { 'op': $3, v1: atom( 'vref', { name: $2 } ), v2: $4, global: true, locs: [@2, @4] } ); }
     | LOCAL IDENTIFIER ASSIGN e
         { $$ = atom( 'binop', { 'op': $3, v1: atom( 'vref', { name: $2 } ), v2: $4, local: true, locs: [@2, @4] } ); }
-    | IDENTIFIER ASSIGN e
-        { $$ = atom( 'binop', { 'op': $2, v1: atom( 'vref', { name: $1 } ), v2: $3, locs: [@1, @3] } ); }
+    | ref_expr ASSIGN e
+        { $$ = atom( 'binop', { 'op': $2, v1: $1, v2: $3, locs: [@1, @3] } ); }
     ;
 
 e

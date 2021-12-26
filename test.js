@@ -1,4 +1,4 @@
-const version = 21314;
+const version = 21360;
 
 const verbose = false;  // If true, all tests and results printed; otherwise just errors.
 
@@ -258,7 +258,13 @@ var test_expr = [
     , { expr: "isInfinity(null)", expect: false }
     , { expr: "isInfinity(Infinity)", expect: true }
     , { expr: "isInfinity(-Infinity)", expect: true }
-    , { expr: "time(2021,1,17)", expect: new Date(2021,0,17).getTime() }    /* Assumes FEATURE_MONTH_BASE == 1 (default) */
+    , { expr: "time(2021,1,17)", expect: new Date(2021,0,17,0,0,0,0).getTime() }    /* Assumes FEATURE_MONTH_BASE == 1 (default) */
+    , { expr: "time({year:2022,month:1,day:21})", expect: new Date(2022,0,21,0,0,0,0).getTime() }
+    , { expr: "time({year:2022,month:1,day:21,hour:13,minute:37})", expect: new Date(2022,0,21,13,37,0,0).getTime() }
+    // The two times below should be only ONE hour apart, because DST change (forward) occurs between.
+    // ??? This test has time dependencies! Maybe move to a separate test suite?
+    , { expr: "t=time({year:2022,month:3,day:13,hour:1})" }
+    , { expr: "p=dateparts(t), p.hour=p.hour+2, time(p)-t", expect: 3600000 }
     , { expr: "typeof( dateparts().year ) ", expect: "number" }
     , { expr: "dateparts(time(2021,1,17,3,4,5)).year", expect: 2021 }
     , { expr: "dateparts(time(2021,1,17,3,4,5)).month", expect: 1 }
@@ -386,8 +392,8 @@ var test_expr = [
     , { expr: "first item in entity.attributes with (item?.level ?? 0) > 0.2", expect: { level: 0.25 } }
     , { expr: "modes={home:{hm:1,ac:'home'},away:{hm:2,ac:'away'},sleep:{hm:3,ac:'sleep'},smart1:{hm:4,ac:'smart1'}}, \
                (first item in modes with item.hm == 2).ac", expect: 'away' }
-    , { expr: "t=[7,23,3,4],first m in t with m<=4: 2*m", expect: 6, verbose:true }
-    , { expr: "t=[1,0,3,4],first m in t with m>=4: 2*m", expect: 8, verbose:true }
+    , { expr: "t=[7,23,3,4],first m in t with m<=4: 2*m", expect: 6 }
+    , { expr: "t=[1,0,3,4],first m in t with m>=4: 2*m", expect: 8 }
 
     /* misc */
     , { expr: "do 5, 6, 7, 8, 9 done", expect: 9 }
@@ -416,6 +422,9 @@ var test_expr = [
     , { expr: 'define ff(a,b) a < b ? 1 : ( a == b ? 0 : -1 ), sort( [ "e", "d", "b", "a", "c" ], ff )', expect: [ "e", "d", "c", "b", "a" ] }
     , { expr: 'sort( [ "e", "d", "b", "a", "c" ], $1 < $2 ? 1 : ( $1 == $2 ? 0 : -1 ) )', expect: [ "e", "d", "c", "b", "a" ] }
     , { expr: 'sort( [ "e", "d", "b", "a", "c" ], 0 )', expect: [ "e", "d", "b", "a", "c" ] }
+
+    /* THE LINE BELOW MUST BE LAST */
+    , { expr: '"End of tests."', verbose: true }
 ];
 
 function compareArrays( a, b ) {
