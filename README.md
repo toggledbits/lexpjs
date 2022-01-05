@@ -9,7 +9,7 @@ built-in functions (abs, cos, sin, floor, ceil, round, etc.). The syntax is comm
 Through a passed-in context table, *lexpjs* supports named variables, and custom functions.
 See the documentation below for how to implement these.
 
-*lexpjs* is offered under GPL 3.0.
+*lexpjs* is offered under the [MIT License](/License).
 
 ## Known Issues ##
 
