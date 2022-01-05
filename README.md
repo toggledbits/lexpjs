@@ -212,7 +212,7 @@ The expression language has a couple of "lightweight statements" that function a
 * `each <element-identifier> [, <element-identifier> ] in <array-or-object-expression>: <body-expression>` &mdash; the `each` statement will iterate over the given array or object (or expression resulting in an array or object), each time placing an array value or object element in the named variable (and the key or index in the second named variable, if given), and then execute the body expression. The body expression result, if non-`null`, is pushed to an array that forms the `each` expression result. For example, `each num of [ 4,7,33 ]: num * 2` will return an array `[ 8, 14, 66 ]`, while `each v,k in { "alpha": 1, "beta": 2 }: k` will return `["alpha", "beta"]`.
 * `first <element-identifier> [, <element-identifier> ] in <array-or-object> with <test-expression> [ : <result-expression> ]` &mdash; the `first` statement will search through the elements of an array or object (top level, no traversal) and return the first value that for which `<test-expression>` is *true* (or [truthy](https://developer.mozilla.org/en-US/docs/Glossary/Truthy)). The result is the value matched, unless the optional `: <result-expression>` clause is given, in which case the result will be that of the expression. Example: `first val,key in devices with val.type=="window": val.name + ' ' + key` will find the first device in an array or map (object) of device objects for which the device object key *type* is *window*, and rather than return the device object, return the device name and key as a space-separated string.
 * `do <statement-list> done` &mdash; since the limited syntax of `each` allows only a single statement to be executed, the `do...done` statement creates a statement block that appears to `each` as a single statement, thus allowing multiple statements to be executed within the loop. The standard multi-statement result rule applies: the result of the statement block is the result produced by the last expression in the block.
-* For users uncomfortable with the ternary operator syntax, an `if <conditional> then <true-expression> else <false-expression> endif` statement may be used. The true and false expressions may be a `do...done` block.
+* `if <conditional> then <true-expression> else <false-expression> endif` &mdash; Introduced for users uncomfortable with the ternary operator (`?:`) syntax, this "traditional" *if...then* form was added. The true and false expressions may be any expression, including a `do...done` block enclosing multiple expressions.
 * `define <functionName>( <args...> ) <expression>` &mdash; defines a function named `<functionName>` that returns the evaluated `<expression>`. Arguments passed to the function will be received as `<args...>`, which must be a comma-separated list of identifiers. Example: `define square(a) a*a` defines a function that returns the square of a single value passed to it received in the variable `a`; the function result is the result of the expression (no `return` statement is required or exists in this syntax). If multiple expressions are required for the implementation of the function, enclose them in a `do ... done` block.
 
 ### Scope of Statements
@@ -221,11 +221,11 @@ The expression language has some rudimentary scoping like most programming langu
 
 For example, given this expression (an iterator):
 
-        each v in [1,2,3,4,5,6]: a=v
+    each v in [1,2,3,4,5,6]: a=v
 
 One might assume at first glance that this iterator assigns each value of the array to `a`, and when the statement ends `a` will be available to the next expression with the value 6. The former is true, but not the latter: `a` is not available outside of the `each` expression. When making assignments to variables, the language will see if the target identifier is defined in any accessible scope, and if it is not defined in any scope, it is created in the current (lowest) scope. So, if you wish to preserve a value computed in the interior of such an expression, define the variable outside the statement first, like this:
 
-        a=0, each v in [1,2,3,4,5,6]: a=v
+    a=0, each v in [1,2,3,4,5,6]: a=v
 
 Now `a` will have a value of 6, because it was defined outside the statement, so assignments made within the statement target the exterior variable.
 
@@ -351,4 +351,4 @@ Important notes with respect to date handling (currently; this will evolve):
 
 As a result of the syntax, the following words are reserved and may not be used as identifiers or function names: `true, false, null, each, in, first, of, with, if, then, else, endif, do, done, define, and, or, not, NaN, Infinity`. Note that keywords and identifiers are case-sensitive, so while `each` is not an acceptable identifier, `Each` or `EACH` would be.
 
-<small>Updated 2021-Dec-26 (21360)</small>
+<small>Updated 2021-Jan-05 (22005)</small>
