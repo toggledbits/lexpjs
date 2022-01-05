@@ -91,8 +91,8 @@ console.log( lexpjs.evaluate( "'Half the area is ' + area / 2" );
 
 This will print two lines:
 
-        50.2654824
-        Half the area is 25.1327412
+    50.2654824
+    Half the area is 25.1327412
 
 Notice in the above example that the context has carried the computed area from the first `evaluate()` call into the second.
 
