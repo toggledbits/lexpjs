@@ -18,7 +18,7 @@
  *  SOFTWARE.
  */
 
-const version = 22005;
+const version = 22023;
 
 const FEATURE_MONTH_BASE = 1;   /* 1 = months 1-12; set to 0 if you prefer JS semantics where 0=Jan,11=Dec */
 const MAX_RANGE = 1000;         /* Maximum number of elements in a result range op result array */
@@ -410,11 +410,12 @@ const MAX_RANGE = 1000;         /* Maximum number of elements in a result range 
 // D('ASSIGN deref context', v1.context, 'v2', v2);                            
                             var scope = _run( v1.context, ctx );
                             if ( "object" !== typeof scope || null === scope ) {
-                                throw new ReferenceError( `Invalid reference to member ${String(v1.member)} of ${String(scope)}` );
+                                throw new ReferenceError( `Invalid reference to member ${String(v1.member)} of (${typeof scope})${String(scope)}` );
                             }
                             var member = _run( v1.member, ctx );
-                            if ( "number" !== typeof member && ( "string" !== typeof member || "" === member ) ) {
-                                throw new ReferenceError( `Invalid reference to member ${String(v1.member)} of ${String(scope)}` );
+                            /* Null and NaN don't pass here */
+                            if ( ! ( "number" === typeof member || "string" === typeof member ) || "" === member  ) {
+                                throw new ReferenceError( `Invalid reference to member (${typeof member})${String(member)} of ${String(scope)}` );
                             }
 // D("ASSIGN",scope,".",member,"=",v2eval);                            
                             res = scope[ member ] = v2eval;
@@ -467,7 +468,8 @@ const MAX_RANGE = 1000;         /* Maximum number of elements in a result range 
                         throw new ReferenceError( `Invalid reference to member ${String(e.member)} of ${String(scope)}` );
                     }
                     var member = _run( e.member, ctx );
-                    if ( "number" !== typeof member && ( "string" !== typeof member || "" === member ) ) {
+                    /* null and NaN are OK here, will likely produce null, which is OK */
+                    if ( ! ( null === member || Number.isNaN( member ) || "number" === typeof member || "string" === typeof member ) ) {
                         throw new ReferenceError( `Invalid reference to member ${String(e.member)} of ${String(scope)}` );
                     }
                     var res = _run( scope[ member ], ctx );

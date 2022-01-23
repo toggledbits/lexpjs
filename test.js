@@ -1,4 +1,4 @@
-const version = 21360;
+const version = 22023;
 
 const verbose = false;  // If true, all tests and results printed; otherwise just errors.
 
@@ -206,6 +206,14 @@ var test_expr = [
     , { expr: "arr?[1]?.name", expect: "Lucy" }
     , { expr: "arg?[1]?.name", expect: null }
     , { expr: "arr[5]?.name", expect: null }
+    , { expr: "entity[null]", expect: null }
+    , { expr: "entity[int('dog')]", expect: null }
+    , { expr: "entity[true]", error: true }
+    , { expr: "entity[{ a: 0}]", error: true }
+    , { expr: "entity['']=23", error: true }
+    , { expr: "entity[int('dog')]=23", error: true }
+    , { expr: "entity[false]=23", error: true }
+    , { expr: "entity[{ a: 0}]=23", error: true }
     , { expr: "1 ?? 0 & 4" }
     , { expr: "(1 ?? 0) & 4" }
 
