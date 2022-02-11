@@ -18,7 +18,7 @@
  *  SOFTWARE.
  */
 
-const version = 22023;
+const version = 22041;
 
 const FEATURE_MONTH_BASE = 1;   /* 1 = months 1-12; set to 0 if you prefer JS semantics where 0=Jan,11=Dec */
 const MAX_RANGE = 1000;         /* Maximum number of elements in a result range op result array */
@@ -160,7 +160,7 @@ const MAX_RANGE = 1000;         /* Maximum number of elements in a result range 
         }
         , median    : { nargs: 1, impl: (a) => {
                 if ( Array.isArray( a ) && a.length > 0 ) {
-                    let t = a.sort();
+                    let t = a.sort( ( a, b ) => a - b ); /* Numeric sort */
                     return ( 0 === ( t.length & 1 ) ) ? ( ( t[t.length/2-1] + t[t.length/2] ) / 2 ) : t[Math.floor( t.length / 2 )];
                 }
                 return null;
