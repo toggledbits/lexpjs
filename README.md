@@ -214,36 +214,36 @@ The expression language has a couple of "lightweight statements" that function a
 * `do <statement-list> done` &mdash; since the limited syntax of `each` allows only a single statement to be executed, the `do...done` statement creates a statement block that appears to `each` as a single statement, thus allowing multiple statements to be executed within the loop. The standard multi-statement result rule applies: the result of the statement block is the result produced by the last expression in the block.
 * `if <conditional> then <true-expression> else <false-expression> endif` &mdash; Introduced for users uncomfortable with the ternary operator (`?:`) syntax, this "traditional" *if...then* form was added. The true and false expressions may be any expression, including a `do...done` block enclosing multiple expressions. Note that when writing `else if` for multiple conditions, each `if` starts a new `if` block and must have a matching `endif`:
 
-    # The following is incorrect:
-    if a > 5
-      then "high range"
-      else if a > -5
-        then "nominal"
-      else "lo range"     <--- ambiguous else
-    endif
+        # The following is incorrect:
+        if a > 5
+          then "high range"
+          else if a > -5
+            then "nominal"
+          else "lo range"     <--- ambiguous else
+        endif
 
-    # Should be:
-    if a > 5
-      then "high range"
-      else
-        if a > -5
-          then "nominal"
-          else "lo range"
-        end if                  <-- for the inner if
-    end if                      <-- for the outer if
+        # Should be:
+        if a > 5
+          then "high range"
+          else
+            if a > -5
+              then "nominal"
+              else "lo range"
+            end if                  <-- for the inner if
+        end if                      <-- for the outer if
 
 * `case when <conditional-expr-1>: <true-expression-1> [ when <conditional-expr-n>: <true-expression-n> ]* [ else <default-expression> ] end` &mdash;
 Sometimes `if` statements need to make multiple tests, and the `if` statement and ternary operator can become very difficult to write and follow later.
 To make things tidier, the `case` statement evaluates a series of `when` conditions; the first `<conditional-expression>` that is `true` will cause the statement
 to return the value of its matching `<true-expression>`. If none is `true`, the `<default-expression>` result is returned if an `else` clause is present,
-or `null` otherwise. The `<true-expressions>` and `<default-expression>` may be any expression, including assignments or block statements (even another `case` statement).
+or `null` otherwise. The `<true-expressions>` and `<default-expression>` may be any expression, including assignments or block statements (even another `case` statement). Example below; lines and spacing for clarity only.
 
-    case
-      when tempF < 65: "it's cold in here!"
-      when tempF < 76: "we're comfortable"
-      when tempF < 85: "it's a bit warm in here!"
-      else "we need to cool this place down!"
-    end
+        case
+          when tempF < 65: "it's cold in here!"
+          when tempF < 76: "we're comfortable"
+          when tempF < 85: "it's a bit warm in here!"
+          else "we need to cool this place down!"
+        end
 
 * `define <functionName>( <args...> ) <expression>` &mdash; defines a function named `<functionName>` that returns the evaluated `<expression>`. Arguments passed to the function will be received as `<args...>`, which must be a comma-separated list of identifiers. Example: `define square(a) a*a` defines a function that returns the square of a single value passed to it received in the variable `a`; the function result is the result of the expression (no `return` statement is required or exists in this syntax). If multiple expressions are required for the implementation of the function, enclose them in a `do ... done` block.
 
