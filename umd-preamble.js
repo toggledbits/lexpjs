@@ -18,7 +18,7 @@
  *  SOFTWARE.
  */
 
-const version = 22041;
+const version = 22043;
 
 const FEATURE_MONTH_BASE = 1;   /* 1 = months 1-12; set to 0 if you prefer JS semantics where 0=Jan,11=Dec */
 const MAX_RANGE = 1000;         /* Maximum number of elements in a result range op result array */
@@ -407,7 +407,7 @@ const MAX_RANGE = 1000;         /* Maximum number of elements in a result range 
                         let c, res;
                         if ( is_atom( v1, 'deref' ) ) {
                             /* Assignment to member */
-// D('ASSIGN deref context', v1.context, 'v2', v2);                            
+// D('ASSIGN deref context', v1.context, 'v2', v2);
                             var scope = _run( v1.context, ctx );
                             if ( "object" !== typeof scope || null === scope ) {
                                 throw new ReferenceError( `Invalid reference to member ${String(v1.member)} of (${typeof scope})${String(scope)}` );
@@ -417,7 +417,7 @@ const MAX_RANGE = 1000;         /* Maximum number of elements in a result range 
                             if ( ! ( "number" === typeof member || "string" === typeof member ) || "" === member  ) {
                                 throw new ReferenceError( `Invalid reference to member (${typeof member})${String(member)} of ${String(scope)}` );
                             }
-// D("ASSIGN",scope,".",member,"=",v2eval);                            
+// D("ASSIGN",scope,".",member,"=",v2eval);
                             res = scope[ member ] = v2eval;
                         } else {
                             /* Simple assignment to identifier */
@@ -620,6 +620,21 @@ const MAX_RANGE = 1000;         /* Maximum number of elements in a result range 
                         res = _run( e.block, ctx );
                     } finally {
                         ctx = pop_context( ctx );
+                    }
+                    return res;
+                } else if ( is_atom( e, 'case' ) ) {
+                    const list = e.when_list; // list atom
+                    let res = null;
+                    for ( let c of list.expr ) {
+                        var cond = _run( c.test, ctx );
+                        if ( cond ) {
+                            res = _run( c.tc, ctx );
+                            break;
+                        }
+                        if ( c.fc ) {
+                            res = _run( c.fc, ctx );
+                            break;
+                        }
                     }
                     return res;
                 } else if ( is_atom( e, 'fdef' ) ) {

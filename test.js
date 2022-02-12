@@ -1,4 +1,4 @@
-const version = 22041;
+const version = 22043;
 
 const verbose = false;  // If true, all tests and results printed; otherwise just errors.
 
@@ -373,6 +373,12 @@ var test_expr = [
     , { expr: "if !entity.attributes.power_switch.state then 1 else 0 endif", expect: 0 }
     , { expr: "if entity.attributes.power_switch.state then 1 endif", expect: 1 }
     , { expr: "if !entity.attributes.power_switch.state then 1 endif", expect: null }
+
+    /* Case statement */
+    , { expr: 't=12, case when t==1: "one" when t==2: "two" when t==12: "twelve" end', expect: "twelve" }
+    , { expr: 't=9, case when t==1: "one" when t==2: "two" when t==12: "twelve" end', expect: null }
+    , { expr: 't=11, case when t==1: "one" when t==2: "two" when t==12: "twelve" else "unknown" end', expect: "unknown" }
+   
 
     /* Iteration */
     , { expr: "each item in [1,2,3,4,5]: 2*item", expect: [ 2,4,6,8,10 ] }

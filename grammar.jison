@@ -74,6 +74,9 @@
 "then"                  { return 'THEN'; }
 "else"                  { return 'ELSE'; }
 "endif"                 { return 'ENDIF'; }
+"case"                  { return 'CASE'; }
+"when"                  { return 'WHEN'; }
+"end"                   { return 'END'; }
 "in"                    { return 'IN'; }
 "done"                  { return 'DONE'; }
 "do"                    { return 'DO'; }
@@ -159,7 +162,7 @@
 %start expressions
 
 %{
-    /* Grammar 21360 */
+    /* Grammar 22043 */
 
     var buffer = "", qsep = "";
 
@@ -281,6 +284,15 @@ assignment
         { $$ = atom( 'binop', { 'op': $2, v1: $1, v2: $3, locs: [@1, @3] } ); }
     ;
 
+when_list
+    : when_list WHEN e COLON e ELSE e
+        { $1.expr.push( atom( 'if', { test: $3, tc: $5, fc: $7, locs: [@3, @5, @7] } ) ); $$ = $1; }
+    | when_list WHEN e COLON e
+        { $1.expr.push( atom( 'if', { test: $3, tc: $5, locs: [@3, @5] } ) ); $$ = $1; }
+    | WHEN e COLON e
+        { $$ = atom( 'list', { expr: [ atom( 'if', { test: $2, tc: $4, locs: [@2, @4] } ) ] } ); }
+    ;
+
 e
     : '-' e %prec UMINUS
         { $$ = atom( 'unop', { op: '-', val: $2 } ); }
@@ -390,4 +402,6 @@ e
         { $$ = atom( 'block', { block: $2 } ); }
     | DEF IDENTIFIER '(' arg_list ')' e
         { $$ = atom( 'fdef', { name: $2, args: $4, list: $6 } ); }
+    | CASE when_list END
+        { $$ = atom( 'case', { when_list: $2 } ); }
     ;
