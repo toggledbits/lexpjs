@@ -245,6 +245,8 @@ or `null` otherwise. The `<true-expressions>` and `<default-expression>` may be 
           else "we need to cool this place down!"
         end
 
+    Note that while the above example shows all `when` clauses testing the value of `tempF`, there is no requirement that the conditionals be consistent or related in this way. It is perfectly to acceptable to write `case when sun.isup: "sun is up" when pool.isfull "pool is full" else "read a book" end`, if that is what you need to do.
+
 * `define <functionName>( <args...> ) <expression>` &mdash; defines a function named `<functionName>` that returns the evaluated `<expression>`. Arguments passed to the function will be received as `<args...>`, which must be a comma-separated list of identifiers. Example: `define square(a) a*a` defines a function that returns the square of a single value passed to it received in the variable `a`; the function result is the result of the expression (no `return` statement is required or exists in this syntax). If multiple expressions are required for the implementation of the function, enclose them in a `do ... done` block.
 
 ### Scope of Statements
