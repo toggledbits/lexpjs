@@ -397,6 +397,6 @@ Important notes with respect to date handling (currently; this will evolve):
 
 ### Reserved Words
 
-As a result of the syntax, the following words are reserved and may not be used as identifiers or function names: `true, false, null, each, in, first, of, with, if, then, else, endif, do, done, define, and, or, not, NaN, Infinity`. Note that keywords and identifiers are case-sensitive, so while `each` is not an acceptable identifier, `Each` or `EACH` would be.
+As a result of the syntax, the following words are reserved and may not be used as identifiers or function names: `true, false, null, each, in, first, of, with, if, then, else, endif, case, when, do, done, define, and, or, not, NaN, Infinity`. Note that keywords and identifiers are case-sensitive, so while `each` is not an acceptable identifier, `Each` or `EACH` would be.
 
 <small>Updated 2021-Feb-12 (22043)</small>
