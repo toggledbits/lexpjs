@@ -1,4 +1,4 @@
-/* Version 22043.1852 */
+/* Version 22048.2245 */
 /** lexpjs - Copyright (C) 2018,2021 Patrick H. Rigney, All Rights Reserved
  *  See https://github.com/toggledbits/lexpjs
  *
@@ -1076,6 +1076,7 @@ return new Parser;
         , "float"   : { nargs: 1, impl: parseFloat }
         , "bool"    : { nargs: 1, impl: function( s ) { return !!s && null === String(s).match( /^\s*(0|no|off|false)\s*$/i ); } }
         , str       : { nargs: 1, impl: (s) => String(s) }
+        , pad       : { nargs: 2, impl: (s,l,p) => l > 0 ? String(s)+(p||' ').repeat(Math.max(0,l-s.length)) : (p||' ').repeat(Math.max(0,-s.length-l))+String(s) }
         , hex       : { nargs: 1, impl: (n) => Number( n ).toString( 16 ) }
         , time      : { nargs: 0, impl: function( ...args ) {
                 if ( 1 === args.length && "object" === typeof ( args[0] ) ) {

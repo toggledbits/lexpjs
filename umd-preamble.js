@@ -114,6 +114,7 @@ const MAX_RANGE = 1000;         /* Maximum number of elements in a result range 
         , "float"   : { nargs: 1, impl: parseFloat }
         , "bool"    : { nargs: 1, impl: function( s ) { return !!s && null === String(s).match( /^\s*(0|no|off|false)\s*$/i ); } }
         , str       : { nargs: 1, impl: (s) => String(s) }
+        , pad       : { nargs: 2, impl: (s,l,p) => l > 0 ? String(s)+(p||' ').repeat(Math.max(0,l-s.length)) : (p||' ').repeat(Math.max(0,-s.length-l))+String(s) }
         , hex       : { nargs: 1, impl: (n) => Number( n ).toString( 16 ) }
         , time      : { nargs: 0, impl: function( ...args ) {
                 if ( 1 === args.length && "object" === typeof ( args[0] ) ) {

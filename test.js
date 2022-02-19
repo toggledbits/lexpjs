@@ -353,6 +353,11 @@ var test_expr = [
     , { expr: `hex( 255 )`, expect: "ff" }
     , { expr: `hex( 65536 )`, expect: "10000" }
 
+    , { expr: `pad("a",6)`, expect: "a     " }
+    , { expr: `pad("a",-6)`, expect: "     a" }
+    , { expr: `pad("7",-4,"0")`, expect: "0007" }
+    , { expr: `pad("xxx",-2,"y")`, expect: "xxx" }  // longer than pad length, returns original input unmodified.
+
     , { expr: `typeof(true)`, expect: "boolean" }
     , { expr: `typeof(false)`, expect: "boolean" }
     , { expr: `typeof(null)`, expect: "null" }

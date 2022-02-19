@@ -246,7 +246,7 @@ Introduced for users uncomfortable with the ternary operator (`?:`) syntax, this
 ### `case when <conditional-expr-1>: <true-expression-1> [ when <conditional-expr-n>: <true-expression-n> ]* [ else <default-expression> ] end`
 
 Sometimes `if` statements need to make multiple tests, and the `if` statement and ternary operator can become very difficult to write and follow later.
-To make things tidier, the `case` statement evaluates a series of `when` conditions; the first `<conditional-expression>` that is `true` will cause the statement
+To make things tidier, the `case` statement evaluates a series of `when` clauses; the first `<conditional-expression>` that is `true` will cause the statement
 to return the value of its matching `<true-expression>`. If none is `true`, the `<default-expression>` result is returned if an `else` clause is present,
 or `null` otherwise. The `<true-expressions>` and `<default-expression>` may be any expression, including assignments or block statements (even another `case` statement). Example below; lines and spacing for clarity only.
 
@@ -257,7 +257,7 @@ or `null` otherwise. The `<true-expressions>` and `<default-expression>` may be 
       else "we need to cool this place down!"
     end
 
-Note that while the above example shows all `when` clauses testing the value of `tempF`, there is no requirement that the conditionals be consistent or related in this way. It is perfectly to acceptable to write `case when sun.isup: "sun is up" when pool.isfull "pool is full" else "read a book" end`, if that is what you need to do.
+Note that while the above example shows all `when` clauses testing the value of `tempF`, there is no requirement that the conditionals be consistent or related in this way. It is perfectly acceptable to write `case when sun.isup: "sun is up" when pool.isfull "pool is full" else "read a book" end`, if that is what you need to do.
 
 ### `define <functionName>( <args...> ) <expression>`
 
@@ -336,6 +336,12 @@ I keep adding things as I need them or people ask, so [let me know](https://gith
 * `replace( string, regexp, replacement [ , flags ] )` &mdash; replaces the first substring matched by the regular expression *regexp* with the *replacement* string and returns the result; the optional *flags* (a string) may include "i" for case-insensitive search, and "g" for global replacement (all matches in *string* are replaced; combined would be "ig"); the `$` is a special character in the *replacement* string and follows the JavaScript semantics (for [`String.replace()`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/replace)).
 * `rtrim/ltrim/trim( string )` &mdash; removes whitespace from the right/left/both side(s) of the string;
 * `split( string, regexp [, max ] )` &mdash; splits the string at the matching regular expression and returns an array (e.g. `split( "1,5,8", "," )` returns `["1","5","8"]`).
+* `pad( string, length [, padchar ] )` &mdash; returns `string` padded to length `length` characters. If length is > 0, padding is done on the right; if length < 0, padding is done on the left. If optional `padchar` is specified, it is used to pad the string (default `padchar` is space). If the given `string` is longer than `length`, it is returned unmodified. Examples:
+
+        pad("a", 3)     produces    "a  "
+        pad("a", -3)                "  a"
+        pad("5", -4, "0")           "0005"
+        pad("toolong", -4)          "toolong"
 
 ### Type Handling Functions
 
@@ -399,4 +405,4 @@ Important notes with respect to date handling (currently; this will evolve):
 
 As a result of the syntax, the following words are reserved and may not be used as identifiers or function names: `true, false, null, each, in, first, of, with, if, then, else, endif, case, when, do, done, define, and, or, not, NaN, Infinity`. Note that keywords and identifiers are case-sensitive, so while `each` is not an acceptable identifier, `Each` or `EACH` would be.
 
-<small>Updated 2021-Feb-12 (22043)</small>
+<small>Updated 2022-Feb-17 (22048)</small>
