@@ -355,7 +355,7 @@ I keep adding things as I need them or people ask, so [let me know](https://gith
 ### Date/Time Handling Functions
 
 * `time( [iso-date-string] | [ year [, month [, day [, hour [, minute [, second ]]]]]] | [ dateparts-obj ] )` &mdash; returns the current time if no arguments are given. If an [ISO 8601 date string](https://en.wikipedia.org/wiki/ISO_8601) is given, it is parsed; if an object of the same form that is returned by `dateparts()` is given, the date is constructed from those parts; otherwise the arguments are assumed to be numeric and a date/time is constructed using as many parts as are provided (in the order shown). The result is always a Unix Epoch time in milliseconds. See additional notes below.
-* `dateparts( [time] )` &mdash; returns an object with keys `year`, `month`, `day`, `hour`, `minute`, `second`, `millis`, and `weekday` (0-6, where 0=Sunday) for the given `time`, or the current time if not given.
+* `dateparts( [time] )` &mdash; returns an object with keys `year`, `month`, `day`, `hour`, `minute`, `second`, `millis`, `weekday` (0-6, where 0=Sunday), `yday` (day of the year, where 1=Jan 1), `isoweek` (ISO-8601 week number 1-53), and `dst` (*true* if Daylight Saving in effect, *false* otherwise) for the given `time`, or the current time if not given.
 
 Important notes with respect to date handling (currently; this will evolve):
 
@@ -405,4 +405,4 @@ Important notes with respect to date handling (currently; this will evolve):
 
 As a result of the syntax, the following words are reserved and may not be used as identifiers or function names: `true, false, null, each, in, first, of, with, if, then, else, endif, case, when, do, done, define, and, or, not, NaN, Infinity`. Note that keywords and identifiers are case-sensitive, so while `each` is not an acceptable identifier, `Each` or `EACH` would be.
 
-<small>Updated 2022-Feb-17 (22048)</small>
+<small>Updated 2022-Mar-30 (22089)</small>

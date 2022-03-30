@@ -1,4 +1,4 @@
-const version = 22043;
+const version = 22089;
 
 const verbose = false;  // If true, all tests and results printed; otherwise just errors.
 
@@ -274,13 +274,25 @@ var test_expr = [
     , { expr: "t=time({year:2022,month:3,day:13,hour:1})" }
     , { expr: "p=dateparts(t), p.hour=p.hour+2, time(p)-t", expect: 3600000 }
     , { expr: "typeof( dateparts().year ) ", expect: "number" }
-    , { expr: "dateparts(time(2021,1,17,3,4,5)).year", expect: 2021 }
-    , { expr: "dateparts(time(2021,1,17,3,4,5)).month", expect: 1 }
-    , { expr: "dateparts(time(2021,1,17,3,4,5)).day", expect: 17 }
-    , { expr: "dateparts(time(2021,1,17,3,4,5)).hour", expect: 3 }
-    , { expr: "dateparts(time(2021,1,17,3,4,5)).minute", expect: 4 }
-    , { expr: "dateparts(time(2021,1,17,3,4,5)).second", expect: 5 }
-    , { expr: "dateparts(time(2021,2,16,12,0,0)).weekday", expect: 2 }
+    , { expr: "dateparts().day", expect: (new Date()).getDate() }
+    , { expr: "dateparts().hour", expect: (new Date()).getHours() }
+    , { expr: "dateparts(time(2021, 1,17,3,4,5)).year", expect: 2021 }
+    , { expr: "dateparts(time(2021, 1,17,3,4,5)).month", expect: 1 }
+    , { expr: "dateparts(time(2021, 1,17,3,4,5)).day", expect: 17 }
+    , { expr: "dateparts(time(2021, 1,17,3,4,5)).hour", expect: 3 }
+    , { expr: "dateparts(time(2021, 1,17,3,4,5)).minute", expect: 4 }
+    , { expr: "dateparts(time(2021, 1,17,3,4,5)).second", expect: 5 }
+    , { expr: "dateparts(time(2021, 2,16,0,0,0)).weekday", expect: 2 }
+    , { expr: "dateparts(time(2022, 3,30,0,0,0)).yday", expect: 89 }
+    , { expr: "dateparts(time(2020, 2,28,0,0,0)).yday", expect: 59 }
+    , { expr: "dateparts(time(2020, 2,29,0,0,0)).yday", expect: 60 }  /* Leap day */
+    , { expr: "dateparts(time(2020, 3, 1,0,0,0)).yday", expect: 61 }  /* Mar 1 in leap year */
+    , { expr: "dateparts(time(2022, 3,13,01,0,0)).dst", expect: false }  /* US DST off */
+    , { expr: "dateparts(time(2022, 3,13,02,0,0)).dst", expect: true }   /* US DST on */
+    , { expr: "dateparts(time(2022,11,6,01,0,0)).dst", expect: true }    /* US DST on (still) */
+    , { expr: "dateparts(time(2022,11,6,02,0,0)).dst", expect: false }   /* US DST off */
+    , { expr: "dateparts(time(2022, 3,31,0,0,0)).isoweek", expect: 13 }
+    , { expr: "dateparts(time(2020,12,31,0,0,0)).isoweek", expect: 53 }
     , { expr: "match( 'The rain in Spain stays mainly in the plain.', 'rain' )", expect: "rain" }
     , { expr: "match( 'The rain in Spain stays mainly in the plain.', 'Sp(ai)n', 1 )", expect: "ai" }
     , { expr: "match( 'The rain in Spain stays mainly in the plain.', 'RAIN', 0, 'i' )", expect: "rain" }
@@ -383,7 +395,7 @@ var test_expr = [
     , { expr: 't=12, case when t==1: "one" when t==2: "two" when t==12: "twelve" end', expect: "twelve" }
     , { expr: 't=9, case when t==1: "one" when t==2: "two" when t==12: "twelve" end', expect: null }
     , { expr: 't=11, case when t==1: "one" when t==2: "two" when t==12: "twelve" else "unknown" end', expect: "unknown" }
-   
+
 
     /* Iteration */
     , { expr: "each item in [1,2,3,4,5]: 2*item", expect: [ 2,4,6,8,10 ] }
@@ -504,6 +516,7 @@ function compareObjects( a, b ) {
     return true;
 }
 
+console.log("lexpjs test script version",version,"testing lexpjs package version",lexp.version);
 var num_errors = 0;
 test_expr.forEach( function( e ) {
     let chatty = "undefined" === typeof e.verbose ? verbose : e.verbose;

@@ -18,7 +18,7 @@
  *  SOFTWARE.
  */
 
-const version = 22043;
+const version = 22089;
 
 const FEATURE_MONTH_BASE = 1;   /* 1 = months 1-12; set to 0 if you prefer JS semantics where 0=Jan,11=Dec */
 const MAX_RANGE = 1000;         /* Maximum number of elements in a result range op result array */
@@ -132,11 +132,29 @@ const MAX_RANGE = 1000;         /* Maximum number of elements in a result range 
                 return new Date( ...args ).getTime();
             }
         }
-        , dateparts : { nargs: 0, impl: (t) => {
-                let d = "undefined" === typeof t ? new Date() : new Date(t);
-                return { year: d.getFullYear(), month: d.getMonth()+FEATURE_MONTH_BASE, day: d.getDate(),
+        , dateparts : { nargs: 0, impl: (m) => {
+                let d = "undefined" === typeof m ? new Date() : new Date(m);
+                let ret = { year: d.getFullYear(), month: d.getMonth()+FEATURE_MONTH_BASE, day: d.getDate(),
                          hour: d.getHours(), minute: d.getMinutes(), second: d.getSeconds(),
                          millis: d.getMilliseconds(), weekday: d.getDay() };
+                /* Day of Year; ref: https://stackoverflow.com/posts/40975730/timeline */
+                ret.yday = (Date.UTC(ret.year, ret.month-FEATURE_MONTH_BASE, ret.day) - Date.UTC(ret.year,0,0)) / 24 / 60 / 60 / 1000;
+                /* ISO-8601 Week Number; ref: https://www.epochconverter.com/weeknumbers */
+                let t = new Date( d.valueOf() );
+                let dn = ( t.getDay() + 6 ) % 7;
+                t.setDate( t.getDate() - dn + 3 );
+                let fth = t.valueOf();
+                t.setMonth( 0, 1 );
+                if ( t.getDay() != 4 ) t.setMonth( 0, 1 + (( 4 - t.getDay() ) + 7) % 7 );
+                ret.isoweek = 1 + Math.ceil( ( fth - t ) / 604800000 );
+                /* DST. Get the current timezone offset first. */
+                const coffs = Date.UTC( ret.year, ret.month-FEATURE_MONTH_BASE, ret.day, ret.hour, ret.minute, ret.second ) - d;
+                /* Now get offsets for January and June, same year, day, time */
+                const offs0 = Date.UTC( ret.year, 0, ret.day, ret.hour, ret.minute, ret.second ) - d.setMonth( 0 );
+                const offs5 = Date.UTC( ret.year, 5, ret.day, ret.hour, ret.minute, ret.second ) - d.setMonth( 5 );
+                /* If current offset is greater than Jan or Jun offset, we're in DST */
+                ret.dst = coffs > offs0 || coffs > offs5;
+                return ret;
             }
         }
         , "isNaN"   : { nargs: 1, impl: (n) => Number.isNaN(n) || isNaN(n) }
