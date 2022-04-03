@@ -1,4 +1,4 @@
-/* Version 22089.1329 */
+/* Version 22093.1101 */
 /** lexpjs - Copyright (C) 2018,2021 Patrick H. Rigney, All Rights Reserved
  *  See https://github.com/toggledbits/lexpjs
  *
@@ -19,7 +19,7 @@
  *  SOFTWARE.
  */
 
-const version = 22089;
+const version = 22093;
 
 const FEATURE_MONTH_BASE = 1;   /* 1 = months 1-12; set to 0 if you prefer JS semantics where 0=Jan,11=Dec */
 const MAX_RANGE = 1000;         /* Maximum number of elements in a result range op result array */
@@ -1391,7 +1391,7 @@ return new Parser;
 // D('ASSIGN deref context', v1.context, 'v2', v2);
                             var scope = _run( v1.context, ctx );
                             if ( "object" !== typeof scope || null === scope ) {
-                                throw new ReferenceError( `Invalid reference to member ${String(v1.member)} of (${typeof scope})${String(scope)}` );
+                                throw new ReferenceError( `Invalid scope in reference to member ${String(v1.member)} of (${typeof scope})${String(scope)}` );
                             }
                             var member = _run( v1.member, ctx );
                             /* Null and NaN don't pass here */
@@ -1446,12 +1446,12 @@ return new Parser;
                         return null;
                     }
                     if ( "object" !== typeof scope || null === scope ) {
-                        throw new ReferenceError( `Invalid reference to member ${String(e.member)} of ${String(scope)}` );
+                        throw new ReferenceError( `Invalid scope in reference to member ${String(e.member)} of (${typeof scope})${String(scope)}` );
                     }
                     var member = _run( e.member, ctx );
                     /* null and NaN are OK here, will likely produce null, which is OK */
                     if ( ! ( null === member || Number.isNaN( member ) || "number" === typeof member || "string" === typeof member ) ) {
-                        throw new ReferenceError( `Invalid reference to member ${String(e.member)} of ${String(scope)}` );
+                        throw new ReferenceError( `Invalid reference to member (${typeof member})${String(member)} of (${typeof scope})${String(scope)}` );
                     }
                     var res = _run( scope[ member ], ctx );
                     //D("DEREF",scope,".",member,"=",res);
