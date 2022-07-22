@@ -298,6 +298,7 @@ var test_expr = [
     , { expr: "time( 'July 4, 2022 19:20:00' )", expect: 1656976800000 }   /* extended date/time parsing */
     , { expr: "time( 'Jul 4 2022 19:20:00' )", expect: 1656976800000 }   /* extended date/time parsing */
     , { expr: "time( '4 Jul 22 19:20:00' )", expect: 1656976800000 }   /* extended date/time parsing */
+    , { expr: "time( '2022-07-15' )", expect: 1657857600000 }   /* extended date/time parsing */
     , { expr: "time( '12:34' )", expect: new Date().setHours( 12, 34, 0, 0 ) }   /* extended date/time parsing */
     , { expr: "time( '12:34:56' )", expect: new Date().setHours( 12, 34, 56, 0 ) }   /* extended date/time parsing */
     , { expr: "time( '12:34:56.789' )" }   /* extended date/time parsing */

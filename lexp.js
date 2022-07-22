@@ -1,4 +1,4 @@
-/* Version 22203.0955 */
+/* Version 22203.1018 */
 /** lexpjs - Copyright (C) 2018,2021 Patrick H. Rigney, All Rights Reserved
  *  See https://github.com/toggledbits/lexpjs
  *
@@ -1065,6 +1065,14 @@ return new Parser;
          *  A date and time like "7/15/2022 12:34:56" is also handled correctly. Various date forms seem to be supported,
          *  like "2022-07-15" and "Jul 15, 2022" and "2022 July 15".
          */
+        /** N.B. Humpf. nodejs 16.13.1, if the string does not contain a time component, the time generated is midnight
+         *       ***UTC***, not midnight local. Oddly, if we supply midnight time, the result is midnight local. Seems
+         *       like something is wrong here in JS, but we can work around it.
+         */
+        if ( ! s.match( /\d+:\d+/ ) ) {
+            /* No time found, so add it. */
+            s += ' 00:00:00.000';
+        }
         let d = new Date( s ).getTime();
         if ( isNaN( d ) ) {
             throw new Error( `time() received unparseable date/time string: ${s}` );
