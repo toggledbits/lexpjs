@@ -152,9 +152,9 @@ const MAX_RANGE = 1000;         /* Maximum number of elements in a result range 
                         d( obj.second, 0 ), d( obj.millis, 0 ) ).getTime();
                 } else if ( args.length === 1 && "string" === typeof( args[ 0 ] ) ) {
                     return f_dtconv( args[ 0 ] );
-                } else if ( args.length > 1 && "number" === typeof( args[0] ) ) {
+                } else if ( args.length >= 1 && "number" === typeof( args[0] ) ) {
                     args[1] -= FEATURE_MONTH_BASE;
-                } else {
+                } else if ( 0 !== args.length ) {
                     throw new Error( "Invalid arguments to time()" );
                 }
                 return new Date( ...args ).getTime();

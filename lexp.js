@@ -1,4 +1,4 @@
-/* Version 22203.0814 */
+/* Version 22203.0909 */
 /** lexpjs - Copyright (C) 2018,2021 Patrick H. Rigney, All Rights Reserved
  *  See https://github.com/toggledbits/lexpjs
  *
@@ -1114,9 +1114,9 @@ return new Parser;
                         d( obj.second, 0 ), d( obj.millis, 0 ) ).getTime();
                 } else if ( args.length === 1 && "string" === typeof( args[ 0 ] ) ) {
                     return f_dtconv( args[ 0 ] );
-                } else if ( args.length > 1 && "number" === typeof( args[0] ) ) {
+                } else if ( args.length >= 1 && "number" === typeof( args[0] ) ) {
                     args[1] -= FEATURE_MONTH_BASE;
-                } else {
+                } else if ( 0 !== args.length ) {
                     throw new Error( "Invalid arguments to time()" );
                 }
                 return new Date( ...args ).getTime();

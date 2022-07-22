@@ -266,6 +266,7 @@ var test_expr = [
     , { expr: "isInfinity(null)", expect: false }
     , { expr: "isInfinity(Infinity)", expect: true }
     , { expr: "isInfinity(-Infinity)", expect: true }
+    , { expr: "time()" } /* no expectation, but also no error */
     , { expr: "time(2021,1,17)", expect: new Date(2021,0,17,0,0,0,0).getTime() }    /* Assumes FEATURE_MONTH_BASE == 1 (default) */
     , { expr: "time({year:2022,month:1,day:21})", expect: new Date(2022,0,21,0,0,0,0).getTime() }
     , { expr: "time({year:2022,month:1,day:21,hour:13,minute:37})", expect: new Date(2022,0,21,13,37,0,0).getTime() }
