@@ -1,4 +1,4 @@
-const version = 22089;
+const version = 22203;
 
 const verbose = false;  // If true, all tests and results printed; otherwise just errors.
 
@@ -293,6 +293,13 @@ var test_expr = [
     , { expr: "dateparts(time(2022,11,6,02,0,0)).dst", expect: false }   /* US DST off */
     , { expr: "dateparts(time(2022, 3,31,0,0,0)).isoweek", expect: 13 }
     , { expr: "dateparts(time(2020,12,31,0,0,0)).isoweek", expect: 53 }
+    , { expr: "t=time( '2022-07-04 19:20:00' )", expect: 1656976800000 }   /* extended date/time parsing */
+    , { expr: "t=time( 'July 4, 2022 19:20:00' )", expect: 1656976800000 }   /* extended date/time parsing */
+    , { expr: "t=time( 'Jul 4 2022 19:20:00' )", expect: 1656976800000 }   /* extended date/time parsing */
+    , { expr: "t=time( '4 Jul 22 19:20:00' )", expect: 1656976800000 }   /* extended date/time parsing */
+    , { expr: "t=time( '12:34' )", expect: new Date().setHours( 12, 34, 0, 0 ) }   /* extended date/time parsing */
+    , { expr: "t=time( '12:34:56' )", expect: new Date().setHours( 12, 34, 56, 0 ) }   /* extended date/time parsing */
+    , { expr: "t=time( '12:34:56.789' )" }   /* extended date/time parsing */
     , { expr: "match( 'The rain in Spain stays mainly in the plain.', 'rain' )", expect: "rain" }
     , { expr: "match( 'The rain in Spain stays mainly in the plain.', 'Sp(ai)n', 1 )", expect: "ai" }
     , { expr: "match( 'The rain in Spain stays mainly in the plain.', 'RAIN', 0, 'i' )", expect: "rain" }

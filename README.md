@@ -309,6 +309,8 @@ global a = 0 # Specifying global scope is redundant when in global scope
 
 I keep adding things as I need them or people ask, so [let me know](https://github.com/toggledbits/lexpjs/issues) if I'm missing what you need.
 
+The syntax guides shown below (which are based on a well-known [BNF](https://en.wikipedia.org/wiki/Extended_Backus%E2%80%93Naur_form#Table_of_symbols)) denotes optional arguments by enclosing them in `[]` (square brackets). These characters are not be included when writing your expressions. For example, the BNF `dateparts( [time] )` denotes that the `time` argument is optional and may be omitted, so you could write `dateparts( someTimeVariableName )` or just `dateparts()`, but `dateparts( [ someTimeVariableName ] )` would *not* be correct.
+
 ### Arithmetic Functions
 
 * `abs( number )` &mdash; returns the absolute value of its argument;
@@ -354,13 +356,13 @@ I keep adding things as I need them or people ask, so [let me know](https://gith
 
 ### Date/Time Handling Functions
 
-* `time( [iso-date-string] | [ year [, month [, day [, hour [, minute [, second ]]]]]] | [ dateparts-obj ] )` &mdash; returns the current time if no arguments are given. If an [ISO 8601 date string](https://en.wikipedia.org/wiki/ISO_8601) is given, it is parsed; if an object of the same form that is returned by `dateparts()` is given, the date is constructed from those parts; otherwise the arguments are assumed to be numeric and a date/time is constructed using as many parts as are provided (in the order shown). The result is always a Unix Epoch time in milliseconds. See additional notes below.
+* `time( [datetime-string] | [ dateparts-obj ] | [ year [, month [, day [, hour [, minute [, second ]]]]]] )` &mdash; Since all arguments are optional, `time()` returns the current time if none are given. If a single string argument is given, the function will attempt to parse it simplistically. Very complex date/time strings may not parse successfully, but simple strings similar to the locale's default format should work, and ISO-8601 is explicitly supported. If the string contains no time component, it will be assumed to be midnight; if it contains no date component, then the date is assumed to be the current day. If an object is given, it is assumed to be of the same form as that returned by `dateparts()`, and the date is constructed from its available members. If the argument is neither string nor object, `time()` expects numeric arguments and a date/time is constructed using as many parts as are provided (in the order shown). The result is always a [Unix Epoch time](https://en.wikipedia.org/wiki/Unix_time) in milliseconds. See additional notes below.
 * `dateparts( [time] )` &mdash; returns an object with keys `year`, `month`, `day`, `hour`, `minute`, `second`, `millis`, `weekday` (0-6, where 0=Sunday), `yday` (day of the year, where 1=Jan 1), `isoweek` (ISO-8601 week number 1-53), and `dst` (*true* if Daylight Saving in effect, *false* otherwise) for the given `time`, or the current time if not given.
 
 Important notes with respect to date handling (currently; this will evolve):
 
 * All time functions operate in the local time and timezone set for the runtime. There are currently no UTC functions.
-* Where *month* is an argument (`time()`) or return value (`dateparts()`), there is a configuration flag in the code for whether months should numbered 0-11 (like JavaScript) or 1-12 (for hoomans); the *lexpjs* default is **1** (months 1-12), and all examples assume this.
+* Where *month* is an argument (e.g. to `time()`) or return value (e.g. from `dateparts()`), there is a configuration flag in the code for whether months should numbered 0-11 (like JavaScript) or 1-12 (for hoomans); the *lexpjs* default is **1** (months 1-12), and all examples and test code assumes this.
 * When passing a `dateparts`-form object (i.e. an object with keys `year`, `month`, etc.) into `time()`, a missing key is assumed to be 0 except `year` (which is assumed to be the current year), and `month` and `day` which are assumed to be 1. An offset date can be computed by adjusting the values in the object by the offset required. For example, fifteen days before March 1, 2022 can be found with `{ year: 2022, month: 3, day: -14 }` (-14 = 1 - 15). Five hours and 8 minutes before the current time could be written as `t=dateparts(), t.hour=t.hour-5, t.minute=t.minute-8, time(t)`. Using this form of date offset computation (rather than simply subtracting 18,480,000 milliseconds from the current time in milliseconds) accounts for changes in DST, leap seconds, or leap days occurring during the offset interval.
 
 ### Array/Object Handling Functions

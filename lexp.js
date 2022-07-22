@@ -1,4 +1,4 @@
-/* Version 22093.1101 */
+/* Version 22203.0814 */
 /** lexpjs - Copyright (C) 2018,2021 Patrick H. Rigney, All Rights Reserved
  *  See https://github.com/toggledbits/lexpjs
  *
@@ -19,7 +19,7 @@
  *  SOFTWARE.
  */
 
-const version = 22093;
+const version = 22203;
 
 const FEATURE_MONTH_BASE = 1;   /* 1 = months 1-12; set to 0 if you prefer JS semantics where 0=Jan,11=Dec */
 const MAX_RANGE = 1000;         /* Maximum number of elements in a result range op result array */
@@ -1044,6 +1044,30 @@ return new Parser;
         return res;
     }
 
+    /**
+     *  Helper function to handle string dates, which may be a simple time string or a date + time. This is highly
+     *  simplified, taking advantage of some behaviors observed in node 16 that seem to slightly deviate from the
+     *  spec. YMMV on what will parse to what, but ISO 8601 is explicitly supported by the Date() object and thus
+     *  expected to always work. See further comment below.
+     */
+    const f_dtconv = function( s ) {
+        s = String( s ); // insurance
+        let d = new Date();
+        let r = s.match( /^\s*(\d+):(\d+)(:(\d+))?(\.(\d+))?/ ); // ??? last element could be tighter
+        if ( r ) {
+            /* Simple time format HH:MM[.SS[.uuu]] */
+            d.setHours( r[1] || 0, r[2] || 0, r[4] || 0, r[6] || 0 );
+            return d.getTime();
+        }
+
+        /** Just let JS handle it. If it contains only a date (e.g. 7/15/2022), JS will make a midnight time for the
+         *  correct date (at least in node 16.13) within the correct TZ (cool!). Otherwise, invalid date (getTime()=NaN).
+         *  A date and time like "7/15/2022 12:34:56" is also handled correctly. Various date forms seem to be supported,
+         *  like "2022-07-15" and "Jul 15, 2022" and "2022 July 15".
+         */
+        return new Date( s ).getTime();
+    }
+
     const nativeFuncs = {
           abs       : { nargs: 1, impl: (v) => v >= 0 ? v : -v }
         , sign      : { nargs: 1, impl: Math.sign }
@@ -1088,8 +1112,12 @@ return new Parser;
                         ( "undefined" === typeof obj.month || null === obj.month ) ? 0 : ( obj.month-FEATURE_MONTH_BASE ),
                         d( obj.day, 1 ), d( obj.hour, 0 ), d( obj.minute, 0 ),
                         d( obj.second, 0 ), d( obj.millis, 0 ) ).getTime();
-                } else if ( args.length > 1 && "number" === typeof( args[1] ) ) {
+                } else if ( args.length === 1 && "string" === typeof( args[ 0 ] ) ) {
+                    return f_dtconv( args[ 0 ] );
+                } else if ( args.length > 1 && "number" === typeof( args[0] ) ) {
                     args[1] -= FEATURE_MONTH_BASE;
+                } else {
+                    throw new Error( "Invalid arguments to time()" );
                 }
                 return new Date( ...args ).getTime();
             }
