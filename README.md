@@ -403,8 +403,12 @@ Important notes with respect to date handling (currently; this will evolve):
 * `urlencode( string )` &mdash; URL-encodes the given string.
 * `urldecode( string )` &mdash; URL-decodes the given string.
 
+### Other Functions
+
+* `err( message )` &mdash; throw an error with the given *message*. This can be used when some complex expression would return unexpected/invalid results if a "soft" or logical error (as determine by the expression's author) occurs within its interior. For example, in the middle of some expression, it may be an error for a particular result to be zero or null when added to an array. The expression `push( arrayName, value )` might be rewritten as `push( arrayName, value || err( "invalid value" ) )` to implement this trap.
+
 ### Reserved Words
 
-As a result of the syntax, the following words are reserved and may not be used as identifiers or function names: `true, false, null, each, in, first, of, with, if, then, else, endif, case, when, do, done, define, and, or, not, NaN, Infinity`. Note that keywords and identifiers are case-sensitive, so while `each` is not an acceptable identifier, `Each` or `EACH` would be.
+As a result of the syntax, the following words are reserved and may not be used as identifiers or function names: `true, false, null, each, in, first, of, with, if, then, else, endif, case, when, do, done, define, and, or, not, NaN, Infinity`. Note that keywords and identifiers are case-sensitive, so while `each` is not an acceptable identifier, `Each` or `EACH` would be. The names of all defined functions are also reserved.
 
-<small>Updated 2022-Mar-30 (22089)</small>
+<small>Updated 2022-Jul-22 (22203)</small>

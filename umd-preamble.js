@@ -90,10 +90,10 @@ const MAX_RANGE = 1000;         /* Maximum number of elements in a result range 
      */
     const f_dtconv = function( s ) {
         s = String( s ); // insurance
-        let d = new Date();
         let r = s.match( /^\s*(\d+):(\d+)(:(\d+))?(\.(\d+))?/ ); // ??? last element could be tighter
         if ( r ) {
             /* Simple time format HH:MM[.SS[.uuu]] */
+            let d = new Date();
             d.setHours( r[1] || 0, r[2] || 0, r[4] || 0, r[6] || 0 );
             return d.getTime();
         }
@@ -103,7 +103,11 @@ const MAX_RANGE = 1000;         /* Maximum number of elements in a result range 
          *  A date and time like "7/15/2022 12:34:56" is also handled correctly. Various date forms seem to be supported,
          *  like "2022-07-15" and "Jul 15, 2022" and "2022 July 15".
          */
-        return new Date( s ).getTime();
+        let d = new Date( s ).getTime();
+        if ( isNaN( d ) ) {
+            throw new Error( `time() received unparseable date/time string: ${s}` );
+        }
+        return d;
     }
 
     const nativeFuncs = {
@@ -236,6 +240,7 @@ const MAX_RANGE = 1000;         /* Maximum number of elements in a result range 
         , urlencode : { nargs: 1, impl: encodeURIComponent }
         , urldecode : { nargs: 1, impl: decodeURIComponent }
         , "typeof"  : { nargs: 1, impl: (a) => null === a ? 'null' : ( Array.isArray(a) ? 'array' : typeof a ) }
+        , "err"     : { nargs: 1, impl: (s) => { throw new Error( String(s) ) } }
 /* FUTURE:
         , format
         , dateadd

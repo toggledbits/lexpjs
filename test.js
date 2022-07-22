@@ -294,13 +294,14 @@ var test_expr = [
     , { expr: "dateparts(time(2022,11,6,02,0,0)).dst", expect: false }   /* US DST off */
     , { expr: "dateparts(time(2022, 3,31,0,0,0)).isoweek", expect: 13 }
     , { expr: "dateparts(time(2020,12,31,0,0,0)).isoweek", expect: 53 }
-    , { expr: "t=time( '2022-07-04 19:20:00' )", expect: 1656976800000 }   /* extended date/time parsing */
-    , { expr: "t=time( 'July 4, 2022 19:20:00' )", expect: 1656976800000 }   /* extended date/time parsing */
-    , { expr: "t=time( 'Jul 4 2022 19:20:00' )", expect: 1656976800000 }   /* extended date/time parsing */
-    , { expr: "t=time( '4 Jul 22 19:20:00' )", expect: 1656976800000 }   /* extended date/time parsing */
-    , { expr: "t=time( '12:34' )", expect: new Date().setHours( 12, 34, 0, 0 ) }   /* extended date/time parsing */
-    , { expr: "t=time( '12:34:56' )", expect: new Date().setHours( 12, 34, 56, 0 ) }   /* extended date/time parsing */
-    , { expr: "t=time( '12:34:56.789' )" }   /* extended date/time parsing */
+    , { expr: "time( '2022-07-04 19:20:00' )", expect: 1656976800000 }   /* extended date/time parsing */
+    , { expr: "time( 'July 4, 2022 19:20:00' )", expect: 1656976800000 }   /* extended date/time parsing */
+    , { expr: "time( 'Jul 4 2022 19:20:00' )", expect: 1656976800000 }   /* extended date/time parsing */
+    , { expr: "time( '4 Jul 22 19:20:00' )", expect: 1656976800000 }   /* extended date/time parsing */
+    , { expr: "time( '12:34' )", expect: new Date().setHours( 12, 34, 0, 0 ) }   /* extended date/time parsing */
+    , { expr: "time( '12:34:56' )", expect: new Date().setHours( 12, 34, 56, 0 ) }   /* extended date/time parsing */
+    , { expr: "time( '12:34:56.789' )" }   /* extended date/time parsing */
+    , { expr: "time( `a hollow voice says plugh` )", error: true }
     , { expr: "match( 'The rain in Spain stays mainly in the plain.', 'rain' )", expect: "rain" }
     , { expr: "match( 'The rain in Spain stays mainly in the plain.', 'Sp(ai)n', 1 )", expect: "ai" }
     , { expr: "match( 'The rain in Spain stays mainly in the plain.', 'RAIN', 0, 'i' )", expect: "rain" }
@@ -392,6 +393,8 @@ var test_expr = [
     , { expr: `typeof([])`, expect: "array" }
     , { expr: `typeof({})`, expect: "object" }
     , { expr: `typeof(entity.attributes)`, expect: "object" }
+
+    , { expr: `err( "stop here" )`, error: "stop here" }
 
     /* Conditional */
     , { expr: "if entity.attributes.power_switch.state then 1 else 0 endif", expect: 1 }
@@ -568,7 +571,16 @@ test_expr.forEach( function( e ) {
                 }
             }
         } catch ( err ) {
-            if ( true === e.error || ( e.error instanceof Error && err instanceof e.error.constructor ) ) {
+            if ( e.error ) {
+                if ( e.error instanceof Error && ! ( err instanceof e.error.constructor ) ) {
+                    console.error("**** Eval error (wrong error thrown): ", err );
+                    console.error("++++ Got", err.constructor.name, "expecting", e.error.constructor.name );
+                    ++num_errors;
+                } else if ( "string" === typeof e.error && err.message !== e.error ) {
+                    console.error("**** Eval error (wrong error thrown): ", err );
+                    console.error("++++ Expecting", e.error );
+                    ++num_errors;
+                }
                 /* Expecting error, got error. */
                 if ( chatty ) {
                     console.log( "     Result: (expected error) ", String( err ) );
