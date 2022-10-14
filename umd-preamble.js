@@ -18,7 +18,7 @@
  *  SOFTWARE.
  */
 
-const version = 22203;
+const version = 22287;
 
 const FEATURE_MONTH_BASE = 1;   /* 1 = months 1-12; set to 0 if you prefer JS semantics where 0=Jan,11=Dec */
 const MAX_RANGE = 1000;         /* Maximum number of elements in a result range op result array */
@@ -744,42 +744,149 @@ const MAX_RANGE = 1000;         /* Maximum number of elements in a result range 
         return result;
     };
 
+    function define_func_impl( ctx, name, impl ) {
+        let __global = ctx.__global || ctx;
+        __global._func = __global._func || {}
+        __global._func[ name ] = impl;
+    }
+
+    function define_var( ctx, name, val ) {
+        ctx.__lvar = ctx.__lvar || {};
+        ctx.__lvar[ name ] = N(val);
+        return ctx.__lvar[ name ];
+    }
+
+    function set_var( ctx, name, val ) {
+        let c = locate_context( name, ctx, '__lvar' );
+        if ( ! c ) {
+            return define_var( ctx, name, val );
+        }
+        c.__lvar[ name ] = val;
+    }
+
+    function get_var( ctx, name ) {
+        let c = locate_context( name, ctx, '__lvar' );
+        if ( c ) {
+            return c.__lvar[ name ];
+        }
+        return undefined;
+    }
+
+    class CompiledExpression {
+        constructor( expr, b ) {
+            this.expr = expr;
+            this.ce = b;
+        }
+
+        toString() {
+            return this.expr;
+        }
+    }
+
+    class ExpressionContext {
+        constructor() {
+            this.ctx = get_context();
+        }
+
+        defineFunction( name, impl ) {
+            return define_func_impl( this.ctx, name, impl );
+        }
+
+        defineVar( name, val ) {
+            return define_var( this.ctx, name, val );
+        }
+
+        setVar( name, val ) {
+            return set_var( this.ctx, name, val );
+        }
+
+        getVar( name ) {
+            return get_var( this.ctx, name );
+        }
+
+        push( tag ) {
+            return this.ctx = push_context( this.ctx, tag );
+        }
+
+        /** Pop contexts up to and including tag. If tag is not specified, pop one level. */
+        pop( tag ) {
+            while ( this.ctx.__tag !== "__global" ) {
+                if ( ! tag || this.ctx.__tag === tag ) {
+                    this.ctx = pop_context( this.ctx );
+                    return this.ctx;
+                }
+                this.ctx = pop_context( this.ctx );
+            }
+            return this.ctx;
+        }
+
+        getTag() {
+            return this.ctx.__tag;
+        }
+
+        find( tag ) {
+            return find_context_tag( this.ctx, tag );
+        }
+
+        getContext() {
+            return this.ctx;
+        }
+
+        toString() {
+            return `[object ExpressionContext#${this.ctx.__tag || ( '<' + this.ctx.__depth + '>' )}]`;
+        }
+    }
+
+    class LEXP {
+        constructor() {
+            throw new TypeError( "Do not construct an instance of LEXP; all methods are static" );
+        }
+
+        static compile( expr ) {
+            return new CompiledExpression( expr, parser.parse( expr ) );
+        }
+
+        static run( ce, ctx ) {
+            if ( ! ( ce instanceof CompiledExpression ) ) {
+                throw new TypeError( "Argument 1 must be a CompiledExpression" );
+            }
+            if ( ctx && ! ( ctx instanceof ExpressionContext ) ) {
+                throw new TypeError( "Argument 2 must be a ExpressionContext" );
+            }
+            return run( ce.ce, ctx?.ctx );
+        }
+
+        static evaluate( expr, ctx ) {
+            if ( ctx && ! ( ctx instanceof ExpressionContext ) ) {
+                throw new TypeError( "Argument 2 must be a ExpressionContext" );
+            }
+            return LEXP.run( LEXP.compile( expr ), ctx );
+        }
+
+        static toString() {
+            return '[class LEXP]';
+        }
+    }
+
     return {
         version: version,
         get_context: get_context,
-        define_func_impl: function( ctx, name, impl ) {
-            let __global = ctx.__global || ctx;
-            __global._func = __global._func || {}
-            __global._func[ name ] = impl;
-        },
-        define_var: function( ctx, name, val ) {
-            ctx.__lvar = ctx.__lvar || {};
-            ctx.__lvar[ name ] = N(val);
-            return ctx.__lvar[ name ];
-        },
-        set_var: function( ctx, name, val ) {
-            let c = locate_context( name, ctx, '__lvar' );
-            if ( ! c ) {
-                return define_var( ctx, name, val );
-            }
-            c.__lvar[ name ] = val;
-        },
-        get_var: function( ctx, name ) {
-            let c = locate_context( name, ctx, '__lvar' );
-            if ( c ) {
-                return c.__lvar[ name ];
-            }
-            return undefined;
-        },
+        define_func_impl: define_func_impl,
+        define_var: define_var,
+        set_var: set_var,
+        get_var: get_var,
         push_context: push_context,
         pop_context: pop_context,
         find_context_tag: find_context_tag,
-        evaluate: function( expr, context ) {
-            return run( parser.parse( expr ), context );
-        },
         compile: function( expr ) {
             return parser.parse( expr );
         },
-        run: run
+        run: run,
+        evaluate: function( expr, context ) {
+            return run( parser.parse( expr ), context );
+        },
+        CompiledExpression: CompiledExpression,
+        ExpressionContext: ExpressionContext,
+        LEXP: LEXP
     };
 }));
