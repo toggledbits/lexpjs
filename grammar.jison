@@ -17,10 +17,9 @@
  *  TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  *  SOFTWARE.
  *
- *  REQUIRED MODIFICATION TO JISON-LEX:
- *  This grammar uses Unicode property escapes because Unicode characters are allowed in lexpjs identifiers.
- *  See the lex pattern below (search for IDENTIFIER all caps) and make the change suggested there. If Unicode
- *  identifiers are not needed, you can comment out that lex pattern and use the more basic one above it.
+ *  NOTA BENE: REQUIRED MODIFICATION TO JISON-LEX FOR UNICODE IDENTIFIERS: See README-lexer.md.
+ *             If you don't need Unicode-friendly identifiers, use the non-Unicode lex pattern.
+ *             Search for "IDENTIFIER" (ALL CAPS) in this file to find the relevant lines.
  */
 
 /* Lexical analysis/rules. First come first served! */
@@ -91,21 +90,13 @@
 "and"                   { return 'LAND'; }
 "or"                    { return 'LOR'; }
 "not"                   { return 'LNOT'; }
+
+/* NOTE: Only ONE of the two patterns that follow should be uncommented. */
+/* Use this line if you don't want/need Unicode-friendly identifiers. */
 /* [A-Za-z_$][A-Za-z0-9_$]*\b  { return 'IDENTIFIER'; } */
-/* Nota Bene: To make Unicode-friendly identifiers work, jison-lex needs to be
- * modified (currently) as follows. Find the following line (around line 53 in
- * jison-lex version 0.3.4):
- *
- *     m = new RegExp("^(?:" + m + ")", caseless ? 'i':'');
- *
- * Modify it to read:
- *
- *     m = new RegExp("^(?:" + m + ")", caseless ? 'iu':'u');
- *
- * That's it. If you don't want Unicode-friendly identifiers, comment out or
- * remove the line below and uncomment the line above this comment block.
- */
+/* Use this line for Unicode-friendly identifiers. */
 [\p{Alphabetic}_$][\p{Alphabetic}0-9_$]*\b  { return 'IDENTIFIER'; }
+
 [0-9]+("."[0-9]+)?([eE][+-]?[0-9]+)?\b  { return 'NUMBER'; }
 0x[0-9A-Fa-f]+\b        { return 'HEXNUM'; }
 0o[0-7]+\b              { return 'OCTNUM'; }

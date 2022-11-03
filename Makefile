@@ -1,7 +1,7 @@
 #
 # Prerequisites to build:
 #     * Install dependencies: npm i --no-package-lock
-#     * Also modify jison-lex as suggested in the grammar.jison file header.
+#     * See README-lexer.md for changes needed to `jison-lex` package.
 
 all: test
 
