@@ -18,7 +18,7 @@
  *  SOFTWARE.
  */
 
-const version = require( './package.json' ).version;
+const version = 22307;
 
 const FEATURE_MONTH_BASE = 1;   /* 1 = months 1-12; set to 0 if you prefer JS semantics where 0=Jan,11=Dec */
 const MAX_RANGE = 1000;         /* Maximum number of elements in a result range op result array */
