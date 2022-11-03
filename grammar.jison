@@ -16,6 +16,11 @@
  *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
  *  TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  *  SOFTWARE.
+ *
+ *  REQUIRED MODIFICATION TO JISON-LEX:
+ *  This grammar uses Unicode property escapes because Unicode characters are allowed in lexpjs identifiers.
+ *  See the lex pattern below (search for IDENTIFIER all caps) and make the change suggested there. If Unicode
+ *  identifiers are not needed, you can comment out that lex pattern and use the more basic one above it.
  */
 
 /* Lexical analysis/rules. First come first served! */
@@ -72,6 +77,9 @@
 "Infinity"              { return 'INF'; }
 "if"                    { return 'IF'; }
 "then"                  { return 'THEN'; }
+"elif"                  { return 'ELIF'; }
+"elsif"                 { return 'ELIF'; }
+"elseif"                { return 'ELIF'; }
 "else"                  { return 'ELSE'; }
 "endif"                 { return 'ENDIF'; }
 "case"                  { return 'CASE'; }
@@ -84,6 +92,19 @@
 "or"                    { return 'LOR'; }
 "not"                   { return 'LNOT'; }
 /* [A-Za-z_$][A-Za-z0-9_$]*\b  { return 'IDENTIFIER'; } */
+/* Nota Bene: To make Unicode-friendly identifiers work, jison-lex needs to be
+ * modified (currently) as follows. Find the following line (around line 53 in
+ * jison-lex version 0.3.4):
+ *
+ *     m = new RegExp("^(?:" + m + ")", caseless ? 'i':'');
+ *
+ * Modify it to read:
+ *
+ *     m = new RegExp("^(?:" + m + ")", caseless ? 'iu':'u');
+ *
+ * That's it. If you don't want Unicode-friendly identifiers, comment out or
+ * remove the line below and uncomment the line above this comment block.
+ */
 [\p{Alphabetic}_$][\p{Alphabetic}0-9_$]*\b  { return 'IDENTIFIER'; }
 [0-9]+("."[0-9]+)?([eE][+-]?[0-9]+)?\b  { return 'NUMBER'; }
 0x[0-9A-Fa-f]+\b        { return 'HEXNUM'; }
@@ -162,7 +183,7 @@
 %start expressions
 
 %{
-    /* Grammar 22043 */
+    /* Grammar 22307 */
 
     var buffer = "", qsep = "";
 
@@ -192,6 +213,13 @@
 expressions
     : expr_list EOF
         { return $1; }
+    ;
+
+elif_list
+    : elif_list ELIF e THEN expr_list
+        { $1.push( { test: $3, tc: $5 } ); $$ = $1; }
+    | ELIF e THEN expr_list
+        { $$ = [ { test: $2, tc: $4 } ]; }
     ;
 
 expr_list
@@ -368,6 +396,10 @@ e
         { $$ = parseInt( yytext.substr( 2 ), 2 ); }
     | quoted_string
         { $$ = $1; }
+    | IF e THEN expr_list elif_list ELSE expr_list ENDIF
+        { $$ = atom( 'if', { test: $2, tc: $4, alts: $5, fc: $7, locs: [@2, @4, @5, @7] } ); }
+    | IF e THEN expr_list elif_list ENDIF
+        { $$ = atom( 'if', { test: $2, tc: $4, alts: $5, locs: [@2, @4, @5] } ); }
     | IF e THEN expr_list ELSE expr_list ENDIF
         { $$ = atom( 'if', { test: $2, tc: $4, fc: $6, locs: [@2, @4, @6] } ); }
     | IF e THEN expr_list ENDIF

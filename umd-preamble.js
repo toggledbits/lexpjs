@@ -18,7 +18,7 @@
  *  SOFTWARE.
  */
 
-const version = 22287;
+const version = require( './package.json' ).version;
 
 const FEATURE_MONTH_BASE = 1;   /* 1 = months 1-12; set to 0 if you prefer JS semantics where 0=Jan,11=Dec */
 const MAX_RANGE = 1000;         /* Maximum number of elements in a result range op result array */
@@ -537,16 +537,22 @@ const MAX_RANGE = 1000;         /* Maximum number of elements in a result range 
                     return N(res);
                 } else if ( is_atom( e, 'if' ) ) {
                     /* Special short-cut function */
-                    var cond = _run( e.test, ctx );
-                    var ifresult;
-                    if ( cond ) {
-                        ifresult = _run( e.tc, ctx );
-                    } else if ( "undefined" !== typeof e.fc ) {
-                        ifresult = _run( e.fc, ctx );
-                    } else {
-                        ifresult = null;
+                    if ( _run( e.test, ctx ) ) {
+                        return N(_run( e.tc, ctx ));  /* if -> true -> then */
                     }
-                    return N(ifresult);
+                    if ( e.alts ) {
+                        /* elifs */
+                        for ( alt of e.alts ) {
+                            if ( _run( alt.test, ctx ) ) {
+                                return N(_run( alt.tc, ctx ));
+                            }
+                        }
+                    }
+                    if ( "undefined" !== typeof e.fc ) {
+                        /* else */
+                        return N(_run( e.fc, ctx ));
+                    }
+                    return null; /* default if no else */
                 } else if ( is_atom( e, 'fref' ) ) {
                     // D('function ref ' + e.name + ' with ' + e.args.length + ' args');
                     var name = e.name;

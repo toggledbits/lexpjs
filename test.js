@@ -1,4 +1,4 @@
-const version = 22203;
+const version = 22307;
 
 const verbose = false;  // If true, all tests and results printed; otherwise just errors.
 
@@ -402,6 +402,9 @@ var test_expr = [
     , { expr: "if !entity.attributes.power_switch.state then 1 else 0 endif", expect: 0 }
     , { expr: "if entity.attributes.power_switch.state then 1 endif", expect: 1 }
     , { expr: "if !entity.attributes.power_switch.state then 1 endif", expect: null }
+    , { expr: "t=2, if t==0 then 0 elif t==1 then 'A' elif t==2 then 'B' else 'NOA' endif", expect: 'B' }
+    , { expr: "t=1, if t==0 then 0 elif t==1 then 'A' elif t==2 then 'B' else 'NOA' endif", expect: 'A' }
+    , { expr: "t=3, if t==0 then 0 elif t==1 then 'A' elif t==2 then 'B' else 'NOA' endif", expect: 'NOA' }
 
     /* Case statement */
     , { expr: 't=12, case when t==1: "one" when t==2: "two" when t==12: "twelve" end', expect: "twelve" }
@@ -532,12 +535,16 @@ console.log("lexpjs test script version",version,"testing lexpjs package version
 var num_errors = 0;
 test_expr.forEach( function( e ) {
     let chatty = "undefined" === typeof e.verbose ? verbose : e.verbose;
+    chatty = chatty || e.debug;
     if ( chatty ) {
         console.log("Test expression: ", e.expr);
     }
     var ce, res;
     try {
         ce = lexp.compile( e.expr );
+        if ( e.debug ) {
+            console.log( ce );
+        }
         try {
             res = lexp.run( ce, ctx );
             if ( "undefined" !== typeof e.expect ) {

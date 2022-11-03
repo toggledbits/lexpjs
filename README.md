@@ -221,27 +221,21 @@ The `first` statement will search through the elements of an array or object (to
 
 Since the limited syntax of `each`, `case`, etc. allow only a single statement to be executed, the `do...done` statement creates a statement block that appears to be a single statement, thus allowing multiple statements/expressions to be executed in that context. The standard multi-statement result rule applies: the result of the statement block is the result produced by the last expression in the block.
 
-### `if <conditional> then <true-expression> [ else <false-expression> ] endif`
+### `if <conditional> then <true-expression> [ elif <conditional> then <true-expression> ]* [ else <false-expression> ] endif`
 
-Introduced for users uncomfortable with the ternary operator (`?:`) syntax, this "traditional" *if...then* form was added. The true and false expressions may be any expression, including a `do...done` block enclosing multiple expressions. Note that when writing `else if` for multiple conditions, each `if` starts a new `if` block and must have a matching `endif`:
+The `true-` and `false-expressions` may be any expression, including a `do...done` block enclosing multiple expressions. To remove the ambiguity that can arise from using `else if` with a nested `if` block, any number of `elif` subconditions may be included. The optional `else` clause is a catch-all for no other conditions matching.
 
-    # The following is incorrect:
-    if a > 5
-      then "high range"
-      else if a > -5
-        then "nominal"
-      else "lo range"     <--- ambiguous else
+```
+    t = 2,
+    if t === 1 then 'A'
+    elif t === 2 then 'B'
+    elif t === 3 then 'C'
+    else null
     endif
+    # Result is "B"
+```
 
-    # Should be:
-    if a > 5
-      then "high range"
-      else
-        if a > -5
-          then "nominal"
-          else "lo range"
-        end if                  <-- for the inner if
-    end if                      <-- for the outer if
+The keywords `elsif` and `elseif` are synonyms for `elif` that you may use "if you're not into the whole brevity thing."
 
 ### `case when <conditional-expr-1>: <true-expression-1> [ when <conditional-expr-n>: <true-expression-n> ]* [ else <default-expression> ] end`
 
@@ -409,6 +403,6 @@ Important notes with respect to date handling (currently; this will evolve):
 
 ### Reserved Words
 
-As a result of the syntax, the following words are reserved and may not be used as identifiers or function names: `true, false, null, each, in, first, of, with, if, then, else, endif, case, when, do, done, define, and, or, not, NaN, Infinity`. Note that keywords and identifiers are case-sensitive, so while `each` is not an acceptable identifier, `Each` or `EACH` would be. The names of all defined functions are also reserved.
+As a result of the syntax, the following words are reserved and may not be used as identifiers or function names: `true, false, null, each, in, first, of, with, if, then, else, elif, elsif, elseif, endif, case, when, do, done, define, and, or, not, NaN, Infinity`. Note that keywords and identifiers are case-sensitive, so while `each` is not an acceptable identifier, `Each` or `EACH` would be. The names of all defined functions are also reserved.
 
-<small>Updated 2022-Jul-22 (22203)</small>
+<small>Updated 2022-Nov-03 (22307)</small>
