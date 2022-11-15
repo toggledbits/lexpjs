@@ -211,7 +211,7 @@ The expression language has a couple of "lightweight statements" that function a
 
 ### `each <element-identifier> [, <element-identifier> ] in <array-or-object-expression>: <body-expression>`
 
-The `each` statement will iterate over the given array or object (or expression resulting in an array or object), each time placing an array value or object element in the named variable (and the key or index in the second named variable, if given), and then execute the body expression. The body expression result, if non-`null`, is pushed to an array that forms the `each` expression result. For example, `each num of [ 4,7,33 ]: num * 2` will return an array `[ 8, 14, 66 ]`, while `each v,k in { "alpha": 1, "beta": 2 }: k` will return `["alpha", "beta"]`.
+The `each` statement will iterate over the given array or object (or expression resulting in an array or object), each time placing an array value or object element in the named variable (and the key or index in the second named variable, if given), and then execute the body expression. The body expression result, if non-`null`, is pushed to an array that forms the `each` expression result. For example, `each num in [ 4,7,33 ]: num * 2` will return an array `[ 8, 14, 66 ]`, while `each v,k in { "alpha": 1, "beta": 2 }: k` will return `["alpha", "beta"]`.
 
 ### `first <element-identifier> [, <element-identifier> ] in <array-or-object> with <test-expression> [ : <result-expression> ]`
 
@@ -405,4 +405,4 @@ Important notes with respect to date handling (currently; this will evolve):
 
 As a result of the syntax, the following words are reserved and may not be used as identifiers or function names: `true, false, null, each, in, first, of, with, if, then, else, elif, elsif, elseif, endif, case, when, do, done, define, and, or, not, NaN, Infinity`. Note that keywords and identifiers are case-sensitive, so while `each` is not an acceptable identifier, `Each` or `EACH` would be. The names of all defined functions are also reserved.
 
-<small>Updated 2022-Nov-03 (22307)</small>
+<small>Updated 2022-Nov-06 (for version 22307)</small>
