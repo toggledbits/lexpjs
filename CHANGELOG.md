@@ -2,6 +2,10 @@
 
 **NOTE:** In order to *build* lexpjs with Unicode-friendly identifiers enabled (if, for some reason, the included pre-built `lexp.js` file doesn't suit your needs), you first need to modify *jison-lex* to allow Unicode property escapes in its *RegExp*s. See `README-lexer.md` for details.
 
+## 1.0.22347
+
+* Resolve what I feel to be an inconsistency in JavaScript's implementation of `isNaN()`. In JS, if you pass `null`, the result is *false*, but passing `null` to `parseInt()` or `parseFloat()` will return `NaN`. I think these should behave consistently, so I've modified *lexpjs*' `isNaN()` to return *true* when its argument is `null` (i.e. `null` is not a number). The JS behavior was discovered/verified in *nodejs* 16.13.1 and Chrome browser 108.0.5359.98.
+
 ## 1.0.22307
 
 * Improve `if...then...else...endif` with addition of `elif <cond> then <expr-list>` alternates.

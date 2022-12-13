@@ -1,4 +1,4 @@
-const version = 22307;
+const version = 22347;
 
 const verbose = false;  // If true, all tests and results printed; otherwise just errors.
 
@@ -261,6 +261,7 @@ var test_expr = [
     , { expr: "isNaN('123')", expect: false }
     , { expr: "isNaN('abc')", expect: true }
     , { expr: "isNaN(NaN)", expect: true }
+    , { expr: "isNaN(null)", expect: true }         /* JS isNaN(null) is false, but parseFloat(null) is NaN; we don't do that. */
     , { expr: "isInfinity(123)", expect: false }
     , { expr: "isInfinity(1/0)", expect: true }
     , { expr: "isInfinity(null)", expect: false }

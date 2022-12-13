@@ -18,7 +18,7 @@
  *  SOFTWARE.
  */
 
-const version = 22307;
+const version = 22347;
 
 const FEATURE_MONTH_BASE = 1;   /* 1 = months 1-12; set to 0 if you prefer JS semantics where 0=Jan,11=Dec */
 const MAX_RANGE = 1000;         /* Maximum number of elements in a result range op result array */
@@ -197,7 +197,7 @@ const MAX_RANGE = 1000;         /* Maximum number of elements in a result range 
                 return ret;
             }
         }
-        , "isNaN"   : { nargs: 1, impl: (n) => Number.isNaN(n) || isNaN(n) }
+        , "isNaN"   : { nargs: 1, impl: (n) => null === n || "undefined" === typeof n || Number.isNaN(n) || isNaN(n) }  /* See README */
         , isnull    : { nargs: 1, impl: (s) => "undefined" === typeof s || null === s }
         , isInfinity: { nargs: 1, impl: (s) => ! isFinite(s) }
         , keys      : { nargs: 1, impl: Object.keys }

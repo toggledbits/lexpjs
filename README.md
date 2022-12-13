@@ -319,7 +319,7 @@ The syntax guides shown below (which are based on a well-known [BNF](https://en.
 * `sqrt( number )` &mdash; square root (of `number` > 0);
 * `random()` &mdash; returns a random number greater than or equal to 0 and less than 1;
 * `min/max( ... )` &mdash; returns the smallest/largest value of its arguments; if an argument is an array, the array is scanned; non-numeric values are ignored, so these functions return *null* unless at least one number (type) value is found;
-* `isNaN( various )` &mdash; returns true if the argument is `NaN`, or if it would be if conversion was attempted (e.g. `isNaN( 'not a number' )` is *true*, but `isNaN( '123' )` is *false*).
+* `isNaN( various )` &mdash; returns *true* if the argument is `NaN`, `null`, or if an attempted conversion with `parseInt()/parseFloat()` would result in `NaN` (e.g. `isNaN( 'this is not a number' )` returns *true*, but `isNaN( '123' )` returns *false*). Note that this is a little different from JavaScript's `isNaN()`: under JS (as tested in *nodejs* 16.13.1 and *Chrome* browser 108.0.5359.98) `isNaN(null)` returns *false* while `parseInt(null)` and `parseFloat(null)` both return `NaN`. I think this is a vexing inconsistency, so *lexpjs* will return *true* for `isNaN(null)` to agree with `parseInt()/parseFloat()`.
 * `isInfinity( value )` &mash; returns true if the argument is `Infinity`, as would result in, for example, division by zero.
 
 ### String Handling Functions
@@ -405,4 +405,4 @@ Important notes with respect to date handling (currently; this will evolve):
 
 As a result of the syntax, the following words are reserved and may not be used as identifiers or function names: `true, false, null, each, in, first, of, with, if, then, else, elif, elsif, elseif, endif, case, when, do, done, define, and, or, not, NaN, Infinity`. Note that keywords and identifiers are case-sensitive, so while `each` is not an acceptable identifier, `Each` or `EACH` would be. The names of all defined functions are also reserved.
 
-<small>Updated 2022-Nov-06 (for version 22307)</small>
+<small>Updated 2022-Dec-13 (for version 22347)</small>
