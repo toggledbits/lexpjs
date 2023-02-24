@@ -18,10 +18,21 @@
  *  SOFTWARE.
  */
 
-const version = 22347;
+const version = 23055;
 
 const FEATURE_MONTH_BASE = 1;   /* 1 = months 1-12; set to 0 if you prefer JS semantics where 0=Jan,11=Dec */
 const MAX_RANGE = 1000;         /* Maximum number of elements in a result range op result array */
+
+const c_quot = {                /* Default quoting */
+    "\"": "\\\"",
+    "\\": "\\\\",
+    "\t": "\\t",
+    "\n": "\\n",
+    "\r": "\\r",
+    "\b": "\\b",
+    "\f": "\\f",
+    "\v": "\\v"
+};
 
 (function (root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -151,6 +162,7 @@ const MAX_RANGE = 1000;         /* Maximum number of elements in a result range 
         , "bool"    : { nargs: 1, impl: function( s ) { return !!s && null === String(s).match( /^\s*(0|no|off|false)\s*$/i ); } }
         , str       : { nargs: 1, impl: (s) => String(s) }
         , pad       : { nargs: 2, impl: (s,l,p) => l > 0 ? String(s)+(p||' ').repeat(Math.max(0,l-s.length)) : (p||' ').repeat(Math.max(0,-s.length-l))+String(s) }
+        , quote     : { nargs: 1, impl: (s) => String(s).replace( /[\\"\b\f\n\r\t\v]/g, (t) => c_quot[t] || t ) }
         , hex       : { nargs: 1, impl: (n) => Number( n ).toString( 16 ) }
         , time      : { nargs: 0, impl: function( ...args ) {
                 if ( 1 === args.length && "object" === typeof ( args[0] ) ) {

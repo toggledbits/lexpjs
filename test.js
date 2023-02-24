@@ -1,4 +1,4 @@
-const version = 22347;
+const version = 23055;
 
 const verbose = false;  // If true, all tests and results printed; otherwise just errors.
 
@@ -230,6 +230,8 @@ var test_expr = [
     , { expr: "rtrim('   work     ')", expect: "   work" }
     , { expr: "trim('       tight   ')", expect: "tight" }
     , { expr: "t='attributes',str(entity[t]['power_switch']['state'])", expect: "true" }
+    , { expr: `quote('The "rain" in "Spain" is \\\\rad\\\\')`, expect: "The \\\"rain\\\" in \\\"Spain\\\" is \\\\rad\\\\" }
+    , { expr: `quote("\b\f\n\r\t\v")`, expect: "\\b\\f\\n\\r\\t\\v" }
     , { expr: "floor(3.8)", expect: 3 }
     , { expr: "floor(-3.8)", expect: -4 }
     , { expr: "ceil(3.8)", expect: 4 }

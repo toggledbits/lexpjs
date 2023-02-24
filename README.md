@@ -339,6 +339,8 @@ The syntax guides shown below (which are based on a well-known [BNF](https://en.
         pad("5", -4, "0")           "0005"
         pad("toolong", -4)          "toolong"
 
+* `quote( string )` &mdash; escape any interior characters of the string argument so that the result can be embedded in double-quotes safely (i.e. for a lexpjs/JavaScript/JSON-compatible result). For example, the string `hello "there"` would be returned as `hello \\"there\\"`; and the string `abc<newline>def` (where `<newline>` represents an embedded newline ASCII 10 character) would be `abc\\ndef`.
+
 ### Type Handling Functions
 
 * `int( various )` &mdash; attempts conversion of its argument to an integer; returns `NaN` if the argument cannot be converted, otherwise, it returns the integer;
