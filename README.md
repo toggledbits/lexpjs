@@ -313,7 +313,7 @@ The syntax guides shown below (which are based on a well-known [BNF](https://en.
 * `ceil( number )` &mdash; returns the next integer greater than or equal to its argument;
 * `round( number, precision )` &mdash; rounds `number` to `precision` decimal digits;
 * `trunc( number )` &mdash; returns the integer portion of its argument (e.g. trunc(-3.4) is -3, where floor(-3.4) is 4);
-* `cos/sin/tan/acos/asin/atan/atan2( radians )` &mdash; trig operations (same as JavaScript functions of same name);
+* `cos/sin/tan/acos/asin/atan/atan2( number )` &mdash; trig operations (same as JavaScript functions of same name);
 * `log/exp( number )` &mdash; natural logarithm and exponential;
 * `pow( base, power )` &mdash; raises `base` to the `power`th power (e.g. `pow(10,3)` is 1000);
 * `sqrt( number )` &mdash; square root (of `number` > 0);
