@@ -5,6 +5,8 @@
 ## 1.0.23296
 
 * Add `asin()`, `acos()`, `atan()` and `atan2()`, which function identically to their JavaScript `Math` library counterparts.
+* Add `pi` (lowercase) as reserved word; gives the value of `Math.PI`.
+* Test function extended to allow function for expected result (i.e. function returns boolean `true` for valid expression result, `false` otherwise).
 
 ## 1.0.23055
 

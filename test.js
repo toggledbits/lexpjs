@@ -1,4 +1,4 @@
-const version = 23055;
+const version = 23296;
 
 const verbose = false;  // If true, all tests and results printed; otherwise just errors.
 
@@ -28,7 +28,7 @@ var ctx = lexp.get_context( {
         { name: "Spot", type: "beagle" },
         { name: "Lucy", type: "shepherd" }
     ],
-    pi: 3.14159265
+    tau: 6.28318
 });
 
 var test_expr = [
@@ -62,7 +62,8 @@ var test_expr = [
     , { expr: "true", expect: true }
     , { expr: "false", expect: false }
     , { expr: "null", expect: null }
-    , { expr: "pi", expect: ctx.pi }
+    , { expr: "tau", expect: ctx.tai }  // constant in context defined above
+    , { expr: "pi", expect: (r) => Math.floor(r*100000000) === Math.floor(Math.PI*100000000) }
     , { expr: "2**16", expect: 65536 }
     , { expr: "4*7", expect: 28 }
     , { expr: "5*0", expect: 0 }
@@ -558,6 +559,9 @@ test_expr.forEach( function( e ) {
                     }
                 } else if ( null === e.expect ) {
                     failed = null !== res;
+                } else if ( "function" === typeof e.expect ) {
+                    // expect can be a function that returns true for valid result
+                    failed = !e.expect( res );
                 } else if ( "object" === typeof e.expect ) {
                     if ( "object" === typeof res ) {
                         failed = !compareObjects( e.expect, res );

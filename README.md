@@ -139,7 +139,7 @@ Strings are represented as characters surrounded by matching double-quotes ("), 
 
 Boolean values *true* and *false* are represented by the reserved words `true` and `false`, respectively.
 
-The reserved word `null` evaluates to the *null* value (basically means "no value").
+The reserved word `null` evaluates to the *null* value (basically means "no value"). The reserved word `pi` evaluates to the JavaScript `Math.PI`, approximately 3.14159265.
 
 *Identifiers* are names that represent values. An identifier must begin with an upper- or lowercase alphabetic character, and may follow with any combination of alphanumeric characters and underscore. Thus `myLastSignal` is a valid identifier, but `023lastSignal` is not, and nor is `just another name!`.
 
@@ -313,7 +313,7 @@ The syntax guides shown below (which are based on a well-known [BNF](https://en.
 * `ceil( number )` &mdash; returns the next integer greater than or equal to its argument;
 * `round( number, precision )` &mdash; rounds `number` to `precision` decimal digits;
 * `trunc( number )` &mdash; returns the integer portion of its argument (e.g. trunc(-3.4) is -3, where floor(-3.4) is 4);
-* `cos/sin/tan( radians )` &mdash; trig operations;
+* `cos/sin/tan/acos/asin/atan/atan2( radians )` &mdash; trig operations (same as JavaScript functions of same name);
 * `log/exp( number )` &mdash; natural logarithm and exponential;
 * `pow( base, power )` &mdash; raises `base` to the `power`th power (e.g. `pow(10,3)` is 1000);
 * `sqrt( number )` &mdash; square root (of `number` > 0);
@@ -405,6 +405,6 @@ Important notes with respect to date handling (currently; this will evolve):
 
 ### Reserved Words
 
-As a result of the syntax, the following words are reserved and may not be used as identifiers or function names: `true, false, null, each, in, first, of, with, if, then, else, elif, elsif, elseif, endif, case, when, do, done, define, and, or, not, NaN, Infinity`. Note that keywords and identifiers are case-sensitive, so while `each` is not an acceptable identifier, `Each` or `EACH` would be. The names of all defined functions are also reserved.
+As a result of the syntax, the following words are reserved and may not be used as identifiers or function names: `true, false, null, each, in, first, of, with, if, then, else, elif, elsif, elseif, endif, case, when, do, done, define, and, or, not, NaN, Infinity, pi`. Note that keywords and identifiers are case-sensitive, so while `each` is not an acceptable identifier, `Each` or `EACH` would be. The names of all defined functions are also reserved.
 
-<small>Updated 2023-Feb-24 (for version 23055)</small>
+<small>Updated 2023-Oct-23 (for version 23296)</small>

@@ -74,6 +74,7 @@
 "each"                  { return 'EACH'; }
 "NaN"                   { return 'NAN'; }
 "Infinity"              { return 'INF'; }
+"pi"\b                  { return 'PI'; }
 "if"                    { return 'IF'; }
 "then"                  { return 'THEN'; }
 "elif"                  { return 'ELIF'; }
@@ -405,6 +406,8 @@ e
         { $$ = NaN; }
     | INF
         { $$ = Infinity; }
+    | PI
+        { $$ = Math.PI; }
     | ref_expr
         { $$ = $1; }
     | assignment
