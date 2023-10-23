@@ -18,7 +18,7 @@
  *  SOFTWARE.
  */
 
-const version = 23055;
+const version = 23296;
 
 const FEATURE_MONTH_BASE = 1;   /* 1 = months 1-12; set to 0 if you prefer JS semantics where 0=Jan,11=Dec */
 const MAX_RANGE = 1000;         /* Maximum number of elements in a result range op result array */
@@ -139,6 +139,10 @@ const c_quot = {                /* Default quoting */
         , cos       : { nargs: 1, impl: Math.cos }
         , sin       : { nargs: 1, impl: Math.sin }
         , tan       : { nargs: 1, impl: Math.tan }
+        , acos      : { nargs: 1, impl: Math.acos }
+        , asin      : { nargs: 1, impl: Math.asin }
+        , atan      : { nargs: 1, impl: Math.atan }
+        , atan2     : { nargs: 2, impl: Math.atan2 }
         , log       : { nargs: 1, impl: Math.log }
         , exp       : { nargs: 1, impl: Math.exp }
         , pow       : { nargs: 2, impl: Math.pow }
