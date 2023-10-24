@@ -1,4 +1,4 @@
-/* Version 23296.0858 */
+/* Version 23297.0853 */
 /** lexpjs - Copyright (C) 2018,2021 Patrick H. Rigney, All Rights Reserved
  *  See https://github.com/toggledbits/lexpjs
  *
@@ -19,7 +19,7 @@
  *  SOFTWARE.
  */
 
-const version = 23296;
+const version = 23297;
 
 const FEATURE_MONTH_BASE = 1;   /* 1 = months 1-12; set to 0 if you prefer JS semantics where 0=Jan,11=Dec */
 const MAX_RANGE = 1000;         /* Maximum number of elements in a result range op result array */
@@ -465,7 +465,7 @@ parse: function parse(input) {
     return true;
 }};
 
-    /* Grammar 22307 */
+    /* Grammar 23296 */
 
     var buffer = "", qsep = "";
 
@@ -1224,6 +1224,16 @@ return new Parser;
                     return ( 0 === ( t.length & 1 ) ) ? ( ( t[t.length/2-1] + t[t.length/2] ) / 2 ) : t[Math.floor( t.length / 2 )];
                 }
                 return null;
+            }
+        }
+        , range     : { nargs: 3, impl: (s,e,i) => {
+                let a = []; s = parseInt(s); e = parseInt(e); e = isNaN(e) ? s : e;
+                if ( "number" === typeof s && "number" === typeof e ) {
+                    i = parseInt(i);
+                    if ( isNaN(i) ) i = Math.sign(e-s) || 1;
+                    for (let k=s; a.length < MAX_RANGE && (i>0&&k<=e || i<0&&k>=e); k+=i) a.push(k); 
+                }
+                return a;
             }
         }
         , concat    : { nargs: 2, impl: (a,b) => (a||[]).concat(b||[]) }

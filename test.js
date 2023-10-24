@@ -1,4 +1,4 @@
-const version = 23296;
+const version = 23297;
 
 const verbose = false;  // If true, all tests and results printed; otherwise just errors.
 
@@ -347,6 +347,12 @@ var test_expr = [
     , { expr: "t=[9,7,5],s=t,push(s, 3),t", expect: [9,7,5,3] }
     , { expr: "t=[9,7,5],s=clone(t),push(s, 3),t", expect: [9,7,5] }
     , { expr: "s", expect: [9,7,5,3] }
+
+    , { expr: "range(0,5)", expect: [0,1,2,3,4,5] }
+    , { expr: "range(5,0)", expect: [5,4,3,2,1,0] }
+    , { expr: "range(0,5,2)", expect: [0,2,4] }
+    , { expr: "range(5,0,2)", expect: [] }
+    , { expr: "range(5,0,-2)", expect: [5,3,1] }
 
     , { expr: "t=['dog','cat','rat'],u=['whale','shark','rat'],arrayConcat( t, u )", expect: [ 'dog','cat','rat','whale','shark','rat' ] }
 

@@ -167,7 +167,7 @@ The *coalesce operators*, borrowed from C#, are `??`, `?#`, `?.` and `?[`. Coale
 
 The `in` operator is used to establish if an object contains a specified key (e.g. `key in obj`) or an array contains an element at the given index (e.g. `15 in arr`). It is important to note that this operator works on *keys* only, not values, and in particular, cannot be used to search an array for a value (i.e. `4 in [ 4, 5, 6 ]` is *false*). To find an array element, use the `indexOf()` function. The `first` statement can be used to find a value in an object.
 
-The `..` range operator produces an array containing all integers from the left operand to the right, so `3..6` results in `[3,4,5,6]`. A `for`-style counting loop can be implemented using `each` with the range operator as its operand: `each i in 0..9: <statement>` would execute `<statement>` 10 times.
+The `..` range operator produces an array containing all integers from the left operand to the right, so `3..6` results in `[3,4,5,6]`. A `for`-style counting loop can be implemented using `each` with the range operator as its operand: `each i in 0..9: <statement>` would execute `<statement>` 10 times. The increment for the range operator is always 1 (or -1 if the ending value is less than the starting value); if you need a different increment, use the `range()` function.
 
 Multiple expressions can be chained together by separating them with a comma. The result of a chained expression is the last expression evaluated.
 
@@ -363,7 +363,7 @@ Important notes with respect to date handling (currently; this will evolve):
 
 ### Array/Object Handling Functions
 
-* `len( array )` &mdash; returns the number of elements in the array;
+* `len( array )` &mdash; returns the number of elements in the array (including any `null` elements; also see `count()`);
 * `keys( object )` &mdash; returns, as an array, the keys in the given object;
 * `values( object )` &mdash; returns, as an array, the values in the given object;
 * `clone( various )` &mdash; returns a (deep) copy of its argument; this is particularly useful for arrays and objects;
@@ -386,6 +386,7 @@ Important notes with respect to date handling (currently; this will evolve):
 * `arrayExclusive( a, b )` &mdash; returns a new array containing all values of the arrays *a* and *b* that appear only in either, but not both (this is often referred to as the *symmetric difference*); for example, `arrayExclusive( [1,2,3], [1,3,5] )` returns `[2,5]`;
 * `arrayUnion( a, b )` &mdash; returns a new array containing all values of the arrays *a* and *b*; for example, `arrayUnion( [1,2,3], [1,3,5] )` returns `[1,2,3,5]`;
 * `sort( array [, comparison] )` &mdash; sort the given array, returning a new array (the given array is not modified). The array to be sorted may contain data of any type. The default sort is a case-sensitive ascending string sort (so the array is assumed to contain strings, and if it contains any other type the values are coerced to strings prior to comparison). To sort differently (e.g. descending, numeric, etc.), `comparison` can be given as the either the name of a defined function taking two arguments as the values to be compared, or an expression that compares the local variables `$1` and `$2` (defined by the `sort()` function as it runs). In either case, the result *must* be an integer: 0 if the two values are equal; less than 0 (e.g. -1) if the first value sorts before the second; or greater than zero (e.g. 1) if the first value sorts after the second. The comparison must be stable: given two values, it must return the same result every time it runs. Do not apply randomness or other heuristics to the comparison, as this can lead to long runtimes or even infinite loops in the attempt to sort.
+* `range( start, end [, increment] )` &mdash; returns an array of integers counting up from `start` to `end` inclusive. If `end` < `start`, the array elements will count down. If `increment` is not specified, it assumed to be 1 (or -1 if `end` < `start`). Examples: `range(0,5)` returns `[0,1,2,3,4,5]`; `range(5,0)` returns `[5,4,3,2,1,0]`; `range(0,5,2)` returns `[0,2,4]`; `range(5,0,-2)` returns `[5,3,1]`; `range(5,0,2)` returns `[]`, an empty array, because a positive increment on a descending range (`end` < `start`) is impossible. A common use of this function is to iterate over the even-numbered items of some other array: `sum=0, each k in range(0,len(otherArray),2): sum = sum + otherArray[k]`.
 * `isArray( various )` &mdash; returns *true* if the argument is an array (of any length);
 * `isObject( various )` &mdash; returns *true* if the argument is an object;
 
@@ -407,4 +408,4 @@ Important notes with respect to date handling (currently; this will evolve):
 
 As a result of the syntax, the following words are reserved and may not be used as identifiers or function names: `true, false, null, each, in, first, of, with, if, then, else, elif, elsif, elseif, endif, case, when, do, done, define, and, or, not, NaN, Infinity, pi`. Note that keywords and identifiers are case-sensitive, so while `each` is not an acceptable identifier, `Each` or `EACH` would be. The names of all defined functions are also reserved.
 
-<small>Updated 2023-Oct-23 (for version 23296)</small>
+<small>Updated 2023-Oct-24 (for version 23297)</small>
