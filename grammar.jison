@@ -175,7 +175,7 @@
 %start expressions
 
 %{
-    /* Grammar 23296 */
+    /* Grammar 23321 */
 
     var buffer = "", qsep = "";
 
@@ -309,6 +309,8 @@ when_list
         { $1.expr.push( atom( 'if', { test: $3, tc: $5, fc: $7, locs: [@3, @5, @7] } ) ); $$ = $1; }
     | when_list WHEN e COLON e
         { $1.expr.push( atom( 'if', { test: $3, tc: $5, locs: [@3, @5] } ) ); $$ = $1; }
+    | WHEN e COLON e ELSE e
+        { $$ = atom( 'list', { expr: [ atom( 'if', { test: $2, tc: $4, fc: $6, locs: [@2, @4, @5] } ) ] } ); }
     | WHEN e COLON e
         { $$ = atom( 'list', { expr: [ atom( 'if', { test: $2, tc: $4, locs: [@2, @4] } ) ] } ); }
     ;

@@ -2,6 +2,10 @@
 
 **NOTE:** In order to *build* lexpjs with Unicode-friendly identifiers enabled (if, for some reason, the included pre-built `lexp.js` file doesn't suit your needs), you first need to modify *jison-lex* to allow Unicode property escapes in its *RegExp*s. See `README-lexer.md` for details.
 
+## 1.0.23321
+
+* Fix degenerate case of `case` statement with a single `when` and an `else` (which is really an `if` made complex).
+
 ## 1.0.23297
 
 * Add `range()` function with more flexibility than short-cut range operator (`..`).

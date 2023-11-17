@@ -1,4 +1,4 @@
-const version = 23297;
+const version = 23321;
 
 const verbose = false;  // If true, all tests and results printed; otherwise just errors.
 
@@ -420,7 +420,8 @@ var test_expr = [
     , { expr: 't=12, case when t==1: "one" when t==2: "two" when t==12: "twelve" end', expect: "twelve" }
     , { expr: 't=9, case when t==1: "one" when t==2: "two" when t==12: "twelve" end', expect: null }
     , { expr: 't=11, case when t==1: "one" when t==2: "two" when t==12: "twelve" else "unknown" end', expect: "unknown" }
-
+    , { expr: 'case when t==1: "one" end', expect: null }  // abbreviated syntax (nonsense, use 'if', but supported)
+    , { expr: 'case when t==1: "one" else "two" end', expect: "two" }  // abbreviated syntax (nonsense, use 'if', but supported)
 
     /* Iteration */
     , { expr: "each item in [1,2,3,4,5]: 2*item", expect: [ 2,4,6,8,10 ] }
