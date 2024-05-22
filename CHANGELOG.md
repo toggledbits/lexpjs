@@ -2,6 +2,10 @@
 
 **NOTE:** In order to *build* lexpjs with Unicode-friendly identifiers enabled (if, for some reason, the included pre-built `lexp.js` file doesn't suit your needs), you first need to modify *jison-lex* to allow Unicode property escapes in its *RegExp*s. See `README-lexer.md` for details.
 
+## 1.0.24143
+
+* Unparseable time string given to `time()` now returns `NaN` rather than throwing exception (i.e. behave like *JavaScript*).
+
 ## 1.0.23321
 
 * Fix degenerate case of `case` statement with a single `when` and an `else` (which is really an `if` made complex).

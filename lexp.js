@@ -1,5 +1,5 @@
-/* Version 23321.0908 */
-/** lexpjs - Copyright (C) 2018,2021 Patrick H. Rigney, All Rights Reserved
+/* Version 24143.1447 */
+/** lexpjs - Copyright (C) 2018,2021,2024 Patrick H. Rigney, All Rights Reserved
  *  See https://github.com/toggledbits/lexpjs
  *
  *  This Software is open source offered under the MIT LICENSE. See https://opensource.org/licenses/MIT
@@ -19,7 +19,7 @@
  *  SOFTWARE.
  */
 
-const version = 23321;
+const version = 24143;
 
 const FEATURE_MONTH_BASE = 1;   /* 1 = months 1-12; set to 0 if you prefer JS semantics where 0=Jan,11=Dec */
 const MAX_RANGE = 1000;         /* Maximum number of elements in a result range op result array */
@@ -1089,6 +1089,9 @@ return new Parser;
      */
     const f_dtconv = function( s ) {
         s = String( s ); // insurance
+        if ( "now" === s.toLowerCase() ) {
+            return Date.now();
+        }
         let r = s.match( /^\s*(\d+):(\d+)(:(\d+))?(\.(\d+))?/ ); // ??? last element could be tighter
         if ( r ) {
             /* Simple time format HH:MM[.SS[.uuu]] */
@@ -1110,11 +1113,7 @@ return new Parser;
             /* No time found, so add it. */
             s += ' 00:00:00.000';
         }
-        let d = new Date( s ).getTime();
-        if ( isNaN( d ) ) {
-            throw new Error( `time() received unparseable date/time string: ${s}` );
-        }
-        return d;
+        return new Date( s ).getTime();
     }
 
     const nativeFuncs = {
@@ -1168,6 +1167,8 @@ return new Parser;
                         d( obj.second, 0 ), d( obj.millis, 0 ) ).getTime();
                 } else if ( args.length === 1 && "string" === typeof( args[ 0 ] ) ) {
                     return f_dtconv( args[ 0 ] );
+                } else if ( args.length === 1 && "number" === typeof( args[ 0 ] ) ) {
+                    return new Date( args[0] ).getTime();
                 } else if ( args.length >= 1 && "number" === typeof( args[0] ) ) {
                     args[1] -= FEATURE_MONTH_BASE;
                 } else if ( 0 !== args.length ) {
