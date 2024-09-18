@@ -2,6 +2,12 @@
 
 **NOTE:** In order to *build* lexpjs with Unicode-friendly identifiers enabled (if, for some reason, the included pre-built `lexp.js` file doesn't suit your needs), you first need to modify *jison-lex* to allow Unicode property escapes in its *RegExp*s. See `README-lexer.md` for details.
 
+## 1.0.24262
+
+* Add `isvalue()` function, returns *false* for `null` and `NaN`, *true* for everything else.
+* Add `define_vars( ctx, vars )` function to create local variables on given context from key/value pairs of an *Object*.
+* Add optional `vars` third argument to `push_context()` to create local vars at time subcontext is created.
+
 ## 1.0.24143
 
 * Unparseable time string given to `time()` now returns `NaN` rather than throwing exception (i.e. behave like *JavaScript*).

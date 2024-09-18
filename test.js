@@ -1,4 +1,4 @@
-const version = 23321;
+const version = 24262;
 
 const verbose = false;  // If true, all tests and results printed; otherwise just errors.
 
@@ -219,6 +219,19 @@ var test_expr = [
     , { expr: "(1 ?? 0) & 4" }
 
     /* Function tests */
+    , { expr: "isnull('abc')", expect: false }
+    , { expr: "isnull(0)", expect: false }
+    , { expr: "isnull(123)", expect: false }
+    , { expr: "isnull(NaN)", expect: false }
+    , { expr: "isnull(null)", expect: true }
+    , { expr: "isvalue(123)", expect: true }
+    , { expr: "isvalue('abc')", expect: true }
+    , { expr: "isvalue(0)", expect: true }
+    , { expr: "isvalue('')", expect: true }
+    , { expr: "isvalue([])", expect: true }
+    , { expr: "isvalue({})", expect: true }
+    , { expr: "isvalue(null)", expect: false }
+    , { expr: "isvalue(NaN)", expect: false }
     , { expr: "min(5,4,6*9)", expect: 4 }
     , { expr: "max(5,4,6*9)", expect: 54 }
     , { expr: "min( 7..-33 )", expect: -33 }

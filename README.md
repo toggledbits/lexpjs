@@ -319,7 +319,7 @@ The syntax guides shown below (which are based on a well-known [BNF](https://en.
 * `sqrt( number )` &mdash; square root (of `number` > 0);
 * `random()` &mdash; returns a random number greater than or equal to 0 and less than 1;
 * `min/max( ... )` &mdash; returns the smallest/largest value of its arguments; if an argument is an array, the array is scanned; non-numeric values are ignored, so these functions return *null* unless at least one number (type) value is found;
-* `isNaN( various )` &mdash; returns *true* if the argument is `NaN`, `null`, or if an attempted conversion with `parseInt()/parseFloat()` would result in `NaN` (e.g. `isNaN( 'this is not a number' )` returns *true*, but `isNaN( '123' )` returns *false*). Note that this is a little different from JavaScript's `isNaN()`: under JS (as tested in *nodejs* 16.13.1 and *Chrome* browser 108.0.5359.98) `isNaN(null)` returns *false* while `parseInt(null)` and `parseFloat(null)` both return `NaN`. I think this is a vexing inconsistency, so *lexpjs* will return *true* for `isNaN(null)` to agree with `parseInt()/parseFloat()`.
+* `isNaN( various )` &mdash; returns *true* if the argument is `NaN`, `null`, or if an attempted conversion with `parseInt()/parseFloat()` would result in `NaN` (e.g. `isNaN( 'this is not a number' )` returns *true*, but `isNaN( '123' )` returns *false*). Note that this is a little different from JavaScript's `isNaN()`: under JS (as tested in *nodejs* 16.13.1 and *Chrome* browser 108.0.5359.98) `isNaN(null)` returns *false* while `parseInt(null)` and `parseFloat(null)` both return `NaN`. I think this is a vexing inconsistency, so *lexpjs* will return *true* for `isNaN(null)` to agree with `parseInt()/parseFloat()`. See also `isvalue()`.
 * `isInfinity( value )` &mash; returns true if the argument is `Infinity`, as would result in, for example, division by zero.
 
 ### String Handling Functions
@@ -348,6 +348,7 @@ The syntax guides shown below (which are based on a well-known [BNF](https://en.
 * `bool( various )` &mdash; attempts conversion to `boolean`; in this expression language, the strings "0", "no", "off" and "false", the empty string, the number 0, and boolean *false* all result in *false*; otherwise, the result is *true*;
 * `str( various )` &mdash; converts the argument to a string;
 * `isnull( various )` &mdash; more a test than a conversion, returns *true* if the argument is `null`.
+* `isvalue( various }` &mdash; returns *true* if the argument is not `null` or `NaN`.
 * `typeof( various )` &mdash; returns the data type of the argument. While JavaScript reports arrays and `null` as *object*s, *lexpjs* reports them more specifically as *array* and *null* respectively.
 
 ### Date/Time Handling Functions
@@ -408,4 +409,4 @@ Important notes with respect to date handling (currently; this will evolve):
 
 As a result of the syntax, the following words are reserved and may not be used as identifiers or function names: `true, false, null, each, in, first, of, with, if, then, else, elif, elsif, elseif, endif, case, when, do, done, define, and, or, not, NaN, Infinity, pi`. Note that keywords and identifiers are case-sensitive, so while `each` is not an acceptable identifier, `Each` or `EACH` would be. The names of all defined functions are also reserved.
 
-<small>Updated 2023-Oct-24 (for version 23297)</small>
+<small>Updated 2024-Sep-18 (for version 24262)</small>

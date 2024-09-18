@@ -18,7 +18,7 @@
  *  SOFTWARE.
  */
 
-const version = 24143;
+const version = 24262;
 
 const FEATURE_MONTH_BASE = 1;   /* 1 = months 1-12; set to 0 if you prefer JS semantics where 0=Jan,11=Dec */
 const MAX_RANGE = 1000;         /* Maximum number of elements in a result range op result array */
@@ -216,6 +216,7 @@ const c_quot = {                /* Default quoting */
         }
         , "isNaN"   : { nargs: 1, impl: (n) => null === n || "undefined" === typeof n || Number.isNaN(n) || isNaN(n) }  /* See README */
         , isnull    : { nargs: 1, impl: (s) => "undefined" === typeof s || null === s }
+        , isvalue   : { nargs: 1, impl: (s) => "undefined" !== typeof s && null !== s && ! Number.isNaN( s ) }
         , isInfinity: { nargs: 1, impl: (s) => ! isFinite(s) }
         , keys      : { nargs: 1, impl: Object.keys }
         , values    : { nargs: 1, impl: Object.values }
@@ -247,7 +248,7 @@ const c_quot = {                /* Default quoting */
                 if ( "number" === typeof s && "number" === typeof e ) {
                     i = parseInt(i);
                     if ( isNaN(i) ) i = Math.sign(e-s) || 1;
-                    for (let k=s; a.length < MAX_RANGE && (i>0&&k<=e || i<0&&k>=e); k+=i) a.push(k); 
+                    for (let k=s; a.length < MAX_RANGE && (i>0&&k<=e || i<0&&k>=e); k+=i) a.push(k);
                 }
                 return a;
             }
@@ -292,12 +293,12 @@ const c_quot = {                /* Default quoting */
         return c
     };
 
-    var push_context = function( ctx, tag ) {
+    var push_context = function( ctx, tag, lvars ) {
         return {
             __global: ctx.__global || ctx,
             __parent: ctx,
             __depth: (ctx.__depth||0)+1,
-            __lvar: {},
+            __lvar: lvars || {},
             __tag: tag
         };
     }
@@ -340,6 +341,7 @@ const c_quot = {                /* Default quoting */
             ( !typ || v.__atom === typ );
     }
 
+    /** Return value given, remapping `undefined` to null. */
     function N( v ) {
         return "undefined" === typeof v ? null : v;
     }
@@ -783,12 +785,22 @@ const c_quot = {                /* Default quoting */
         __global._func[ name ] = impl;
     }
 
+    /** Define local variable in given context. */
     function define_var( ctx, name, val ) {
         ctx.__lvar = ctx.__lvar || {};
         ctx.__lvar[ name ] = N(val);
         return ctx.__lvar[ name ];
     }
 
+    /** Define vars in the given context from key/value pairs (i.e. an Object). */
+    function define_vars( ctx, vars ) {
+        ctx.__lvar = ctx.__lvar || {};
+        for ( let [name,value] of Object.entries( vars || {} ) ) {
+            ctx.__lvar[ name ] = N(value);
+        }
+    }
+
+    /** Set a variable in it's home context. If it doesn't exist in any context, create it in the leaf. */
     function set_var( ctx, name, val ) {
         let c = locate_context( name, ctx, '__lvar' );
         if ( ! c ) {
@@ -797,6 +809,9 @@ const c_quot = {                /* Default quoting */
         c.__lvar[ name ] = val;
     }
 
+    /** Get the value of the named variable. Search starts at the given context and goes up the tree until found
+     *  or not, in which case we return `undefined`, distinct from `null` which is a valid variable value.
+     */
     function get_var( ctx, name ) {
         let c = locate_context( name, ctx, '__lvar' );
         if ( c ) {
