@@ -18,7 +18,7 @@
  *  SOFTWARE.
  */
 
-const version = 24262;
+const version = 24274;
 
 const FEATURE_MONTH_BASE = 1;   /* 1 = months 1-12; set to 0 if you prefer JS semantics where 0=Jan,11=Dec */
 const MAX_RANGE = 1000;         /* Maximum number of elements in a result range op result array */
@@ -251,6 +251,18 @@ const c_quot = {                /* Default quoting */
                     for (let k=s; a.length < MAX_RANGE && (i>0&&k<=e || i<0&&k>=e); k+=i) a.push(k);
                 }
                 return a;
+            }
+        }
+        , constrain : { nargs: 2, impl: (n,mn,mx) => {
+                n = parseFloat( n ); if ( isNaN(n) ) return NaN;
+                mn = null === mn ? mn : parseFloat( mn );
+                mx = ( undefined === mx || null === mx ) ? null : parseFloat( mx );
+                return ( null !== mn && ! isNaN( mn ) && n < mn ) ? mn : ( ( null !== mx && ! isNaN( mx ) && n > mx ) ? mx : n );
+            }
+        }
+        , scale     : { nargs: 2, impl: (n,fromMin,fromMax,toMin,toMax) => {
+                n = nativeFuncs.constrain.impl( n, fromMin, fromMax ); if ( isNaN(n) ) return NaN;
+                return ( n - fromMin ) * ( toMax - toMin ) / ( fromMax - fromMin ) + toMin;
             }
         }
         , concat    : { nargs: 2, impl: (a,b) => (a||[]).concat(b||[]) }
@@ -521,8 +533,12 @@ const c_quot = {                /* Default quoting */
                             if ( fc && "function" === typeof fc._func._assign ) {
                                 /* If _assign returns undefined, the normal assignment will be performed. Otherwise, it is
                                  * assumed that _assign has done it.
+                                 * Note that we are passing two contexts here: the context that the target identifier
+                                 * was found in (c, where the assignment will be made), and the context in which the
+                                 * expression is executing (ctx). This allows the callback function to determine where
+                                 * the assignment is made from, for informational and debugging purposes.
                                  */
-                                res = fc._func._assign( v1.name, v2eval, c, e );
+                                res = fc._func._assign( v1.name, v2eval, c, e, ctx );
                             }
                             if ( "undefined" === typeof res ) {
                                 c.__lvar = c.__lvar || {};

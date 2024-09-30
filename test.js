@@ -1,4 +1,4 @@
-const version = 24262;
+const version = 24274;
 
 const verbose = false;  // If true, all tests and results printed; otherwise just errors.
 
@@ -56,6 +56,8 @@ var test_expr = [
     , { expr: "-5.0", expect: -5.0 }
     , { expr: "-4.88", expect: -4.88 }
     , { expr: "1e2", expect: 100 }
+    , { expr: "1.0e3", expect: 1000 }
+    , { expr: "1.e4", expect: 10000 }
     , { expr: "1e-3", expect: 0.001 }
 
 
@@ -238,6 +240,15 @@ var test_expr = [
     , { expr: "max( 7..-33 )", expect: 7 }
     , { expr: "min( 1, 5, 6, [ 3, 0, 4, [ 9, -1 ] ] )", expect: -1 }
     , { expr: "max( 1, 5, 6, [ 3, 0, 4, [ 9, -1 ] ] )", expect: 9 }
+    , { expr: "constrain(2,0,1)", expect: 1 }
+    , { expr: "constrain(-1,0,1)", expect: 0 }
+    , { expr: "constrain(15,0,100)", expect: 15 }
+    , { expr: "constrain(10,0,null)", expect: 10 }
+    , { expr: "constrain(-4,null,1)", expect: -4 }
+    , { expr: "scale(2,0,5,0,100)", expect: 40 }
+    , { expr: "scale(128,0,256,0,10)", expect: 5 }
+    , { expr: "scale(-50,0,256,0,10)", expect: 0 }
+    , { expr: "scale(512,0,256,0,10)", expect: 10 }
     , { expr: "upper('hello')", expect: "HELLO" }
     , { expr: "lower('BYEBYE')", expect: "byebye" }
     , { expr: "ltrim('    abcde  ')", expect: "abcde  " }
@@ -470,6 +481,7 @@ var test_expr = [
     , { expr: "do yyy=444 done, yyy", expect: null }
     , { expr: "'nice' # this is a comment", expect: "nice" }
     , { expr: "# this is a comment\n'hello'", expect: "hello" }
+    , { expr: "/* C-style comment */ 'dogs' /* and here */ + 'cats' /* and there */ + 'fish'", expect: "dogscatsfish" }
     , { expr: "([1,2,3])[1]", expect: 2 }
     , { expr: "min( 1, entity.attributes.volume.level - ( parameters.amount ?? 0.05 ) )", expect: 0.12 }
     , { expr: "t='off',({off:'OFF',on:'ON'})[t]", expect: "OFF" }

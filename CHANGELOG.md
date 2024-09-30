@@ -2,6 +2,10 @@
 
 **NOTE:** In order to *build* lexpjs with Unicode-friendly identifiers enabled (if, for some reason, the included pre-built `lexp.js` file doesn't suit your needs), you first need to modify *jison-lex* to allow Unicode property escapes in its *RegExp*s. See `README-lexer.md` for details.
 
+## 1.0.24274
+
+* Add `constrain()` and `scale()` functions.
+
 ## 1.0.24262
 
 * Add `isvalue()` function, returns *false* for `null` and `NaN`, *true* for everything else.

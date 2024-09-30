@@ -1,4 +1,4 @@
-/** Grammar for lexpjs. Copyright (C) 2020,2021 Patrick H. Rigney
+/** Grammar for lexpjs. Copyright (C) 2020,2021,2024 Patrick H. Rigney
  *  See https://github.com/toggledbits/lexpjs
  *
  *  This Software is offered under the MIT LICENSE open source license. See https://opensource.org/licenses/MIT
@@ -29,6 +29,7 @@
 %x STRD
 %x STRS
 %x STRB
+%x CMNT
 
 %%
 
@@ -57,6 +58,12 @@
 <STRS>[']                               { this.popState(); return 'QSTR'; }
 <STRB>[`]                               { this.popState(); return 'QSTR'; }
 <STRD,STRS,STRB>.                       { buffer += yytext; }
+
+[/][*]                                  { this.begin("CMNT"); }
+<CMNT>(\r\n|\r|\n)+                     { /* discard */ }
+<CMNT><<EOF>>                           { return 'EOF_IN_COMMENT'; }
+<CMNT>[*][/]                            { this.popState(); /* discard */ }
+<CMNT>.                                 { /* discard */ }
 
 \s+                     { /* skip whitespace */ }
 \r                      { /* skip */ }
@@ -98,7 +105,7 @@
 /* Use this line for Unicode-friendly identifiers. */
 [\p{Alphabetic}_$][\p{Alphabetic}0-9_$]*\b  { return 'IDENTIFIER'; }
 
-[0-9]+("."[0-9]+)?([eE][+-]?[0-9]+)?\b  { return 'NUMBER'; }
+[0-9]+("."[0-9]*)?([eE][+-]?[0-9]+)?\b  { return 'NUMBER'; }
 0x[0-9A-Fa-f]+\b        { return 'HEXNUM'; }
 0o[0-7]+\b              { return 'OCTNUM'; }
 0b[01]+\b               { return 'BINNUM'; }
@@ -175,7 +182,7 @@
 %start expressions
 
 %{
-    /* Grammar 23321 */
+    /* Grammar 24269 */
 
     var buffer = "", qsep = "";
 
@@ -194,7 +201,7 @@
     }
 
     function D( ...args ) {
-        console.log( ...args );
+        // console.log( ...args );
     }
 %}
 

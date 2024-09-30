@@ -321,6 +321,8 @@ The syntax guides shown below (which are based on a well-known [BNF](https://en.
 * `min/max( ... )` &mdash; returns the smallest/largest value of its arguments; if an argument is an array, the array is scanned; non-numeric values are ignored, so these functions return *null* unless at least one number (type) value is found;
 * `isNaN( various )` &mdash; returns *true* if the argument is `NaN`, `null`, or if an attempted conversion with `parseInt()/parseFloat()` would result in `NaN` (e.g. `isNaN( 'this is not a number' )` returns *true*, but `isNaN( '123' )` returns *false*). Note that this is a little different from JavaScript's `isNaN()`: under JS (as tested in *nodejs* 16.13.1 and *Chrome* browser 108.0.5359.98) `isNaN(null)` returns *false* while `parseInt(null)` and `parseFloat(null)` both return `NaN`. I think this is a vexing inconsistency, so *lexpjs* will return *true* for `isNaN(null)` to agree with `parseInt()/parseFloat()`. See also `isvalue()`.
 * `isInfinity( value )` &mash; returns true if the argument is `Infinity`, as would result in, for example, division by zero.
+* `constrain( number, minimum [, maximum] )` &mdash; returns the value given limited by the extrema (that is, if the value is less than the given minimum, the minimum is return; if a maximum is given and the value is greater, the maximum is returned).
+* `scale( number, fromLow, fromHigh, toLow, toHigh )` &mdash; takes the given value (`number`), assumed to be in the range of `fromLow` to `fromHigh`, and rescales it into the range of `toLow` to `toHigh`. For example, `scale(15,10,20,0,100)` returns 50, because 15 is halfway between 10 and 20, and halfway between 0 and 100 is 50.
 
 ### String Handling Functions
 
@@ -409,4 +411,4 @@ Important notes with respect to date handling (currently; this will evolve):
 
 As a result of the syntax, the following words are reserved and may not be used as identifiers or function names: `true, false, null, each, in, first, of, with, if, then, else, elif, elsif, elseif, endif, case, when, do, done, define, and, or, not, NaN, Infinity, pi`. Note that keywords and identifiers are case-sensitive, so while `each` is not an acceptable identifier, `Each` or `EACH` would be. The names of all defined functions are also reserved.
 
-<small>Updated 2024-Sep-18 (for version 24262)</small>
+<small>Updated 2024-Sep-30 (for version 24274)</small>
