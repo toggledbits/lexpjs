@@ -17,8 +17,9 @@
  *  TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  *  SOFTWARE.
  */
+/* global parser */
 
-const version = 24274;
+const version = 24287;
 
 const FEATURE_MONTH_BASE = 1;   /* 1 = months 1-12; set to 0 if you prefer JS semantics where 0=Jan,11=Dec */
 const MAX_RANGE = 1000;         /* Maximum number of elements in a result range op result array */
@@ -49,11 +50,11 @@ const c_quot = {                /* Default quoting */
     }
 }(typeof self !== 'undefined' ? self : this, function () {
 
-/* --------------------------------- generated grammar (DO NOT EDIT) ------------------------------- */
+/* ---------------------------------- Generated grammar (DO NOT EDIT) --------------------------------- */
 
 @@@
 
-/* --------------------------------- lexp executive ------------------------------- */
+/* --------------------------- End of generated section (DO NOT EDIT ABOVE) --------------------------- */
 
     const f_min = function( ...args ) {
         let res = null;
@@ -72,7 +73,7 @@ const c_quot = {                /* Default quoting */
             }
         }
         return res;
-    }
+    };
 
     const f_max = function( ...args ) {
         let res = null;
@@ -91,7 +92,7 @@ const c_quot = {                /* Default quoting */
             }
         }
         return res;
-    }
+    };
 
     /**
      *  Helper function to handle string dates, which may be a simple time string or a date + time. This is highly
@@ -126,7 +127,7 @@ const c_quot = {                /* Default quoting */
             s += ' 00:00:00.000';
         }
         return new Date( s ).getTime();
-    }
+    };
 
     const nativeFuncs = {
           abs       : { nargs: 1, impl: (v) => v >= 0 ? v : -v }
@@ -150,7 +151,7 @@ const c_quot = {                /* Default quoting */
         , min       : { nargs: 1, impl: function( ...args ) { return f_min( null, ...args ); } }
         , max       : { nargs: 1, impl: function( ...args ) { return f_max( null, ...args ); } }
         , len       : { nargs: 1, impl: (s) => s.length }
-        , substr    : { nargs: 2, impl: function( s, p, l ) { s = String(s); if (l==undefined) l=s.length; return s.substr(p,l); } }
+        , substr    : { nargs: 2, impl: function( s, p, l ) { s = String(s); if (undefined===l) l=s.length; return s.substr(p,l); } }
         , upper     : { nargs: 1, impl: (s) => String(s).toUpperCase() }
         , lower     : { nargs: 1, impl: (s) => String(s).toLowerCase() }
         , match     : { nargs: 2, impl: function( s, p, n, f ) { let r = String(s).match( new RegExp( p, f ) ); return ( r === null ) ? null : r[n || 0]; } }
@@ -226,12 +227,12 @@ const c_quot = {                /* Default quoting */
         , indexOf   : { nargs: 2, impl: (a,el) => a.indexOf( el ) }
         , count     : { nargs: 1, impl: function( a ) {
                 let n=0;
-                Array.isArray( a ) ? a.forEach( el => { ( "undefined" !== typeof el && null !== el ) ? ++n : n } ) : n;
+                Array.isArray( a ) ? a.forEach( el => { ( "undefined" !== typeof el && null !== el ) ? ++n : n; } ) : n;
                 return n;
             }
         }
         , sum       : { nargs: 1, impl: function( a ) {
-                let n=0; Array.isArray( a ) ? a.forEach( el => { ( "number" === typeof el ) ? n += el : 0 } ) : 0;
+                let n=0; Array.isArray( a ) ? a.forEach( el => { ( "number" === typeof el ) ? n += el : 0; } ) : 0;
                 return n;
             }
         }
@@ -288,7 +289,7 @@ const c_quot = {                /* Default quoting */
         , urlencode : { nargs: 1, impl: encodeURIComponent }
         , urldecode : { nargs: 1, impl: decodeURIComponent }
         , "typeof"  : { nargs: 1, impl: (a) => null === a ? 'null' : ( Array.isArray(a) ? 'array' : typeof a ) }
-        , "err"     : { nargs: 1, impl: (s) => { throw new Error( String(s) ) } }
+        , "err"     : { nargs: 1, impl: (s) => { throw new Error( String(s) ); } }
 /* FUTURE:
         , format
         , dateadd
@@ -302,7 +303,7 @@ const c_quot = {                /* Default quoting */
     var get_context = function( vars ) {
         var c = { __lvar: vars || {}, __depth: 0, __tag: 'global', _func: {} };
         c.__global = c;
-        return c
+        return c;
     };
 
     var push_context = function( ctx, tag, lvars ) {
@@ -313,11 +314,11 @@ const c_quot = {                /* Default quoting */
             __lvar: lvars || {},
             __tag: tag
         };
-    }
+    };
 
     var pop_context = function( ctx ) {
         return ctx.__parent || ctx;
-    }
+    };
 
     function locate_context( key, ctx, subkey ) {
         while ( ctx ) {
@@ -364,7 +365,7 @@ const c_quot = {                /* Default quoting */
         /* Resolve a VREF atom */
         function _resolve( a, ctx ) {
             /* Scope priority: local, context, external resolver */
-            var res;
+            let res;
             let c = locate_context( a.name, ctx, '__lvar' );
             if ( c ) {
                 res = c.__lvar[ a.name ];
@@ -406,9 +407,9 @@ const c_quot = {                /* Default quoting */
                 } else if ( is_atom( e, 'vref' ) ) {
                     return N( _resolve( e, ctx ) );
                 } else if ( is_atom( e, 'binop' ) ) {
-                    var v2 = e.v2;
-                    var v1 = e.v1;
-                    var v1eval, v2eval;
+                    const v2 = e.v2;
+                    const v1 = e.v1;
+                    let v1eval, v2eval;
                     if ( "=" !== e.op ) {
                         v1eval = _run( v1, ctx );
                     }
@@ -509,11 +510,11 @@ const c_quot = {                /* Default quoting */
                         if ( is_atom( v1, 'deref' ) ) {
                             /* Assignment to member */
 // D('ASSIGN deref context', v1.context, 'v2', v2);
-                            var scope = _run( v1.context, ctx );
+                            let scope = _run( v1.context, ctx );
                             if ( "object" !== typeof scope || null === scope ) {
                                 throw new ReferenceError( `Invalid scope in reference to member ${String(v1.member)} of (${typeof scope})${String(scope)}` );
                             }
-                            var member = _run( v1.member, ctx );
+                            let member = _run( v1.member, ctx );
                             /* Null and NaN don't pass here */
                             if ( ! ( "number" === typeof member || "string" === typeof member ) || "" === member  ) {
                                 throw new ReferenceError( `Invalid reference to member (${typeof member})${String(member)} of ${String(scope)}` );
@@ -553,7 +554,7 @@ const c_quot = {                /* Default quoting */
                     }
                     return v1eval;
                 } else if ( is_atom( e, 'unop' ) ) {
-                    var veval = _run( e.val, ctx );
+                    let veval = _run( e.val, ctx );
                     if (e.op == '-')
                         veval = -veval;
                     else if (e.op == '!')
@@ -564,7 +565,7 @@ const c_quot = {                /* Default quoting */
                         throw new Error( `BUG: unsupported unop in compiled expression: ${String(e.op)}` );
                     return veval;
                 } else if ( is_atom( e, 'deref' ) ) {
-                    var scope = _run( e.context, ctx );
+                    let scope = _run( e.context, ctx );
                     /* Watch for null-conditional operators */
                     if ( ( e.op === '?.' || e.op == '?[' ) && scope === null ) {
                         return null;
@@ -572,12 +573,12 @@ const c_quot = {                /* Default quoting */
                     if ( "object" !== typeof scope || null === scope ) {
                         throw new ReferenceError( `Invalid scope in reference to member ${String(e.member)} of (${typeof scope})${String(scope)}` );
                     }
-                    var member = _run( e.member, ctx );
+                    let member = _run( e.member, ctx );
                     /* null and NaN are OK here, will likely produce null, which is OK */
                     if ( ! ( null === member || Number.isNaN( member ) || "number" === typeof member || "string" === typeof member ) ) {
                         throw new ReferenceError( `Invalid reference to member (${typeof member})${String(member)} of (${typeof scope})${String(scope)}` );
                     }
-                    var res = _run( scope[ member ], ctx );
+                    let res = _run( scope[ member ], ctx );
                     //D("DEREF",scope,".",member,"=",res);
                     return N(res);
                 } else if ( is_atom( e, 'if' ) ) {
@@ -587,7 +588,7 @@ const c_quot = {                /* Default quoting */
                     }
                     if ( e.alts ) {
                         /* elifs */
-                        for ( alt of e.alts ) {
+                        for ( let alt of e.alts ) {
                             if ( _run( alt.test, ctx ) ) {
                                 return N(_run( alt.tc, ctx ));
                             }
@@ -600,8 +601,8 @@ const c_quot = {                /* Default quoting */
                     return null; /* default if no else */
                 } else if ( is_atom( e, 'fref' ) ) {
                     // D('function ref ' + e.name + ' with ' + e.args.length + ' args');
-                    var name = e.name;
-                    var impl;
+                    let name = e.name;
+                    let impl;
                     if ( "sort" === name ) {
                         /* Special implementation for sort() allows function reference or expr-
                         *  ession as second arg for custom sort. This requires a "late eval-
@@ -625,7 +626,7 @@ const c_quot = {                /* Default quoting */
                                     ctx.__lvar.$2 = b;
                                     let r = _run( e.args[1], ctx );
                                     return r;
-                                }
+                                };
                             }
                         }
                         if ( ! impl ) {
@@ -641,7 +642,7 @@ const c_quot = {                /* Default quoting */
                         ctx = pop_context( ctx );
                         return a;
                     }
-                    var impl = false;
+                    impl = false;
                     // Attached to context? Scan from current up.
                     let c = locate_context( name, ctx, '_func' );
                     if ( c ) {
@@ -655,11 +656,11 @@ const c_quot = {                /* Default quoting */
                     }
 
                     // Build argument list and go. Context is always first argument.
-                    var a = [ ctx ];
+                    let a = [ ctx ];
                     e.args.forEach( function( se ) {
                         a.push( _run( se, ctx ) );
                     });
-                    var r = impl.apply( null, a );
+                    let r = impl.apply( null, a );
                     return N(r);
                 } else if ( is_atom( e, 'iter' ) ) {
                     ctx.__lvar = ctx.__lvar || {};
@@ -673,7 +674,7 @@ const c_quot = {                /* Default quoting */
                         // D("Iterate over",context,"using",e.value,"apply",e.exec);
                         let local_ctx = push_context( ctx );
                         try {
-                            for ( [ key, value ] of Object.entries( context ) ) {
+                            for ( let [ key, value ] of Object.entries( context ) ) {
                                 // D("Assigning",value,"to",e.value);
                                 local_ctx.__lvar[ e.value ] = value;
                                 if ( e.key ) {
@@ -701,9 +702,9 @@ const c_quot = {                /* Default quoting */
                         if ( "object" !== typeof context ) {
                             context = [ context ];
                         }
-                        local_ctx = push_context( ctx );
+                        let local_ctx = push_context( ctx );
                         try {
-                            for ( const [key, value] of Object.entries( context ) ) {
+                            for ( let [key, value] of Object.entries( context ) ) {
                                 // D("Assigning",value,"to",e.value);
                                 local_ctx.__lvar[ e.value ] = value;
                                 if ( e.key ) {
@@ -737,7 +738,7 @@ const c_quot = {                /* Default quoting */
                     const list = e.when_list; // list atom
                     let res = null;
                     for ( let c of list.expr ) {
-                        var cond = _run( c.test, ctx );
+                        let cond = _run( c.test, ctx );
                         if ( cond ) {
                             res = _run( c.tc, ctx );
                             break;
@@ -790,14 +791,14 @@ const c_quot = {                /* Default quoting */
         } /* function _run() */
 
         D("lexp.run()", ce, g_ctx);
-        var result = _run( ce, g_ctx );
+        const result = _run( ce, g_ctx );
         D("lexp.run() finished with", result);
         return result;
     };
 
     function define_func_impl( ctx, name, impl ) {
         let __global = ctx.__global || ctx;
-        __global._func = __global._func || {}
+        __global._func = __global._func || {};
         __global._func[ name ] = impl;
     }
 
@@ -812,7 +813,7 @@ const c_quot = {                /* Default quoting */
     function define_vars( ctx, vars ) {
         ctx.__lvar = ctx.__lvar || {};
         for ( let [name,value] of Object.entries( vars || {} ) ) {
-            ctx.__lvar[ name ] = N(value);
+            ctx.__lvar[ name ] = N( value );
         }
     }
 
@@ -869,7 +870,7 @@ const c_quot = {                /* Default quoting */
         }
 
         push( tag ) {
-            return this.ctx = push_context( this.ctx, tag );
+            return ( this.ctx = push_context( this.ctx, tag ) );
         }
 
         /** Pop contexts up to and including tag. If tag is not specified, pop one level. */
@@ -937,6 +938,7 @@ const c_quot = {                /* Default quoting */
         get_context: get_context,
         define_func_impl: define_func_impl,
         define_var: define_var,
+        define_vars: define_vars,
         set_var: set_var,
         get_var: get_var,
         push_context: push_context,

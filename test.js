@@ -1,4 +1,4 @@
-const version = 24274;
+const version = 24287;
 
 const verbose = false;  // If true, all tests and results printed; otherwise just errors.
 
@@ -344,6 +344,7 @@ var test_expr = [
     , { expr: "count( [ 1,5,9 ] )", expect: 3 }
     , { expr: "count( [ 1, null, 9, false, 0 ] )", expect: 4 }
     , { expr: "sum( [ 1,5,9 ] )", expect: 15 }
+    , { expr: "sum( [ 1, null, 9, false, 0 ] )", expect: 10 }
     , { expr: "sum( 56 )", expect: 0 } /* only accepts array */
     , { expr: "median( [ 149,2090,39 ] )", expect: 149 }
     , { expr: "median( [91,2,53,7] )", expect: 30 }
