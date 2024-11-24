@@ -1,4 +1,4 @@
-const version = 24287;
+const version = 24329;
 
 const verbose = false;  // If true, all tests and results printed; otherwise just errors.
 
@@ -298,6 +298,9 @@ var test_expr = [
     , { expr: "time(2021,1,17)", expect: new Date(2021,0,17,0,0,0,0).getTime() }    /* Assumes FEATURE_MONTH_BASE == 1 (default) */
     , { expr: "time({year:2022,month:1,day:21})", expect: new Date(2022,0,21,0,0,0,0).getTime() }
     , { expr: "time({year:2022,month:1,day:21,hour:13,minute:37})", expect: new Date(2022,0,21,13,37,0,0).getTime() }
+    , { expr: "time(null,11,22)", expect: new Date(new Date().getFullYear(),10,22,0,0,0,0).getTime() }  /* Assumes FEATURE_MONTH_BASE == 1 (default) */
+    , { expr: "time(null,null,null,15,45,30,499)", expect: new Date(new Date().getFullYear(),new Date().getMonth(),new Date().getDate(),15,45,30,499).getTime() }  /* Assumes FEATURE_MONTH_BASE == 1 (default) */
+    , { expr: "time(null,13,1)", expect: new Date(new Date().getFullYear()+1,0,1).getTime() }  /* Assumes FEATURE_MONTH_BASE == 1 (default) */
     // The two times below should be only ONE hour apart, because DST change (forward) occurs between.
     // ??? This test has time dependencies! Maybe move to a separate test suite?
     , { expr: "t=time({year:2022,month:3,day:13,hour:1})" }

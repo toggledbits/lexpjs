@@ -19,7 +19,7 @@
  */
 /* global parser */
 
-const version = 24287;
+const version = 24329;
 
 const FEATURE_MONTH_BASE = 1;   /* 1 = months 1-12; set to 0 if you prefer JS semantics where 0=Jan,11=Dec */
 const MAX_RANGE = 1000;         /* Maximum number of elements in a result range op result array */
@@ -169,7 +169,9 @@ const c_quot = {                /* Default quoting */
         , quote     : { nargs: 1, impl: (s) => String(s).replace( /[\\"\b\f\n\r\t\v]/g, (t) => c_quot[t] || t ) }
         , hex       : { nargs: 1, impl: (n) => Number( n ).toString( 16 ) }
         , time      : { nargs: 0, impl: function( ...args ) {
-                if ( 1 === args.length && "object" === typeof ( args[0] ) ) {
+                if ( 1 === args.length && ( null === args[0] || undefined === args.length ) ) {
+                    return Date.now();
+                } else if ( 1 === args.length && "object" === typeof ( args[0] ) ) {
                     /* Construct from dateparts() result */
                     let obj = args[0];
                     let now = new Date();
@@ -182,8 +184,14 @@ const c_quot = {                /* Default quoting */
                     return f_dtconv( args[ 0 ] );
                 } else if ( args.length === 1 && "number" === typeof( args[ 0 ] ) ) {
                     return new Date( args[0] ).getTime();
-                } else if ( args.length >= 1 && "number" === typeof( args[0] ) ) {
-                    args[1] -= FEATURE_MONTH_BASE;
+                } else if ( args.length > 1 && ! args.find( el => null !== el && "number" !== typeof el ) ) {
+                    let now = new Date();
+                    let d = (v) => undefined === v || null === v || Number.isNaN(v);
+                    return new Date( d(args[0]) ? now.getFullYear() : args[0],
+                        d(args[1]) ? now.getMonth() : (args[1]-FEATURE_MONTH_BASE),
+                        d(args[2]) ? now.getDate() : args[2],
+                        args[3] || 0, args[4] || 0, args[5] || 0, args[6] || 0
+                    ).getTime();
                 } else if ( 0 !== args.length ) {
                     throw new Error( "Invalid arguments to time()" );
                 }
@@ -528,12 +536,14 @@ const c_quot = {                /* Default quoting */
                             } else if ( e.local ) {
                                 c = ctx;
                             } else {
+                                /* Find nearest context that has name defined as a local variable (default current) */
                                 c = locate_context( v1.name, ctx, '__lvar' ) || ctx;
                             }
+                            c.__lvar = c.__lvar || {};
                             let fc = locate_context( '_assign', ctx, '_func' );
                             if ( fc && "function" === typeof fc._func._assign ) {
-                                /* If _assign returns undefined, the normal assignment will be performed. Otherwise, it is
-                                 * assumed that _assign has done it.
+                                /* If _assign() returns undefined, the normal assignment will be performed. Otherwise,
+                                 * it is assumed that _assign() has done it.
                                  * Note that we are passing two contexts here: the context that the target identifier
                                  * was found in (c, where the assignment will be made), and the context in which the
                                  * expression is executing (ctx). This allows the callback function to determine where
@@ -542,9 +552,7 @@ const c_quot = {                /* Default quoting */
                                 res = fc._func._assign( v1.name, v2eval, c, e, ctx );
                             }
                             if ( "undefined" === typeof res ) {
-                                c.__lvar = c.__lvar || {};
-                                c.__lvar[ v1.name ] = v2eval;
-                                return v2eval;
+                                res = c.__lvar[ v1.name ] = v2eval;
                             }
                         }
                         return res;
