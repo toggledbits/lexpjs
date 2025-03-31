@@ -1,4 +1,4 @@
-const version = 25083;
+const version = 25090;
 
 const verbose = false;  // If true, all tests and results printed; otherwise just errors.
 
@@ -602,7 +602,7 @@ test_expr.forEach( function( e ) {
     try {
         ce = lexp.compile( e.expr );
         if ( e.debug ) {
-            console.log( ce );
+            console.log( JSON.stringify( ce, null, 4 ) );
         }
         try {
             res = lexp.run( ce, ctx );

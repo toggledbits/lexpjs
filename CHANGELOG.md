@@ -2,6 +2,11 @@
 
 **NOTE:** In order to *build* lexpjs with Unicode-friendly identifiers enabled (if, for some reason, the included pre-built `lexp.js` file doesn't suit your needs), you first need to modify *jison-lex* to allow Unicode property escapes in its *RegExp*s. See `README-lexer.md` for details.
 
+## 1.0.25090
+
+* Tighten definition of arg_list for function definitions, and simplify resulting atom (remove unnecessary wrapper atoms).
+* When using semicolon as a statement separator, allow before end of block (i.e. prior to DONE in a DO...DONE), and at EOF, to more closely match C/C++/Java/JavaScript semantics. As of this version, semicolon is now the preferred statement separator.
+
 ## 1.0.25083
 
 * Allow direct initialization of object with dereferenced keys, like `key='delta', obj={[delta]: '767'}`

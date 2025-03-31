@@ -19,7 +19,7 @@
  */
 /* global parser */
 
-const version = 25083;
+const version = 25090;
 
 const FEATURE_MONTH_BASE = 1;   /* 1 = months 1-12; set to 0 if you prefer JS semantics where 0=Jan,11=Dec */
 const MAX_RANGE = 1000;         /* Maximum number of elements in a result range op result array */
@@ -761,33 +761,29 @@ const c_quot = {                /* Default quoting */
                     }
                     return res;
                 } else if ( is_atom( e, 'fdef' ) ) {
-                    let seen = {};
-                    /* e.args is list atom */
-                    e.args.expr.forEach( (a,ix) => {
-                        /* a is vref atom */
-                        if ( ! is_atom( a, 'vref' ) ) {
-                            throw new SyntaxError( `Invalid argument ${ix}/${e.args.length}, must be identifier` );
+                    const seen = {};
+                    /* e.args is plain array of strings (argument names/identifiers; 25090 tighter, simplified structure) */
+                    e.args.forEach( (a,ix) => {
+                        if ( seen[ a ] ) {
+                            throw new SyntaxError( `Duplicate argument name (${a})` );
                         }
-                        if ( seen[ a.name ] ) {
-                            throw new SyntaxError( `Argument name conflict (${a.name})` );
-                        }
-                        seen[ a.name ] = true;
+                        seen[ a ] = true;
                     });
                     /* Define function; closure loads arguments values passed in to local variables in
-                     * new sub-scope, then runs expression list.
+                     * new sub-scope, then runs expression list in impl.
                      */
                     ctx._func[ e.name ] = (ctx, ...args) => {
                         let res = null;
                         ctx = push_context( ctx, "$fdef" );
                         try {
                             /* Get each defined argument into its corresponding locally-scoped variable */
-                            const n = ( e.args.expr || [] ).length;
+                            const n = e.args.length;
                             for ( let ix = 0; ix < n; ++ix ) {
                                 let v = ix < args.length ? _run( args[ix], ctx ) : null;
-                                D( "set arg", ix, e.args.expr[ix].name, '=', v );
-                                ctx.__lvar[ e.args.expr[ ix ].name ] = v;
+                                D( "set arg", ix, e.args[ix], '=', v );
+                                ctx.__lvar[ e.args[ ix ] ] = v;
                             }
-                            res = _run( e.list, ctx );
+                            res = _run( e.impl, ctx );
                         } finally {
                             ctx = pop_context( ctx );
                         }

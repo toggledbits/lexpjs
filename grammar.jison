@@ -182,7 +182,7 @@
 %start expressions
 
 %{
-    /* Grammar 25083 */
+    /* Grammar 25090 */
 
     var buffer = "", qsep = "";
 
@@ -212,6 +212,8 @@
 expressions
     : expr_list EOF
         { return $1; }
+    | expr_list EXPRSEP EOF
+        { return $1; }
     ;
 
 elif_list
@@ -230,11 +232,24 @@ expr_list
         { $$ = atom( 'list', { expr: [ $1 ] } ); }
     ;
 
-/* arg_list - function arguments: expr_list or nothing */
+/* identifier_list - list of identifiers used for defining functions to determine argument list */
+
+identifier_list
+    : identifier_list COMMA IDENTIFIER
+        { $1.push( $3 ); $$ = $1; }
+    | IDENTIFIER
+        { $$ = [ $1 ]; }
+    |
+        { $$ = []; }
+    ;
+
+/* arg_list - function arguments: like expr_list but must be comma-separated and can be nothing/empty */
 
 arg_list
-    : expr_list
-        { $$ = $1; }
+    : arg_list COMMA e
+        { $1.expr.push( $3 ); $$ = $1; }
+    | e
+        { $$ = atom( 'list', { expr: [ $1 ] } ); }
     |
         { $$ = atom( 'list', { expr: [] } ); }
     ;
@@ -324,8 +339,39 @@ when_list
         { $$ = atom( 'list', { expr: [ atom( 'if', { test: $2, tc: $4, locs: [@2, @4] } ) ] } ); }
     ;
 
+constant_expr
+    : NUMBER
+        { $$ = Number(yytext); }
+    | HEXNUM
+        { $$ = parseInt( yytext.substr( 2 ), 16 ); }
+    | OCTNUM
+        { $$ = parseInt( yytext.substr( 2 ), 8 ); }
+    | BINNUM
+        { $$ = parseInt( yytext.substr( 2 ), 2 ); }
+    | quoted_string
+        { $$ = $1; }
+    | TRUE
+        { $$ = true; }
+    | FALSE
+        { $$ = false; }
+    | NULL
+        { $$ = null; }
+    | NAN
+        { $$ = NaN; }
+    | INF
+        { $$ = Infinity; }
+    | PI
+        { $$ = Math.PI; }
+    ;
+
 e
-    : '-' e %prec UMINUS
+    : constant_expr
+        { $$ = $1; }
+    | ref_expr
+        { $$ = $1; }
+    | assignment
+        { $$ = $1; }
+    | '-' e %prec UMINUS
         { $$ = atom( 'unop', { op: '-', val: $2 } ); }
     | LNOT e
         { $$ = atom( 'unop', { op: '!', val: $2 } ); }
@@ -389,16 +435,6 @@ e
         { $$ = atom( 'dict', { elements: $2 } ); }
     | '[' array_list ']'
         { $$ = $2; }
-    | NUMBER
-        { $$ = Number(yytext); }
-    | HEXNUM
-        { $$ = parseInt( yytext.substr( 2 ), 16 ); }
-    | OCTNUM
-        { $$ = parseInt( yytext.substr( 2 ), 8 ); }
-    | BINNUM
-        { $$ = parseInt( yytext.substr( 2 ), 2 ); }
-    | quoted_string
-        { $$ = $1; }
     | IF e THEN expr_list elif_list ELSE expr_list ENDIF
         { $$ = atom( 'if', { test: $2, tc: $4, alts: $5, fc: $7, locs: [@2, @4, @5, @7] } ); }
     | IF e THEN expr_list elif_list ENDIF
@@ -407,22 +443,6 @@ e
         { $$ = atom( 'if', { test: $2, tc: $4, fc: $6, locs: [@2, @4, @6] } ); }
     | IF e THEN expr_list ENDIF
         { $$ = atom( 'if', { test: $2, tc: $4, locs: [@2, @4] } ); }
-    | TRUE
-        { $$ = true; }
-    | FALSE
-        { $$ = false; }
-    | NULL
-        { $$ = null; }
-    | NAN
-        { $$ = NaN; }
-    | INF
-        { $$ = Infinity; }
-    | PI
-        { $$ = Math.PI; }
-    | ref_expr
-        { $$ = $1; }
-    | assignment
-        { $$ = $1; }
     | EACH IDENTIFIER COMMA IDENTIFIER IN e COLON e
         { $$ = atom( 'iter', { value: $2, key: $4, context: $6, exec: $8 } ); }
     | EACH IDENTIFIER IN e COLON e
@@ -437,8 +457,10 @@ e
         { $$ = atom( 'search', { value: $2, context: $4, exec: $6 } ); }
     | DO expr_list DONE
         { $$ = atom( 'block', { block: $2 } ); }
-    | DEF IDENTIFIER '(' arg_list ')' e
-        { $$ = atom( 'fdef', { name: $2, args: $4, list: $6 } ); }
+    | DO expr_list EXPRSEP DONE
+        { $$ = atom( 'block', { block: $2 } ); }
+    | DEF IDENTIFIER '(' identifier_list ')' e
+        { $$ = atom( 'fdef', { name: $2, args: $4, impl: $6 } ); }
     | CASE when_list END
         { $$ = atom( 'case', { when_list: $2 } ); }
     ;
