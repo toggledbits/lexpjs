@@ -19,7 +19,7 @@
  */
 /* global parser */
 
-const version = 24329;
+const version = 25083;
 
 const FEATURE_MONTH_BASE = 1;   /* 1 = months 1-12; set to 0 if you prefer JS semantics where 0=Jan,11=Dec */
 const MAX_RANGE = 1000;         /* Maximum number of elements in a result range op result array */
@@ -309,7 +309,7 @@ const c_quot = {                /* Default quoting */
     var D = false ? console.log : function() {};
 
     var get_context = function( vars ) {
-        var c = { __lvar: vars || {}, __depth: 0, __tag: 'global', _func: {} };
+        var c = { __lvar: vars || {}, __depth: 0, __tag: '$global', _func: {} };
         c.__global = c;
         return c;
     };
@@ -374,6 +374,9 @@ const c_quot = {                /* Default quoting */
         function _resolve( a, ctx ) {
             /* Scope priority: local, context, external resolver */
             let res;
+            if ( ctx.__global._func._ref ) {
+                ctx.__global._func._ref( a.name, ctx );
+            }
             let c = locate_context( a.name, ctx, '__lvar' );
             if ( c ) {
                 res = c.__lvar[ a.name ];
@@ -617,7 +620,7 @@ const c_quot = {                /* Default quoting */
                         *  uation" (and multiple evaluations) of the sort function/expression.
                         */
                         let a = _run( e.args[0], ctx );
-                        ctx = push_context( ctx );
+                        ctx = push_context( ctx, "$sort" );
                         /* See if a custom sort is supplied. */
                         if ( e.args.length > 1 ) {
                             /* Can pass reference to defined function... */
@@ -680,7 +683,7 @@ const c_quot = {                /* Default quoting */
                             context = [ context ];
                         }
                         // D("Iterate over",context,"using",e.value,"apply",e.exec);
-                        let local_ctx = push_context( ctx );
+                        let local_ctx = push_context( ctx, "$iter" );
                         try {
                             for ( let [ key, value ] of Object.entries( context ) ) {
                                 // D("Assigning",value,"to",e.value);
@@ -710,7 +713,7 @@ const c_quot = {                /* Default quoting */
                         if ( "object" !== typeof context ) {
                             context = [ context ];
                         }
-                        let local_ctx = push_context( ctx );
+                        let local_ctx = push_context( ctx, "$srch" );
                         try {
                             for ( let [key, value] of Object.entries( context ) ) {
                                 // D("Assigning",value,"to",e.value);
@@ -736,7 +739,7 @@ const c_quot = {                /* Default quoting */
                 } else if ( is_atom( e, 'block' ) ) {
                     let res = null;
                     try {
-                        ctx = push_context( ctx );
+                        ctx = push_context( ctx, "$block" );
                         res = _run( e.block, ctx );
                     } finally {
                         ctx = pop_context( ctx );
@@ -775,7 +778,7 @@ const c_quot = {                /* Default quoting */
                      */
                     ctx._func[ e.name ] = (ctx, ...args) => {
                         let res = null;
-                        ctx = push_context( ctx );
+                        ctx = push_context( ctx, "$fdef" );
                         try {
                             /* Get each defined argument into its corresponding locally-scoped variable */
                             const n = ( e.args.expr || [] ).length;
@@ -791,6 +794,30 @@ const c_quot = {                /* Default quoting */
                         return res;
                     };
                     return null;
+                } else if ( is_atom( e, 'dict' ) ) {
+                    /** 25086:
+                     *  The dict atom is used rather than the previous direct initialization of an object during
+                     *  parsing to make "{[key]:123}" initialization possible, where "key" is an expression that
+                     *  (hopefully) resolves to a primitive. Previously, you had to use "d={},d[key]=123,d" to
+                     *  get the same result.
+                     */
+                    let res = {};
+                    for ( let v of e.elements ) {
+                        //console.log("Element:",v);
+                        let key = v.key;
+                        let val = v.value;
+                        if ( is_atom( key ) ) {
+                            key = _run( key, ctx );
+                            //console.log("    evaluated key",v.key,"to",key);
+                        }
+                        if ( is_atom( val ) ) {
+                            val = _run( val, ctx );
+                            //console.log("    evaluated value",v.value,"to",val);
+                        }
+                        res[key] = N(val);
+                        //console.log("    adding to dict:", key, ":", val);
+                    }
+                    return res;
                 } else {
                     D("BUG: unsupported atom:", e);
                     throw new Error( `BUG: unsupported atom (${String(e.__atom)})` );
@@ -940,6 +967,12 @@ const c_quot = {                /* Default quoting */
             return '[class LEXP]';
         }
     }
+
+    parser.yy.parseError = function(str,hash,...args) {
+        if ( hash?.token === 'EOF' && Array.isArray(hash?.expected) && hash.expected.length > 0 )
+            throw new Error(`Unexpected end of expression at line ${hash?.loc?.last_line} column ${hash?.loc?.last_column}`);
+        throw new Error( str );
+    };
 
     return {
         version: version,

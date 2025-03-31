@@ -2,6 +2,10 @@
 
 **NOTE:** In order to *build* lexpjs with Unicode-friendly identifiers enabled (if, for some reason, the included pre-built `lexp.js` file doesn't suit your needs), you first need to modify *jison-lex* to allow Unicode property escapes in its *RegExp*s. See `README-lexer.md` for details.
 
+## 1.0.25083
+
+* Allow direct initialization of object with dereferenced keys, like `key='delta', obj={[delta]: '767'}`
+
 ## 1.0.24329
 
 * Improve handling of `time(year,month,day,hour,min,sec,msec)`. Two or more (integer) arguments may be specified, any of which may be *null*. A *null* for a time component is evaluated as 0 (zero). A *null* year, month, or day argument uses the current year, month, or day, respectively. For example, `time(null,null,1)` produces the Epoch time for (local) midnight of the first day of the current month of the current year. The effect of arguments outside their "normal" range is inherited from the *JavaScript* `Date()` object. For example, `time(null,13,1)` returns January 1 of next year (i.e. 13=12+1, so the result is one month after month 12 of the current year).

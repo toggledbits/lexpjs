@@ -1,4 +1,4 @@
-const version = 24329;
+const version = 25083;
 
 const verbose = false;  // If true, all tests and results printed; otherwise just errors.
 
@@ -30,6 +30,22 @@ var ctx = lexp.get_context( {
     ],
     tau: 6.28318
 });
+
+if (false) {
+    ctx._func._ref = function( name, ctx ) {
+        function locate( name, ctx ) {
+            if ( ctx.__lvar[name] !== undefined ) {
+                return ctx;
+            } else if ( ctx.__parent === undefined ) {
+                return undefined;
+            }
+            return locate( name, ctx.__parent );
+        }
+        const c = locate(name, ctx);
+        console.log("    vref", name, c ? ( c.__tag || "(untagged)" ) : "(not found)");
+        if ( !c ) console.log(ctx);
+    };
+}
 
 var test_expr = [
       { expr: '"Hello"', expect: "Hello" }
@@ -167,6 +183,9 @@ var test_expr = [
     , { expr: "s=[1,2,3], t=s, s==t", expect: true }    /* because same object in memory */
     , { expr: "{ alpha: 1, beta: 2, gamma: 3 }", expect: { alpha: 1, beta: 2, gamma: 3 } }
     , { expr: "{ 'first': 'a', ['strange id']: 'b', 'Another Strange ID': 'voodoo' }", expect: { first: 'a', 'strange id': 'b', 'Another Strange ID': 'voodoo' } }
+    , { expr: "key='alpha', obj={}, obj[key]='747', obj", expect: { alpha: "747" } }  // old way for dereferenced key initialization
+    , { expr: "key='delta', obj={[key]:'737'}", expect: { delta: '737' } }        // new way as of 25083 (direct initialization of object using deref'd key)
+    , { expr: "key='delta', obj={[key]:'767'}, 'xxx' /* scratch value */, obj[key]", expect: '767' }  // check deref access
 
     , { expr: "1 in [ 5,6,4 ]", expect: true }  /* JS semantics: 1 is valid array index and existing member */
     , { expr: "4 in [ 5,6,4 ]", expect: false } /* JS semantics: 4 is not valid array index/existing */
@@ -606,7 +625,7 @@ test_expr.forEach( function( e ) {
                     failed = false;
                 }
                 if ( chatty ) {
-                    console.log( "     Result:", res );
+                    console.log( "     Result:", typeof res, res );
                 }
                 if ( failed ) {
                     if ( !chatty ) {

@@ -182,7 +182,7 @@
 %start expressions
 
 %{
-    /* Grammar 24269 */
+    /* Grammar 25083 */
 
     var buffer = "", qsep = "";
 
@@ -269,22 +269,24 @@ dict_element
         { $$ = { key: $1, value: $3 }; }
     | '[' quoted_string ']' COLON e
         { $$ = { key: $2, value: $5 }; }
+    | '[' ref_expr ']' COLON e
+        { $$ = { key: $2, value: $5 }; }
     | quoted_string COLON e
         { $$ = { key: $1, value: $3 }; }
     ;
 
 dict_elements
     : dict_elements COMMA dict_element
-        { ($1)[($3).key] = ($3).value; $$ = $1; }
+        { $1.push( $3 ); $$ = $1; }
     | dict_element
-        { $$ = { [($1).key]: ($1).value }; }
+        { $$ = [ $1 ]; }
     ;
 
 element_list
     : dict_elements
         { $$ = $1; }
     |
-        { $$ = {}; }
+        { $$ = []; }
     ;
 
 array_elements
@@ -384,7 +386,7 @@ e
     | e '?' e COLON e
         { $$ = atom( 'if', { test: $1, tc: $3, fc: $5, locs: [@1, @3, @5] } ); }
     | LCURLY element_list RCURLY
-        { $$ = $2; }
+        { $$ = atom( 'dict', { elements: $2 } ); }
     | '[' array_list ']'
         { $$ = $2; }
     | NUMBER
