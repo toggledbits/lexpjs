@@ -1,9 +1,20 @@
 #!/usr/bin/env node
 
+const show_parsed = false;  /* Set true to see parsed expressions in output */
+
 const lexp = require( './lexp' );
 
 console.log( "lexp CLI, library version", lexp.version );
 console.log( "Type CTRL-C or 'quit' to exit" );
+
+var emap = function( key, value ) {
+    if ( Number.isNaN( value ) ) {
+        return "--NaN--";
+    } else if ( value === Infinity || value === -Infinity ) {
+        return `--${value.toString()}--`;
+    }
+    return value;
+}
 
 process.stdout.write( 'lexpjs> ' );
 
@@ -16,7 +27,11 @@ process.stdin.on( 'data', ( c ) => {
         return;
     }
     try {
-        let res = lexp.evaluate( c, ctx );
+        const cx = lexp.compile( c );
+        if ( show_parsed ) {
+            console.log(JSON.stringify(cx, emap, 4));
+        }
+        let res = lexp.run( cx, ctx );
         console.log( "Result:", typeof(res), res );
     } catch ( err ) {
         console.log( err );

@@ -161,7 +161,7 @@
 %right FIRST EACH WITH
 %right '?'
 %right COLON
-%left COALESCE COALESCENAN
+%right COALESCE COALESCENAN
 %left LOR
 %left LAND
 %left BOR
@@ -170,7 +170,7 @@
 %nonassoc '==' '===' '!=' '!=='
 %nonassoc IN
 %nonassoc '<' '<=' '>' '>='
-%left RANGE
+%nonassoc RANGE
 %left '<<' '>>' '>>>'
 %left '+' '-'
 %left '*' '/' MOD
@@ -182,7 +182,7 @@
 %start expressions
 
 %{
-    /* Grammar 25090 */
+    /* Grammar 25244 */
 
     var buffer = "", qsep = "";
 

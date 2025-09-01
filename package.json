@@ -1,10 +1,11 @@
 {
   "name": "lexpjs",
-  "version": "1.0.25090",
+  "version": "1.0.25244",
   "description": "An expression parser written in JavaScript",
   "main": "cli.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "make test",
+    "deps": "npm i --no-save --omit dev --no-package-lock && npm prune --no-package-lock"
   },
   "repository": {
     "type": "git",

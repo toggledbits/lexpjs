@@ -1,4 +1,4 @@
-/** lexpjs - Copyright (C) 2018,2021,2024 Patrick H. Rigney, All Rights Reserved
+/** lexpjs - Copyright (C) 2018,2021,2024,2025 Patrick H. Rigney, All Rights Reserved
  *  See https://github.com/toggledbits/lexpjs
  *
  *  This Software is open source offered under the MIT LICENSE. See https://opensource.org/licenses/MIT
@@ -19,7 +19,7 @@
  */
 /* global parser */
 
-const version = 25090;
+const version = 25244;
 
 const FEATURE_MONTH_BASE = 1;   /* 1 = months 1-12; set to 0 if you prefer JS semantics where 0=Jan,11=Dec */
 const MAX_RANGE = 1000;         /* Maximum number of elements in a result range op result array */
@@ -52,7 +52,7 @@ const c_quot = {                /* Default quoting */
 
 /* ---------------------------------- Generated grammar (DO NOT EDIT) --------------------------------- */
 
-@@@
+// @@@
 
 /* --------------------------- End of generated section (DO NOT EDIT ABOVE) --------------------------- */
 
@@ -311,6 +311,10 @@ const c_quot = {                /* Default quoting */
     var get_context = function( vars ) {
         var c = { __lvar: vars || {}, __depth: 0, __tag: '$global', _func: {} };
         c.__global = c;
+        c.__lvar.MAXINT = Number.MAX_SAFE_INTEGER;
+        c.__lvar.MININT = Number.MIN_SAFE_INTEGER;
+        c.__lvar.MAXFLOAT = Number.MAX_VALUE;
+        c.__lvar.MINFLOAT = Number.MIN_VALUE;
         return c;
     };
 
@@ -374,13 +378,21 @@ const c_quot = {                /* Default quoting */
         function _resolve( a, ctx ) {
             /* Scope priority: local, context, external resolver */
             let res;
-            if ( ctx.__global._func._ref ) {
-                ctx.__global._func._ref( a.name, ctx );
+
+            /** NB Making a wierd departure (kludge) for Reactor here, allowing a function to be
+             *  to be defined at a context level other than global. This is necessary for Reactor's
+             *  Rule local variable dependency scan.
+             */
+            if ( ctx._func?._ref ) {
+                ctx._func._ref( a.name, ctx );
             }
+
+            /* If we find a variable at this scope (context) or any above, return its value */
             let c = locate_context( a.name, ctx, '__lvar' );
             if ( c ) {
                 res = c.__lvar[ a.name ];
             } else {
+                /* Not found; use resolver function if defined */
                 c = locate_context( '_resolve', ctx, '_func' );
                 if ( c ) {
                     res = c._func._resolve( a.name, ctx );
@@ -480,14 +492,14 @@ const c_quot = {                /* Default quoting */
                     } else if (e.op == '||') {
                         /* short-cut evaluation */
                         v1eval = v1eval || _run( v2, ctx );
-                    } else if (e.op == 'in' ) {
+                    } else if (e.op == 'in') {
                         v1eval = v1eval in v2eval;
-                    } else if (e.op == '??' ) {
-                        v1eval = ( null === N(v1eval) ) ? _run( v2, ctx ) : v1eval;
-                    } else if (e.op == '?#' ) {
-                        v1eval = parseFloat( v1eval );
-                        v1eval = ( Number.isNaN(v1eval) || isNaN(v1eval) || ! Number.isFinite( v1eval ) ) ?
-                            _run( v2, ctx ) : v1eval;
+                    } else if (e.op == '??') {
+                        v1eval = ( null !== N(v1eval) ) ? v1eval : _run( v2, ctx );
+                    } else if (e.op == '?#') {
+                        /* ?# op returns numeric representation of left operand unless it's not a number, then right operand. */
+                        v1eval = parseFloat( v1eval );  // null/undefined result NaN
+                        v1eval = Number.isFinite( v1eval ) ? v1eval : _run( v2, ctx );  // isFinite() returns false for NaN and null
                     } else if ( ".." === e.op ) {
                         /* Range op */
                         let res = [];
@@ -527,8 +539,23 @@ const c_quot = {                /* Default quoting */
                             }
                             let member = _run( v1.member, ctx );
                             /* Null and NaN don't pass here */
-                            if ( ! ( "number" === typeof member || "string" === typeof member ) || "" === member  ) {
-                                throw new ReferenceError( `Invalid reference to member (${typeof member})${String(member)} of ${String(scope)}` );
+                            if ( Array.isArray( scope ) ) {
+                                if ( "string" === typeof member && member == parseInt( member ) ) {
+                                    member = parseInt( member );
+                                }
+                                if ( isNaN( member ) || ! Number.isFinite( member ) || member < 0 ) {
+                                    // Array assignment must have numeric index
+                                    const wh = is_atom( v1.context, 'vref' ) ? v1.context.name : scope;
+                                    throw new ReferenceError( `Invalid reference to member (${typeof member})${String(member)} of array ${String(wh)}` );
+                                }
+                                member = parseInt( member );
+                            } else if ( "string" !== typeof member || "" === member ) {
+                                if ( "number" === typeof member ) {
+                                    member = String( member );
+                                } else {
+                                    const wh = is_atom( v1.context, 'vref' ) ? v1.context.name : scope;
+                                    throw new ReferenceError( `Invalid reference to member (${typeof member})${String(member)} of object ${String(wh)}` );
+                                }
                             }
 // D("ASSIGN",scope,".",member,"=",v2eval);
                             res = scope[ member ] = v2eval;
@@ -763,7 +790,7 @@ const c_quot = {                /* Default quoting */
                 } else if ( is_atom( e, 'fdef' ) ) {
                     const seen = {};
                     /* e.args is plain array of strings (argument names/identifiers; 25090 tighter, simplified structure) */
-                    e.args.forEach( (a,ix) => {
+                    e.args.forEach( (a /* ,ix */ ) => {
                         if ( seen[ a ] ) {
                             throw new SyntaxError( `Duplicate argument name (${a})` );
                         }
@@ -964,7 +991,7 @@ const c_quot = {                /* Default quoting */
         }
     }
 
-    parser.yy.parseError = function(str,hash,...args) {
+    parser.yy.parseError = function(str, hash /* , ...args */) {
         if ( hash?.token === 'EOF' && Array.isArray(hash?.expected) && hash.expected.length > 0 )
             throw new Error(`Unexpected end of expression at line ${hash?.loc?.last_line} column ${hash?.loc?.last_column}`);
         throw new Error( str );

@@ -1,10 +1,14 @@
-const version = 25090;
+const version = 25244;
 
-const verbose = false;  // If true, all tests and results printed; otherwise just errors.
+/** If verbose is true, every test will print its expression and result.
+ *  Otherwise, tests are run quiet, unless verbose is set true on the test itself.
+ */
+const verbose = false;
 
 var lexp = require("./lexp.js");
 // console.log(lexp);
 
+/* A starting context to play with */
 var ctx = lexp.get_context( {
     entity: {
         id: "house>123",
@@ -31,6 +35,17 @@ var ctx = lexp.get_context( {
     tau: 6.28318
 });
 
+/* Replacer function for JSON.stringify() to expose special values NaN and Infinity */
+var emap = function( key, value ) {
+    if ( Number.isNaN( value ) ) {
+        return "--NaN--";
+    } else if ( value === Infinity || value === -Infinity ) {
+        return `--${value.toString()}--`;
+    }
+    return value;
+}
+
+// debugging
 if (false) {
     ctx._func._ref = function( name, ctx ) {
         function locate( name, ctx ) {
@@ -48,6 +63,7 @@ if (false) {
 }
 
 var test_expr = [
+    /* Test strings, quoting, escaping */
       { expr: '"Hello"', expect: "Hello" }
     , { expr: "'There'", expect: "There" }
     , { expr: "`lexpjs`", expect: "lexpjs" }
@@ -60,6 +76,7 @@ var test_expr = [
     , { expr: "'\\t\\\\t\\z\\.'", expect: "\t\\tz." }
     , { expr: "\n\n\n\t\t1\t\t\n\n\r", expect: 1 }
 
+    /* Test number parsing */
     , { expr: "0", expect: 0 }
     , { expr: "99221", expect: 99221 }
     , { expr: "-2", expect: -2 }
@@ -76,12 +93,14 @@ var test_expr = [
     , { expr: "1.e4", expect: 10000 }
     , { expr: "1e-3", expect: 0.001 }
 
-
+    /* Reserved words and references */
     , { expr: "true", expect: true }
     , { expr: "false", expect: false }
     , { expr: "null", expect: null }
     , { expr: "tau", expect: ctx.tai }  // constant in context defined above
     , { expr: "pi", expect: (r) => Math.floor(r*100000000) === Math.floor(Math.PI*100000000) }
+
+    /* Basic Operators */
     , { expr: "2**16", expect: 65536 }
     , { expr: "4*7", expect: 28 }
     , { expr: "5*0", expect: 0 }
@@ -121,10 +140,36 @@ var test_expr = [
     , { expr: "1 != '2'", expect: true }
     , { expr: "0b1100 ^ 0b1001", expect: 5 }
 
+    /* Assignment test, two steps */
+    , { expr: "t = 'soul stone'", expect: "soul stone" }
+    , { expr: "t", expect: "soul stone" }
+    , { expr: "gem\u00b5se='gut',t=null,gem\u00b5se", expect: "gut" }  // unicode character in identifier is OK
+
+    /* "PEMDAS" tests */
+    , { expr: "( 4 + 5 ) + 6", expect: 15 }
+    , { expr: "( 4 * 5 ) + 6", expect: 26 }
+    , { expr: "( 4 + 5 ) * 6", expect: 54 }
+    , { expr: "( 4 + 5 ) / 6", expect: 9/6 }
+    , { expr: "1 + (2 + (3 + (4 + (5 + (6 + ( 7 ))))))", expect: 28 }
+    , { expr: "3 * 2**4", expect: 48 }
+    , { expr: "2 ** 4 ** 2", expect: 65536 } /* right association, so 2 ** 16 = 65536, not 16 ** 2 = 256 */
+    , { expr: "3 * 8 / 12", expect: 2 }
+    , { expr: "27 / 3 * 4", expect: 36 }
+    , { expr: "4 * 8 + 2", expect: 34 }
+    , { expr: "4 - 8 * 2", expect: -12 }
+
+    /* Null arithmetic */
+    , { expr: "1 + null", expect: 1 }
+    , { expr: "4 * null", expect: 0 }
+    , { expr: "4 / null", expect: Infinity }
+    , { expr: "null / 4", expect: 0 }
+
+    /* String concatenation */
     , { expr: "`red` + `blue`", expect: "redblue" }
     , { expr: "null + `blue`", expect: "blue" }
     , { expr: "`red` + null", expect: "red" }
 
+    /* Boolean expressions */
     , { expr: "true && true", expect: true }
     , { expr: "true && false", expect: false }
     , { expr: "false && true", expect: false }
@@ -151,14 +196,17 @@ var test_expr = [
     , { expr: "false or false", expect: false }
     , { expr: "not true", expect: false }
     , { expr: "not false", expect: true }
+    , { expr: "!0", expect: true }
+    , { expr: "!1", expect: false }
 
+    /* Bitwise operators */
     , { expr: "0x40 | 0x04", expect: 0x44 }
     , { expr: "0x30 | 0x10", expect: 0x30 }
     , { expr: "0x40 & 0x04", expect: 0x00 }
     , { expr: "0x30 & 0x10", expect: 0x10 }
     , { expr: "~0x10", expect: ~0x10 }
-    , { expr: "!0", expect: true }
-    , { expr: "!1", expect: false }
+
+    /* Special operators */
     , { expr: "3..6", expect: [3,4,5,6] }
     , { expr: "6..3", expect: [6,5,4,3] }
     , { expr: "0.5..2.6", expect: [0,1,2] }
@@ -169,23 +217,46 @@ var test_expr = [
     , { expr: "t=0, 123 ?? (t=456), t", expect: 0 }     /* test shortcut eval */
     , { expr: "t=0, null ?? (t=456)", expect: 456 }     /* test shortcut eval */
     , { expr: "t=0, null ?? (t=456), t", expect: 456 }  /* test shortcut eval */
+    , { expr: "'***' ?# 654", expect: 654 }
+    , { expr: "null ?# 456", expect: 456 }
+    , { expr: "NaN ?# 600", expect: 600 }
+    , { expr: "Inf ?# 999", expect: 999 }
     , { expr: "123 ?# null", expect: 123 }
     , { expr: "'123' ?# null", expect: 123 }
     , { expr: "'fox' ?# 'hound'", expect: 'hound' }
     , { expr: "null ?# 'deer'", expect: 'deer' }
     , { expr: "true ?# 'elk'", expect: 'elk' }
     , { expr: "(1/0) ?# 'rabbit'", expect: 'rabbit' }
+    , { expr: "null ?# NaN ?# 789 ?# 'OOF'", expect: 789 }  // test right-associativity
     , { expr: "true ? 123 : 456", expect: 123 }
     , { expr: "false ? 123 : 456", expect: 456 }
+
+    /* Array construction and access */
     , { expr: "[1,2,3]", expect: [1,2,3] }
     , { expr: "([9,8,7,6])[2]", expect: 7 }
     , { expr: "[1,2,3] == [1,2,3]", expect: false }     /* because different objects in memory */
     , { expr: "s=[1,2,3], t=s, s==t", expect: true }    /* because same object in memory */
+    , { expr: "s=[100,200,300], s[1]=110, s", expect: [100,110,300] }
+    , { expr: "s=[100,200,300], s['2']=110, s", expect: [100,200,110] }
+    , { expr: "s=[100,200,300], s[1.5]=110, s", error: /invalid reference to member/i }  // non-integer array index invalid
+    , { expr: "s=[100,200,300], s[-1]=110, s", error: /invalid reference to member/i }  // negative array index invalid
+    , { expr: "t=null, s=[100,200,300], s[t]=123, s", error: /invalid reference to member/i }  // non-numeric array index invalid
+    , { expr: "s=[100,200,300], s[NaN]=123, s", error: /invalid reference to member/i }  // non-numeric
+    , { expr: "s=[100,200,300], s[Infinity]=123, s", error: /invalid reference to member/i }  // outlandish and dangerous
+    , { expr: "s=[100,200,300], s.alpha=123, s", error: /invalid reference to member/i }  // mixed array/object not allowed
+
+    /* Object access */
     , { expr: "{ alpha: 1, beta: 2, gamma: 3 }", expect: { alpha: 1, beta: 2, gamma: 3 } }
     , { expr: "{ 'first': 'a', ['strange id']: 'b', 'Another Strange ID': 'voodoo' }", expect: { first: 'a', 'strange id': 'b', 'Another Strange ID': 'voodoo' } }
     , { expr: "key='alpha', obj={}, obj[key]='747', obj", expect: { alpha: "747" } }  // old way for dereferenced key initialization
     , { expr: "key='delta', obj={[key]:'737'}", expect: { delta: '737' } }        // new way as of 25083 (direct initialization of object using deref'd key)
     , { expr: "key='delta', obj={[key]:'767'}, 'xxx' /* scratch value */, obj[key]", expect: '767' }  // check deref access
+    , { expr: "obj={}, obj.alpha='hat', obj", expect: { alpha: "hat" } }  // assignment to key
+    , { expr: "obj={}, obj['beta']=999, obj", expect: { beta: 999 } }     // also assignment to key
+    , { expr: "t='ohmega', obj={}, obj[t]=4, obj", expect: { ohmega: 4 } }     // also assignment to key
+    , { expr: "obj={}, obj[0]='zero', obj", error: /invalid reference to member/i }  // invalid numeric (can't make mixed array/object)
+    , { expr: "obj={}, obj[null]='zero', obj", error: /invalid reference to member/i }  // invalid null
+    , { expr: "obj={}, obj[NaN]='zero', obj", error: /invalid reference to member/i }  // invalid NaN
 
     , { expr: "1 in [ 5,6,4 ]", expect: true }  /* JS semantics: 1 is valid array index and existing member */
     , { expr: "4 in [ 5,6,4 ]", expect: false } /* JS semantics: 4 is not valid array index/existing */
@@ -194,30 +265,6 @@ var test_expr = [
     , { expr: "'one' in { one: 1, two: 2 }", expect: true }
     , { expr: "'two' in { one: 1, two: 2 }", expect: true }
     , { expr: "'three' in { one: 1, two: 2 }", expect: false }
-
-    /* Assignment test, two steps */
-    , { expr: "t = 'soul stone'", expect: "soul stone" }
-    , { expr: "t", expect: "soul stone" }
-    , { expr: "gem\u00b5se='gut',t=null,gem\u00b5se", expect: "gut" }
-
-    /* "PEMDAS" tests */
-    , { expr: "( 4 + 5 ) + 6", expect: 15 }
-    , { expr: "( 4 * 5 ) + 6", expect: 26 }
-    , { expr: "( 4 + 5 ) * 6", expect: 54 }
-    , { expr: "( 4 + 5 ) / 6", expect: 9/6 }
-    , { expr: "1 + (2 + (3 + (4 + (5 + (6 + ( 7 ))))))", expect: 28 }
-    , { expr: "3 * 2**4", expect: 48 }
-    , { expr: "2 ** 4 ** 2", expect: 65536 } /* right association, so 2 ** 16 = 65536, not 16 ** 2 = 256 */
-    , { expr: "3 * 8 / 12", expect: 2 }
-    , { expr: "27 / 3 * 4", expect: 36 }
-    , { expr: "4 * 8 + 2", expect: 34 }
-    , { expr: "4 - 8 * 2", expect: -12 }
-
-    /* Null arithmetic */
-    , { expr: "1 + null", expect: 1 }
-    , { expr: "4 * null", expect: 0 }
-    , { expr: "4 / null", expect: Infinity }
-    , { expr: "null / 4", expect: 0 }
 
     /* Null-conditional/coalescing operators */
     , { expr: "entity?.id", expect: "house>123" }
@@ -244,6 +291,7 @@ var test_expr = [
     , { expr: "isnull(0)", expect: false }
     , { expr: "isnull(123)", expect: false }
     , { expr: "isnull(NaN)", expect: false }
+    , { expr: "isnull(Infinity)", expect: false }
     , { expr: "isnull(null)", expect: true }
     , { expr: "isvalue(123)", expect: true }
     , { expr: "isvalue('abc')", expect: true }
@@ -253,6 +301,7 @@ var test_expr = [
     , { expr: "isvalue({})", expect: true }
     , { expr: "isvalue(null)", expect: false }
     , { expr: "isvalue(NaN)", expect: false }
+    , { expr: "isvalue(Infinity)", expect: true }  // specification for isvalue() is "not null or NaN"
     , { expr: "min(5,4,6*9)", expect: 4 }
     , { expr: "max(5,4,6*9)", expect: 54 }
     , { expr: "min( 7..-33 )", expect: -33 }
@@ -452,7 +501,7 @@ var test_expr = [
     , { expr: `typeof({})`, expect: "object" }
     , { expr: `typeof(entity.attributes)`, expect: "object" }
 
-    , { expr: `err( "stop here" )`, error: "stop here" }
+    , { expr: `err( "stop here" ), "not this"`, error: "stop here" }
 
     /* Conditional */
     , { expr: "if entity.attributes.power_switch.state then 1 else 0 endif", expect: 1 }
@@ -517,10 +566,10 @@ var test_expr = [
     /* scope tests */
     , { expr: "xyzzy='', do global xyzzy='global' done, xyzzy", expect: "global" }
     , { expr: 'outer="outer", do local xyzzy="inner", outer=xyzzy done, xyzzy', expect: "global" }
-    , { expr: 'outer', expect: 'inner' }
+    , { expr: 'outer', expect: 'inner' }  // carries over from previous text
 
     , { expr: 'area=3.14159265*4*4' }
-    , { expr: "'half the area is ' + area / 2" }
+    , { expr: "'half the area is ' + round( area / 2, 2 )", expect: "half the area is 25.13" }
 
     /* Sorting with user-defined control expression or function */
     , { expr: 'sort( [ "e", "d", "b", "a", "c" ] )', expect: [ "a", "b", "c", "d", "e" ] }
@@ -602,7 +651,7 @@ test_expr.forEach( function( e ) {
     try {
         ce = lexp.compile( e.expr );
         if ( e.debug ) {
-            console.log( JSON.stringify( ce, null, 4 ) );
+            console.log( JSON.stringify( ce, emap, 4 ) );
         }
         try {
             res = lexp.run( ce, ctx );
@@ -646,21 +695,26 @@ test_expr.forEach( function( e ) {
                     console.error("**** Eval error (wrong error thrown): ", err );
                     console.error("++++ Got", err.constructor.name, "expecting", e.error.constructor.name );
                     ++num_errors;
+                } else if ( ( e.error instanceof RegExp ) && ! e.error.test( err.message ) ) {
+                    console.error("**** Eval error (wrong error thrown): ", err );
+                    console.error("++++ Expecting", e.error );
+                    ++num_errors;
                 } else if ( "string" === typeof e.error && err.message !== e.error ) {
                     console.error("**** Eval error (wrong error thrown): ", err );
                     console.error("++++ Expecting", e.error );
                     ++num_errors;
-                }
-                /* Expecting error, got error. */
-                if ( chatty ) {
-                    console.log( "     Result: (expected error) ", String( err ) );
+                } else {
+                    /* Expecting error, got error. */
+                    if ( chatty ) {
+                        console.log( "     Result: (expected error) ", String( err ) );
+                    }
                 }
             } else {
                 if ( !chatty ) {
                     console.error( "\nTest expression: ", e.expr );
                 }
                 console.error("**** Eval error:", err );
-                console.error("ce", JSON.stringify(ce) );
+                console.error("     Compiled to:", JSON.stringify(ce, emap, 4) );
                 ++num_errors;
             }
         }

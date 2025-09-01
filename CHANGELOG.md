@@ -2,6 +2,16 @@
 
 **NOTE:** In order to *build* lexpjs with Unicode-friendly identifiers enabled (if, for some reason, the included pre-built `lexp.js` file doesn't suit your needs), you first need to modify *jison-lex* to allow Unicode property escapes in its *RegExp*s. See `README-lexer.md` for details.
 
+## 1.0.25244
+
+* Grammar: Make `??` and `?#` operators right-associative. This follows *C#* and makes more sense in practical use.
+* Simplify implementation of `?#` operator (mostly to improve readability).
+* Enforce stricter rules for assignments to array and object elements &mdash; no longer allows mixed array/object values.
+* More tests.
+* Add regular expression comparison for a test that is expected to throw an error, so a part of the message can be matched to make sure it's the expected error, rather than having to match the entire error string, which may contain runtime data that can't be predicted.
+* CLI test tool now prints parsed result, controlled by `show_parsed` constant at head of script.
+* Expose the runtime's min and max integer and floating point values as global variables `MAXINT, MININT, MAXFLOAT, MINFLOAT`.
+
 ## 1.0.25090
 
 * Tighten definition of arg_list for function definitions, and simplify resulting atom (remove unnecessary wrapper atoms).
