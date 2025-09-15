@@ -1,4 +1,4 @@
-/** Grammar for lexpjs. Copyright (C) 2020,2021,2024 Patrick H. Rigney
+/** Grammar for lexpjs. Copyright (C) 2020,2021,2024,2025 Patrick H. Rigney
  *  See https://github.com/toggledbits/lexpjs
  *
  *  This Software is offered under the MIT LICENSE open source license. See https://opensource.org/licenses/MIT
@@ -182,22 +182,20 @@
 %start expressions
 
 %{
-    /* Grammar 25244 */
+    /* Grammar 25258 */
 
     var buffer = "", qsep = "";
 
-    function is_atom( v, typ ) {
-        return null !== v && "object" === typeof( v ) &&
-            "undefined" !== typeof v.__atom &&
-            ( !typ || v.__atom === typ );
+    function atom( t, vs ) {
+        return { __atom: t, ...(vs || {}) };
     }
 
-    function atom( t, vs ) {
-        var a = { __atom: t };
-        Object.keys(vs || {}).forEach( function( key ) {
-            a[key] = vs[key];
-        });
-        return a;
+    function vref_atom_track( identifier ) {
+        if ( ! parser.__refs ) {
+            parser.__refs = new Set();
+        }
+        parser.__refs.add( identifier );
+        return atom( 'vref', { name: identifier } );
     }
 
     function D( ...args ) {
@@ -262,7 +260,7 @@ arg_list
 
 ref_expr
     : IDENTIFIER
-        { $$ = atom( 'vref', { name: $1 } ); }
+        { $$ = vref_atom_track( $1 ); }
     | ref_expr DOT IDENTIFIER
         { $$ = atom( 'deref', { context: $1, member: $3, locs: [@1, @3] } ); }
     | ref_expr '[' e ']'
@@ -272,7 +270,7 @@ ref_expr
     | ref_expr QBRACKET e ']'
         { $$ = atom( 'deref', { context: $1, member: $3, locs: [@1, @3], op: $2 } ); }
     | IDENTIFIER '(' arg_list ')'
-        { $$ = atom( 'fref', { name: $1, args: is_atom( $3, 'list') ? ($3).expr : [ $3 ], locs: [@1] } ); }
+        { $$ = atom( 'fref', { name: $1, args: ($3).expr, locs: [@1] } ); }
     | '(' e ')'
         { $$ = $2; }
     ;

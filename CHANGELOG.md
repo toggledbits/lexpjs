@@ -2,6 +2,10 @@
 
 **NOTE:** In order to *build* lexpjs with Unicode-friendly identifiers enabled (if, for some reason, the included pre-built `lexp.js` file doesn't suit your needs), you first need to modify *jison-lex* to allow Unicode property escapes in its *RegExp*s. See `README-lexer.md` for details.
 
+## 1.0.25258
+
+* Grammar now stores names of variables referenced on the compiled expression. These can be retrieved as an array of names using `get_vrefs(ce)` or the method of the same name on *CompiledExpression*.
+
 ## 1.0.25244
 
 * Grammar: Make `??` and `?#` operators right-associative. This follows *C#* and makes more sense in practical use.

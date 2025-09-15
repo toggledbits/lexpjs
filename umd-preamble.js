@@ -19,7 +19,7 @@
  */
 /* global parser */
 
-const version = 25244;
+const version = 25258;
 
 const FEATURE_MONTH_BASE = 1;   /* 1 = months 1-12; set to 0 if you prefer JS semantics where 0=Jan,11=Dec */
 const MAX_RANGE = 1000;         /* Maximum number of elements in a result range op result array */
@@ -895,6 +895,28 @@ const c_quot = {                /* Default quoting */
         return undefined;
     }
 
+    function get_vrefs( ce ) {
+        if ( ! is_atom( ce ) ) {
+            throw new TypeError( "Argument is not compiled expression");
+        }
+        return ce.__vrefs;
+    }
+
+    function _compile( expr ) {
+        const ce = parser.parse( expr );
+        if ( parser.__refs ) {
+            ce.__vrefs = Array.from( parser.__refs.values() );
+            parser.__refs.clear();
+        } else {
+            ce.__vrefs = [];
+        }
+        return ce;
+    }
+
+    function _evaluate( expr, context ) {
+        return run( parser.parse( expr ), context );
+    }
+
     class CompiledExpression {
         constructor( expr, b ) {
             this.expr = expr;
@@ -903,6 +925,20 @@ const c_quot = {                /* Default quoting */
 
         toString() {
             return this.expr;
+        }
+
+        get_vrefs() {
+            return get_vrefs( this.ce );
+        }
+
+        evaluate( ctx ) {
+            return LEXP.run( this.ce, ctx );
+        /*
+            if ( ctx && ! ( ctx instanceof ExpressionContext ) ) {
+                throw new TypeError( "Invalid context" );
+            }
+            return run( this.ce, ctx ? ctx.getContext() : get_context() );
+        */
         }
     }
 
@@ -928,19 +964,20 @@ const c_quot = {                /* Default quoting */
         }
 
         push( tag ) {
-            return ( this.ctx = push_context( this.ctx, tag ) );
+            this.ctx = push_context( this.ctx, tag );
+            return this;
         }
 
         /** Pop contexts up to and including tag. If tag is not specified, pop one level. */
         pop( tag ) {
-            while ( this.ctx.__tag !== "__global" ) {
+            while ( this.ctx.__tag !== "$global" ) {
                 if ( ! tag || this.ctx.__tag === tag ) {
                     this.ctx = pop_context( this.ctx );
-                    return this.ctx;
+                    return this;
                 }
                 this.ctx = pop_context( this.ctx );
             }
-            return this.ctx;
+            return this;
         }
 
         getTag() {
@@ -948,7 +985,19 @@ const c_quot = {                /* Default quoting */
         }
 
         find( tag ) {
-            return find_context_tag( this.ctx, tag );
+            const found = find_context_tag( this.ctx, tag );
+            if ( ! found ) {
+                return undefined;
+            }
+            const ret = new ExpressionContext();
+            ret.ctx = found;
+            return ret;
+        }
+
+        getGlobal() {
+            const ret = new ExpressionContext();
+            ret.ctx = this.ctx.__global;
+            return ret;
         }
 
         getContext() {
@@ -966,7 +1015,7 @@ const c_quot = {                /* Default quoting */
         }
 
         static compile( expr ) {
-            return new CompiledExpression( expr, parser.parse( expr ) );
+            return new CompiledExpression( expr, _compile( expr ) );
         }
 
         static run( ce, ctx ) {
@@ -1005,16 +1054,13 @@ const c_quot = {                /* Default quoting */
         define_vars: define_vars,
         set_var: set_var,
         get_var: get_var,
+        get_vrefs: get_vrefs,
         push_context: push_context,
         pop_context: pop_context,
         find_context_tag: find_context_tag,
-        compile: function( expr ) {
-            return parser.parse( expr );
-        },
+        compile: _compile,
         run: run,
-        evaluate: function( expr, context ) {
-            return run( parser.parse( expr ), context );
-        },
+        evaluate: _evaluate,
         CompiledExpression: CompiledExpression,
         ExpressionContext: ExpressionContext,
         LEXP: LEXP

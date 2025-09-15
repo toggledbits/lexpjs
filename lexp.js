@@ -1,4 +1,4 @@
-/* Version 25244.1659 */
+/* Version 25258.1426 */
 /** lexpjs - Copyright (C) 2018,2021,2024,2025 Patrick H. Rigney, All Rights Reserved
  *  See https://github.com/toggledbits/lexpjs
  *
@@ -20,7 +20,7 @@
  */
 /* global parser */
 
-const version = 25244;
+const version = 25258;
 
 const FEATURE_MONTH_BASE = 1;   /* 1 = months 1-12; set to 0 if you prefer JS semantics where 0=Jan,11=Dec */
 const MAX_RANGE = 1000;         /* Maximum number of elements in a result range op result array */
@@ -169,7 +169,7 @@ case 13:
  this.$ = atom( 'list', { expr: [] } ); 
 break;
 case 14:
- this.$ = atom( 'vref', { name: $$[$0] } ); 
+ this.$ = vref_atom_track( $$[$0] ); 
 break;
 case 15:
  this.$ = atom( 'deref', { context: $$[$0-2], member: $$[$0], locs: [_$[$0-2], _$[$0]] } ); 
@@ -184,7 +184,7 @@ case 18:
  this.$ = atom( 'deref', { context: $$[$0-3], member: $$[$0-1], locs: [_$[$0-3], _$[$0-1]], op: $$[$0-2] } ); 
 break;
 case 19:
- this.$ = atom( 'fref', { name: $$[$0-3], args: is_atom( $$[$0-1], 'list') ? ($$[$0-1]).expr : [ $$[$0-1] ], locs: [_$[$0-3]] } ); 
+ this.$ = atom( 'fref', { name: $$[$0-3], args: ($$[$0-1]).expr, locs: [_$[$0-3]] } ); 
 break;
 case 20: case 86:
  this.$ = $$[$0-1]; 
@@ -469,22 +469,20 @@ parse: function parse(input) {
     return true;
 }};
 
-    /* Grammar 25244 */
+    /* Grammar 25258 */
 
     var buffer = "", qsep = "";
 
-    function is_atom( v, typ ) {
-        return null !== v && "object" === typeof( v ) &&
-            "undefined" !== typeof v.__atom &&
-            ( !typ || v.__atom === typ );
+    function atom( t, vs ) {
+        return { __atom: t, ...(vs || {}) };
     }
 
-    function atom( t, vs ) {
-        var a = { __atom: t };
-        Object.keys(vs || {}).forEach( function( key ) {
-            a[key] = vs[key];
-        });
-        return a;
+    function vref_atom_track( identifier ) {
+        if ( ! parser.__refs ) {
+            parser.__refs = new Set();
+        }
+        parser.__refs.add( identifier );
+        return atom( 'vref', { name: identifier } );
     }
 
     function D( ...args ) {
@@ -1893,6 +1891,28 @@ return new Parser;
         return undefined;
     }
 
+    function get_vrefs( ce ) {
+        if ( ! is_atom( ce ) ) {
+            throw new TypeError( "Argument is not compiled expression");
+        }
+        return ce.__vrefs;
+    }
+
+    function _compile( expr ) {
+        const ce = parser.parse( expr );
+        if ( parser.__refs ) {
+            ce.__vrefs = Array.from( parser.__refs.values() );
+            parser.__refs.clear();
+        } else {
+            ce.__vrefs = [];
+        }
+        return ce;
+    }
+
+    function _evaluate( expr, context ) {
+        return run( parser.parse( expr ), context );
+    }
+
     class CompiledExpression {
         constructor( expr, b ) {
             this.expr = expr;
@@ -1901,6 +1921,20 @@ return new Parser;
 
         toString() {
             return this.expr;
+        }
+
+        get_vrefs() {
+            return get_vrefs( this.ce );
+        }
+
+        evaluate( ctx ) {
+            return LEXP.run( this.ce, ctx );
+        /*
+            if ( ctx && ! ( ctx instanceof ExpressionContext ) ) {
+                throw new TypeError( "Invalid context" );
+            }
+            return run( this.ce, ctx ? ctx.getContext() : get_context() );
+        */
         }
     }
 
@@ -1926,19 +1960,20 @@ return new Parser;
         }
 
         push( tag ) {
-            return ( this.ctx = push_context( this.ctx, tag ) );
+            this.ctx = push_context( this.ctx, tag );
+            return this;
         }
 
         /** Pop contexts up to and including tag. If tag is not specified, pop one level. */
         pop( tag ) {
-            while ( this.ctx.__tag !== "__global" ) {
+            while ( this.ctx.__tag !== "$global" ) {
                 if ( ! tag || this.ctx.__tag === tag ) {
                     this.ctx = pop_context( this.ctx );
-                    return this.ctx;
+                    return this;
                 }
                 this.ctx = pop_context( this.ctx );
             }
-            return this.ctx;
+            return this;
         }
 
         getTag() {
@@ -1946,7 +1981,19 @@ return new Parser;
         }
 
         find( tag ) {
-            return find_context_tag( this.ctx, tag );
+            const found = find_context_tag( this.ctx, tag );
+            if ( ! found ) {
+                return undefined;
+            }
+            const ret = new ExpressionContext();
+            ret.ctx = found;
+            return ret;
+        }
+
+        getGlobal() {
+            const ret = new ExpressionContext();
+            ret.ctx = this.ctx.__global;
+            return ret;
         }
 
         getContext() {
@@ -1964,7 +2011,7 @@ return new Parser;
         }
 
         static compile( expr ) {
-            return new CompiledExpression( expr, parser.parse( expr ) );
+            return new CompiledExpression( expr, _compile( expr ) );
         }
 
         static run( ce, ctx ) {
@@ -2003,16 +2050,13 @@ return new Parser;
         define_vars: define_vars,
         set_var: set_var,
         get_var: get_var,
+        get_vrefs: get_vrefs,
         push_context: push_context,
         pop_context: pop_context,
         find_context_tag: find_context_tag,
-        compile: function( expr ) {
-            return parser.parse( expr );
-        },
+        compile: _compile,
         run: run,
-        evaluate: function( expr, context ) {
-            return run( parser.parse( expr ), context );
-        },
+        evaluate: _evaluate,
         CompiledExpression: CompiledExpression,
         ExpressionContext: ExpressionContext,
         LEXP: LEXP

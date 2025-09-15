@@ -411,4 +411,82 @@ Important notes with respect to date handling (currently; this will evolve):
 
 As a result of the syntax, the following words are reserved and may not be used as identifiers or function names: `true, false, null, each, in, first, of, with, if, then, else, elif, elsif, elseif, endif, case, when, do, done, define, and, or, not, NaN, Infinity, pi`. Note that keywords and identifiers are case-sensitive, so while `each` is not an acceptable identifier, `Each` or `EACH` would be. The names of all defined functions are also reserved.
 
-<small>Updated 2024-Sep-30 (for version 24274)</small>
+## lexpjs Classes
+
+### `class LEXP`
+
+The class `LEXP` is a class wrapper for *lexpjs* functionality.
+
+#### `static compile( expr )`
+
+Compiles the given expression. Throws an error if the expression cannot be compiled. Otherwise, it returns an instance of `CompiledExpression` that is ready for evaluation. This is the only way that instances of the class `CompiledExpression` may be created. If a given expression is to be run multiple times, it is more efficient to call `compile()` once and `run()` (below) several times than to call `evaluate()` multiple times.
+
+#### `static run( compiled_expr [ , context ] )`
+
+Runs the given instance of `CompiledExpression` (see `compile()` above) and returns the result value. An instance of `ExpressionContext` may be passed in the `context` argument.
+
+#### `static evaluate( expr [ , context ] )`
+
+Given a (text) expression, evaluate it and return the result. This is a short-cut for `LEXP.run( LEXP.compile( expr, context ) )` and is appropriate when a given expression will only be executed once or infrequently.
+
+### `class ExpressionContext`
+
+Wrapper class for a *lexpjs* execution context. New execution contexts may be defined using `new ExpressionContext()`. A new execution context, by definition, contains only a single level/scope with the tag `$global`.
+
+#### `defineFunction( name, impl )`
+
+Defines the function named by `name`. The implementation of the function is passed as a JavaScript function in `impl`. Custom functions are described above (see `define_func_impl()`).
+
+#### `defineVar( name, value )`
+
+Defines a variable on the context. See `define_var()` above. The variable is defined in the current scope, so if `push()` has been used to create new context levels, it will be created in that child scope/level.
+
+#### `setVar( name, value )`
+
+Sets the value of a variable in the context. See `set_var()` above. The difference between `defineVar()` and this method is that this method will look up the context tree for a scope in which the variable is already defined; if it finds the variable, it sets it in that scope. Otherwise, the variable is created in the current context as `defineVar()` would.
+
+#### `getVar( name, value )`
+
+Retrieves the value of the named variable from the context tree. See `get_var()` above. This method looks up the context tree to find a scope/level that defines the named variable. If found, its value is returned. Otherwise, *null* is returned.
+
+#### `push( [ tag ] )`
+
+Creates a new context that is a child of the instance context. The new context is assigned the tag given in `tag`, if any. See `push_context()` above.
+
+Note that a new `ExpressionContext` instance is not created. The current instance, which is returned by this method, is modified to refer to the child.
+
+#### `pop( [ tag ] )`
+
+Pops contexts up to and include that identified by `tag`. If `tag` is falsey or not provided, the instance context is popped and its parent returned, unless the instance context is the global context, in which case nothing is popped and the global context is returned (i.e. basically does nothing and returns itself).
+
+Note that, like `push()` above, a new `ExpressionContext` instance is not returned; the current instance is returned with its level/scope reference modified.
+
+#### `getTag()`
+
+Returns the tag of the instance context.
+
+#### `find( tag )`
+
+Looks up the context tree for matching `tag` and returns a new `ExpressionContext` with the subtree. If no matching tag is found, it returns `undefined`.
+
+#### `getGlobal()`
+
+Returns a new `ExpressionContext` containing only the global context from the instance. This is a shortcut for the method call `find( '$global' )`.
+
+### `class CompiledExpression`
+
+The `CompiledExpression` class is a container for a compiled expression. Instances of this class are created and returned only by `LEXP.compile()`. Do not instantiate them directly.
+
+#### `toString()`
+
+Returns the original expression before compilation.
+
+#### `get_vrefs()`
+
+Returns an array of variable names referenced by the expression. This may be useful to client programs that have separate tracking and storage of variables.
+
+#### `evaluate( [ context ] )`
+
+Evaluates the compiled expression using the (optional) `ExpressionContext` instance given in `context`. It is simply a shortcut for `LEXP.run()`.
+
+<small>Updated 2025-Sep-15 (for version 25258)</small>
