@@ -1,4 +1,4 @@
-/* Version 25258.1426 */
+/* Version 25263.0824 */
 /** lexpjs - Copyright (C) 2018,2021,2024,2025 Patrick H. Rigney, All Rights Reserved
  *  See https://github.com/toggledbits/lexpjs
  *
@@ -35,6 +35,8 @@ const c_quot = {                /* Default quoting */
     "\f": "\\f",
     "\v": "\\v"
 };
+
+var __refs = new Set();
 
 (function (root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -469,7 +471,7 @@ parse: function parse(input) {
     return true;
 }};
 
-    /* Grammar 25258 */
+    /* Grammar 25258.02 */
 
     var buffer = "", qsep = "";
 
@@ -478,10 +480,7 @@ parse: function parse(input) {
     }
 
     function vref_atom_track( identifier ) {
-        if ( ! parser.__refs ) {
-            parser.__refs = new Set();
-        }
-        parser.__refs.add( identifier );
+        __refs.add( identifier );
         return atom( 'vref', { name: identifier } );
     }
 
@@ -1899,13 +1898,10 @@ return new Parser;
     }
 
     function _compile( expr ) {
+        __refs.clear();
         const ce = parser.parse( expr );
-        if ( parser.__refs ) {
-            ce.__vrefs = Array.from( parser.__refs.values() );
-            parser.__refs.clear();
-        } else {
-            ce.__vrefs = [];
-        }
+        ce.__vrefs = Array.from( __refs.values() );
+        __refs.clear();
         return ce;
     }
 

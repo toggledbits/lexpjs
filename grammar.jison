@@ -182,7 +182,7 @@
 %start expressions
 
 %{
-    /* Grammar 25258 */
+    /* Grammar 25258.02 */
 
     var buffer = "", qsep = "";
 
@@ -191,10 +191,7 @@
     }
 
     function vref_atom_track( identifier ) {
-        if ( ! parser.__refs ) {
-            parser.__refs = new Set();
-        }
-        parser.__refs.add( identifier );
+        __refs.add( identifier );
         return atom( 'vref', { name: identifier } );
     }
 

@@ -35,6 +35,8 @@ const c_quot = {                /* Default quoting */
     "\v": "\\v"
 };
 
+var __refs = new Set();
+
 (function (root, factory) {
     if (typeof define === 'function' && define.amd) {
         // AMD. Register as an anonymous module.
@@ -903,13 +905,10 @@ const c_quot = {                /* Default quoting */
     }
 
     function _compile( expr ) {
+        __refs.clear();
         const ce = parser.parse( expr );
-        if ( parser.__refs ) {
-            ce.__vrefs = Array.from( parser.__refs.values() );
-            parser.__refs.clear();
-        } else {
-            ce.__vrefs = [];
-        }
+        ce.__vrefs = Array.from( __refs.values() );
+        __refs.clear();
         return ce;
     }
 
