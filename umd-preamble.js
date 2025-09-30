@@ -19,7 +19,7 @@
  */
 /* global parser */
 
-const version = 25258;
+const version = 25273;
 
 const FEATURE_MONTH_BASE = 1;   /* 1 = months 1-12; set to 0 if you prefer JS semantics where 0=Jan,11=Dec */
 const MAX_RANGE = 1000;         /* Maximum number of elements in a result range op result array */
@@ -170,6 +170,8 @@ var __refs = new Set();
         , pad       : { nargs: 2, impl: (s,l,p) => l > 0 ? String(s)+(p||' ').repeat(Math.max(0,l-s.length)) : (p||' ').repeat(Math.max(0,-s.length-l))+String(s) }
         , quote     : { nargs: 1, impl: (s) => String(s).replace( /[\\"\b\f\n\r\t\v]/g, (t) => c_quot[t] || t ) }
         , hex       : { nargs: 1, impl: (n) => Number( n ).toString( 16 ) }
+        , bin       : { nargs: 1, impl: (n) => Number( n ).toString( 2 ) }
+        , oct       : { nargs: 1, impl: (n) => Number( n ).toString( 8 ) }
         , time      : { nargs: 0, impl: function( ...args ) {
                 if ( 1 === args.length && ( null === args[0] || undefined === args.length ) ) {
                     return Date.now();
@@ -294,6 +296,7 @@ var __refs = new Set();
         , arrayUnion: { nargs: 2, impl: (a,b) => a.concat( b.filter( el => ! a.includes( el ) ) ) }
         , toJSON    : { nargs: 1, impl: JSON.stringify }
         , parseJSON : { nargs: 1, impl: JSON.parse }
+        , isJSON    : { nargs: 1, impl: (a) => { try { JSON.parse( a ); return true; } catch ( err ) { return false; } } }
         , btoa      : { nargs: 1, impl: (b) => Buffer.from( b, "utf-8" ).toString( "base64" ) }
         , atob      : { nargs: 1, impl: (a) => Buffer.from( a, "base64" ).toString( "utf-8" ) }
         , urlencode : { nargs: 1, impl: encodeURIComponent }

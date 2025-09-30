@@ -395,9 +395,12 @@ Important notes with respect to date handling (currently; this will evolve):
 
 ### Conversion Functions
 
-* `hex( num )` &mdash; returns the hexadecimal (string) representation of the numeric argument (or "NaN" if non-numeric);
+* `hex( num )` &mdash; returns the hexadecimal (string) representation of the numeric argument (or *NaN* if non-numeric); the string is not prefixed (i.e. with `0x`) or padded to any particular length &mdash; this us up to the user;
+* `oct( num )` &mdash; like `hex()` above, but returns the octal representation of its (numeric) argument as a string;
+* `bin( num )` &mdash; like `hex()` above, but returns the binary representation of its (numeric) argument as a string;
 * `toJSON( various )` &mdash; returns the argument as a JSON-formatted object (string);
 * `parseJSON( json )` &mdash; returns the data represented the (parsed) JSON string argument;
+* `isJSON( string )` &mdash; returns *true* if the given string is parseable as JSON; *false* otherwise.
 * `btoa( str )` &mdash; returns the Base64-encoded representation of the string argument;
 * `atob( str )` &mdash; returns a string containing the decoded Base64 argument (string).
 * `urlencode( string )` &mdash; URL-encodes the given string.

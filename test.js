@@ -1,4 +1,4 @@
-const version = 25244;
+const version = 25273;
 
 /** If verbose is true, every test will print its expression and result.
  *  Otherwise, tests are run quiet, unless verbose is set true on the test itself.
@@ -443,6 +443,12 @@ var test_expr = [
     , { expr: "t=[9,7,5],s=t,push(s, 3),t", expect: [9,7,5,3] }
     , { expr: "t=[9,7,5],s=clone(t),push(s, 3),t", expect: [9,7,5] }
     , { expr: "s", expect: [9,7,5,3] }
+    , { expr: `isJSON("123")`, expect: true }
+    , { expr: `isJSON('"patrick"')`, expect: true }
+    , { expr: `isJSON('{"name":"patrick"}')`, expect: true }
+    , { expr: `isJSON('["Mike","Alice"]')`, expect: true }
+    , { expr: `isJSON('{}')`, expect: true }
+    , { expr: `isJSON('{{')`, expect: false }
 
     , { expr: "range(0,5)", expect: [0,1,2,3,4,5] }
     , { expr: "range(5,0)", expect: [5,4,3,2,1,0] }
@@ -480,6 +486,9 @@ var test_expr = [
 
     , { expr: `hex( 255 )`, expect: "ff" }
     , { expr: `hex( 65536 )`, expect: "10000" }
+    , { expr: `hex( 65535 )`, expect: "ffff" }
+    , { expr: `oct( 65535 )`, expect: "177777" }
+    , { expr: `bin( 65535 )`, expect: "1111111111111111" }
 
     , { expr: `pad("a",6)`, expect: "a     " }
     , { expr: `pad("a",-6)`, expect: "     a" }
