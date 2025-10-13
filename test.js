@@ -1,4 +1,4 @@
-const version = 25273;
+const version = 25286;
 
 /** If verbose is true, every test will print its expression and result.
  *  Otherwise, tests are run quiet, unless verbose is set true on the test itself.
@@ -422,6 +422,7 @@ var test_expr = [
     , { expr: "median( [ 4 ] )", expect: 4 }
     , { expr: "median( [ 61, 41 ] )", expect: 51 }
     , { expr: "median( [] )", expect: null }
+    , { expr: "t=[91,2,53,7], median( t ), t", expect: [91,2,53,7] }  // needs to sort array to work, but should not change it
     , { expr: "concat( [1,2,3], [4,5,6] )", expect: [1,2,3,4,5,6] }
     , { expr: "slice( [10,20,30,40,50,60], 2, 3 )", expect: [ 30 ] }
     , { expr: "slice( [10,20,30,40,50,60], 3 )", expect: [ 40,50,60 ] }
@@ -585,6 +586,7 @@ var test_expr = [
     , { expr: 'define ff(a,b) a < b ? 1 : ( a == b ? 0 : -1 ), sort( [ "e", "d", "b", "a", "c" ], ff )', expect: [ "e", "d", "c", "b", "a" ] }
     , { expr: 'sort( [ "e", "d", "b", "a", "c" ], $1 < $2 ? 1 : ( $1 == $2 ? 0 : -1 ) )', expect: [ "e", "d", "c", "b", "a" ] }
     , { expr: 'sort( [ "e", "d", "b", "a", "c" ], 0 )', expect: [ "e", "d", "b", "a", "c" ] }
+    , { expr: 't=[ "e", "d", "b", "a", "c" ], sort( t ), t', expect: [ "e", "d", "b", "a", "c" ] }  // sort() should not modify original array
 
     /* THE LINE BELOW MUST BE LAST */
     , { expr: '"End of tests."', verbose: true }

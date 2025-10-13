@@ -19,7 +19,7 @@
  */
 /* global parser */
 
-const version = 25273;
+const version = 25286;
 
 const FEATURE_MONTH_BASE = 1;   /* 1 = months 1-12; set to 0 if you prefer JS semantics where 0=Jan,11=Dec */
 const MAX_RANGE = 1000;         /* Maximum number of elements in a result range op result array */
@@ -250,7 +250,7 @@ var __refs = new Set();
         }
         , median    : { nargs: 1, impl: (a) => {
                 if ( Array.isArray( a ) && a.length > 0 ) {
-                    let t = a.sort( ( a, b ) => a - b ); /* Numeric sort */
+                    let t = [ ...a ].sort( ( a, b ) => a - b ); /* Numeric sort of shallow copy (25286 fix) */
                     return ( 0 === ( t.length & 1 ) ) ? ( ( t[t.length/2-1] + t[t.length/2] ) / 2 ) : t[Math.floor( t.length / 2 )];
                 }
                 return null;
@@ -652,6 +652,10 @@ var __refs = new Set();
                         *  uation" (and multiple evaluations) of the sort function/expression.
                         */
                         let a = _run( e.args[0], ctx );
+                        if ( ! Array.isArray( a ) ) {
+                            throw new TypeError( "Requires array" );
+                        }
+                        a = [ ...a ];  // shallow-copy the array (a.sort() below sorts in place) (25286 fix)
                         ctx = push_context( ctx, "$sort" );
                         /* See if a custom sort is supplied. */
                         if ( e.args.length > 1 ) {
