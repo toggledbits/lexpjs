@@ -1,4 +1,4 @@
-/* Version 25286.1121 */
+/* Version 25308.0844 */
 /** lexpjs - Copyright (C) 2018,2021,2024,2025 Patrick H. Rigney, All Rights Reserved
  *  See https://github.com/toggledbits/lexpjs
  *
@@ -20,7 +20,7 @@
  */
 /* global parser */
 
-const version = 25286;
+const version = 25308;
 
 const FEATURE_MONTH_BASE = 1;   /* 1 = months 1-12; set to 0 if you prefer JS semantics where 0=Jan,11=Dec */
 const MAX_RANGE = 1000;         /* Maximum number of elements in a result range op result array */
@@ -1243,7 +1243,7 @@ return new Parser;
         }
         , median    : { nargs: 1, impl: (a) => {
                 if ( Array.isArray( a ) && a.length > 0 ) {
-                    let t = [ ...a ].sort( ( a, b ) => a - b ); /* Numeric sort */
+                    let t = [ ...a ].sort( ( a, b ) => a - b ); /* Numeric sort of shallow copy (25286 fix) */
                     return ( 0 === ( t.length & 1 ) ) ? ( ( t[t.length/2-1] + t[t.length/2] ) / 2 ) : t[Math.floor( t.length / 2 )];
                 }
                 return null;
@@ -1307,7 +1307,7 @@ return new Parser;
     var D = false ? console.log : function() {};
 
     var get_context = function( vars ) {
-        var c = { __lvar: vars || {}, __depth: 0, __tag: '$global', _func: {} };
+        var c = { __lvar: vars || {}, __depth: 0, __tag: '$global', __func: {} };
         c.__global = c;
         c.__lvar.MAXINT = Number.MAX_SAFE_INTEGER;
         c.__lvar.MININT = Number.MIN_SAFE_INTEGER;
@@ -1322,6 +1322,7 @@ return new Parser;
             __parent: ctx,
             __depth: (ctx.__depth||0)+1,
             __lvar: lvars || {},
+            __func: {},
             __tag: tag
         };
     };
@@ -1381,8 +1382,8 @@ return new Parser;
              *  to be defined at a context level other than global. This is necessary for Reactor's
              *  Rule local variable dependency scan.
              */
-            if ( ctx._func?._ref ) {
-                ctx._func._ref( a.name, ctx );
+            if ( ctx.__func?._ref ) {
+                ctx.__func._ref( a.name, ctx );
             }
 
             /* If we find a variable at this scope (context) or any above, return its value */
@@ -1391,9 +1392,9 @@ return new Parser;
                 res = c.__lvar[ a.name ];
             } else {
                 /* Not found; use resolver function if defined */
-                c = locate_context( '_resolve', ctx, '_func' );
+                c = locate_context( '_resolve', ctx, '__func' );
                 if ( c ) {
-                    res = c._func._resolve( a.name, ctx );
+                    res = c.__func._resolve( a.name, ctx );
                 }
             }
             return N(res);
@@ -1523,7 +1524,7 @@ return new Parser;
                     } else if ( e.op == '=' ) {
                         /* Assignment */
                         if ( ! ( is_atom( v1, 'vref' ) || is_atom( v1, 'deref' ) ) ||
-                                String( v1.name || "" ).startsWith( '__' ) || '_func' === v1.name ) {
+                                String( v1.name || "" ).startsWith( '__' ) ) {
                             throw new SyntaxError( `Invalid assignment target (${v1.name})` );
                         }
 // D("run() assign",v2eval,"to",v1.name);
@@ -1568,8 +1569,8 @@ return new Parser;
                                 c = locate_context( v1.name, ctx, '__lvar' ) || ctx;
                             }
                             c.__lvar = c.__lvar || {};
-                            let fc = locate_context( '_assign', ctx, '_func' );
-                            if ( fc && "function" === typeof fc._func._assign ) {
+                            let fc = locate_context( '_assign', ctx, '__func' );
+                            if ( fc && "function" === typeof fc.__func._assign ) {
                                 /* If _assign() returns undefined, the normal assignment will be performed. Otherwise,
                                  * it is assumed that _assign() has done it.
                                  * Note that we are passing two contexts here: the context that the target identifier
@@ -1577,7 +1578,7 @@ return new Parser;
                                  * expression is executing (ctx). This allows the callback function to determine where
                                  * the assignment is made from, for informational and debugging purposes.
                                  */
-                                res = fc._func._assign( v1.name, v2eval, c, e, ctx );
+                                res = fc.__func._assign( v1.name, v2eval, c, e, ctx );
                             }
                             if ( "undefined" === typeof res ) {
                                 res = c.__lvar[ v1.name ] = v2eval;
@@ -1648,15 +1649,15 @@ return new Parser;
                         if ( ! Array.isArray( a ) ) {
                             throw new TypeError( "Requires array" );
                         }
-                        a = [ ...a ];  // shallow-copy the array (a.sort() below sorts in place)
+                        a = [ ...a ];  // shallow-copy the array (a.sort() below sorts in place) (25286 fix)
                         ctx = push_context( ctx, "$sort" );
                         /* See if a custom sort is supplied. */
                         if ( e.args.length > 1 ) {
                             /* Can pass reference to defined function... */
                             if ( is_atom( e.args[1], 'vref' ) ) {
-                                let c = locate_context( e.args[1].name, ctx, '_func' );
+                                let c = locate_context( e.args[1].name, ctx, '__func' );
                                 if ( c ) {
-                                    impl = ( a, b ) => c._func[ e.args[1].name ]( ctx, a, b );
+                                    impl = ( a, b ) => c.__func[ e.args[1].name ]( ctx, a, b );
                                 }
                             }
                             if ( ! impl ) {
@@ -1673,9 +1674,9 @@ return new Parser;
                             /* Default sort. Caller can define a locale-aware compare function, or
                             *  the default sort is used.
                             */
-                            let c = locate_context( '_compare', ctx, '_func' );
+                            let c = locate_context( '_compare', ctx, '__func' );
                             if ( c ) {
-                                impl = ( a, b ) => c._func._compare( ctx, a, b );
+                                impl = ( a, b ) => c.__func._compare( ctx, a, b );
                             }
                         }
                         a = a.sort( impl );
@@ -1684,9 +1685,9 @@ return new Parser;
                     }
                     impl = false;
                     // Attached to context? Scan from current up.
-                    let c = locate_context( name, ctx, '_func' );
+                    let c = locate_context( name, ctx, '__func' );
                     if ( c ) {
-                        impl = c._func[ name ];
+                        impl = c.__func[ name ];
                     }
                     if ( ! impl && nativeFuncs[ name ] ) {
                         impl = ( fctx, ...args ) => nativeFuncs[ name ].impl( ...args );
@@ -1801,7 +1802,7 @@ return new Parser;
                     /* Define function; closure loads arguments values passed in to local variables in
                      * new sub-scope, then runs expression list in impl.
                      */
-                    ctx._func[ e.name ] = (ctx, ...args) => {
+                    ctx.__func[ e.name ] = (ctx, ...args) => {
                         let res = null;
                         ctx = push_context( ctx, "$fdef" );
                         try {
@@ -1857,9 +1858,8 @@ return new Parser;
     };
 
     function define_func_impl( ctx, name, impl ) {
-        let __global = ctx.__global || ctx;
-        __global._func = __global._func || {};
-        __global._func[ name ] = impl;
+        ctx.__func = ctx.__func || {};
+        ctx.__func[ name ] = impl;
     }
 
     /** Define local variable in given context. */
@@ -1895,6 +1895,14 @@ return new Parser;
             return c.__lvar[ name ];
         }
         return undefined;
+    }
+
+    function undefine_var( ctx, name ) {
+        delete ctx.__lvar[ name ];
+    }
+
+    function get_vars( ctx ) {
+        return { ...ctx.__lvar };  // return shallow copy
     }
 
     function get_vrefs( ce ) {
@@ -2050,9 +2058,11 @@ return new Parser;
         get_context: get_context,
         define_func_impl: define_func_impl,
         define_var: define_var,
+        undefine_var: undefine_var,
         define_vars: define_vars,
         set_var: set_var,
         get_var: get_var,
+        get_vars: get_vars,
         get_vrefs: get_vrefs,
         push_context: push_context,
         pop_context: pop_context,

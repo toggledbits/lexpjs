@@ -1,6 +1,6 @@
 {
   "name": "lexpjs",
-  "version": "1.0.25286",
+  "version": "1.0.25308",
   "description": "An expression parser written in JavaScript",
   "main": "cli.js",
   "scripts": {

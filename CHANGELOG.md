@@ -2,6 +2,10 @@
 
 **NOTE:** In order to *build* lexpjs with Unicode-friendly identifiers enabled (if, for some reason, the included pre-built `lexp.js` file doesn't suit your needs), you first need to modify *jison-lex* to allow Unicode property escapes in its *RegExp*s. See `README-lexer.md` for details.
 
+## 1.0.25308
+
+* Prevent runtime error when defining function in other than global context.
+
 ## 1.0.25286
 
 * Fix: the `median()` and `sort()` functions were incorrectly modifying (sorting) the input array argument; the array passed should not be modified.

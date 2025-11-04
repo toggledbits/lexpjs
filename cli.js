@@ -30,6 +30,7 @@ process.stdin.on( 'data', ( c ) => {
         const cx = lexp.compile( c );
         if ( show_parsed ) {
             console.log(JSON.stringify(cx, emap, 4));
+            console.log("Variable references:", lexp.get_vrefs( cx ));
         }
         let res = lexp.run( cx, ctx );
         console.log( "Result:", typeof(res), res );
