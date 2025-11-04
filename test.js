@@ -572,6 +572,9 @@ var test_expr = [
     , { expr: "define square(a) a*a, [ square(5), square(0), square(-5) ]", expect: [ 25, 0, 25 ] }
     , { expr: `define botch(q) '"'+str(q)+'"', botch('hello','there')`, expect: '"hello"' }
     , { expr: `define botch(q,p) '"'+str(q)+str(p)+'"', botch('hello')`, expect: '"hellonull"' }
+    , { expr: `do define botch2(q) "botch "+str(q), botch2("inside") done`, expect: "botch inside" }
+    , { expr: `botch2("outside")`, error: "Undefined function (botch2)" }
+    , { expr: `do define botch3(q) "botch "+str(q) done, botch3("outside")`, error: "Undefined function (botch3)" }
 
     /* scope tests */
     , { expr: "xyzzy='', do global xyzzy='global' done, xyzzy", expect: "global" }
@@ -703,14 +706,15 @@ test_expr.forEach( function( e ) {
         } catch ( err ) {
             if ( e.error ) {
                 if ( e.error instanceof Error && ! ( err instanceof e.error.constructor ) ) {
-                    console.error("**** Eval error (wrong error thrown): ", err );
+                    console.error(`**** Eval error (wrong error thrown, expecting "${e.error.constructor}"):`, err );
                     console.error("++++ Got", err.constructor.name, "expecting", e.error.constructor.name );
                     ++num_errors;
                 } else if ( ( e.error instanceof RegExp ) && ! e.error.test( err.message ) ) {
-                    console.error("**** Eval error (wrong error thrown): ", err );
+                    console.error(`**** Eval error (wrong error thrown, expecting "${e.error}"):`, err );
                     console.error("++++ Expecting", e.error );
                     ++num_errors;
                 } else if ( "string" === typeof e.error && err.message !== e.error ) {
+                    console.error(`**** Eval error (wrong error thrown, expecting "${e.error}"):`, err );
                     console.error("**** Eval error (wrong error thrown): ", err );
                     console.error("++++ Expecting", e.error );
                     ++num_errors;
